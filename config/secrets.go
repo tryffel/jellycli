@@ -63,7 +63,7 @@ func NewSecretStore() (Secret, error) {
 	s := &secret{}
 	var err error
 	s.ring, err = keyring.Open(keyring.Config{
-		AllowedBackends:                nil,
+		AllowedBackends:                []keyring.BackendType{keyring.KWalletBackend, keyring.WinCredBackend},
 		ServiceName:                    "",
 		KeychainName:                   AppName,
 		KeychainTrustApplication:       false,
@@ -93,7 +93,6 @@ func (s *secret) EnsureKey(name string) (string, error) {
 	if err != nil {
 		if err.Error() != "unexpected end of JSON input" &&
 			err.Error() != "The specified item could not be found in the keyring" {
-			//panic(errors.WithMessage(err, "Failed to read wallet "))
 			panic(fmt.Errorf("failed to read wallet: %v", err))
 		}
 	}

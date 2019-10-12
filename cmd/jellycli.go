@@ -18,6 +18,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/jroimartin/gocui"
 	"os"
 	"tryffel.net/pkg/jellycli/api"
 	"tryffel.net/pkg/jellycli/config"
@@ -91,6 +92,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	gui.Show()
-
+	err = gui.Show()
+	if err != nil && err != gocui.ErrQuit {
+		fmt.Printf("Gui error: %v", err)
+	}
 }

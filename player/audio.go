@@ -38,7 +38,8 @@ const (
 )
 
 // Transform volume to db
-var volumeToDbA = float32(config.AudioMaxVolumeDb-config.AudioMinVolumeDb) / (config.AudioMaxVolume - config.AudioMinVolume)
+var volumeToDbA = float32(config.AudioMaxVolumeDb-config.AudioMinVolumeDb) /
+	(config.AudioMaxVolume - config.AudioMinVolume)
 var volumeToDbB = float32(config.AudioMinVolumeDb - config.AudioMinVolume)
 
 func volumeToDb(volume int) float32 {
@@ -47,7 +48,8 @@ func volumeToDb(volume int) float32 {
 
 //Initialize speaker
 func initAudio() error {
-	err := speaker.Init(config.AudioSamplingRate, config.AudioSamplingRate/1000*int(config.AudioBufferPeriod.Seconds()*1000))
+	err := speaker.Init(config.AudioSamplingRate, config.AudioSamplingRate/1000*
+		int(config.AudioBufferPeriod.Seconds()*1000))
 	if err != nil {
 		return fmt.Errorf("speaker initialization failed: %v", err)
 	}
@@ -83,10 +85,10 @@ func newAudio(streamDoneChan chan bool) *audio {
 func (a *audio) streamCompletedCB() {
 	logrus.Info("stream completed")
 	if a.streamer != nil {
-		//err := a.streamer.Close()
-		//if err != nil {
-		//logrus.Error("failed to close stream: %v", err)
-		//}
+		err := a.streamer.Close()
+		if err != nil {
+			logrus.Error("failed to close stream: %v", err)
+		}
 	}
 
 	if a.streamCompleted == nil {
@@ -95,7 +97,11 @@ func (a *audio) streamCompletedCB() {
 	a.streamCompleted <- true
 }
 
-func (a *audio) newStream(reader io.ReadCloser, format Format) error {
+func (a *audio) newStream(streamer beep.StreamSeekCloser) {
+	a.streamer = streamer
+}
+
+func (a *audio) newFileStream(reader io.ReadCloser, format Format) error {
 	var streamer beep.StreamSeekCloser
 	var err error
 	switch format {
@@ -112,7 +118,7 @@ func (a *audio) newStream(reader io.ReadCloser, format Format) error {
 		return fmt.Errorf("failed to initialize stream: %v", err)
 	}
 
-	a.streamer = streamer
+	a.newStream(streamer)
 	return nil
 }
 
@@ -174,8 +180,8 @@ func (a *audio) setVolume(percent int) {
 
 func (a *audio) stop() {
 	a.pause(true)
-	//if a.streamer != nil {
-	//	a.streamer.
+	//if a.streamers != nil {
+	//	a.streamers.
 	//}
 
 }

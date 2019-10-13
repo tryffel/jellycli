@@ -17,25 +17,42 @@
 package api
 
 import (
+	"crypto/rand"
 	"errors"
+	"fmt"
+	"github.com/denisbrodbeck/machineid"
+	"github.com/sirupsen/logrus"
 	"net/http"
+	"tryffel.net/pkg/jellycli/config"
+	"tryffel.net/pkg/jellycli/task"
 )
 
 type Api struct {
-	host     string
-	token    string
-	userId   string
-	serverId string
-	client   *http.Client
-	loggedIn bool
+	task.Task
+	host      string
+	token     string
+	userId    string
+	serverId  string
+	DeviceId  string
+	SessionId string
+	client    *http.Client
+	loggedIn  bool
 }
 
-func NewApi(host string) *Api {
-	return &Api{
+func NewApi(host string) (*Api, error) {
+	a := &Api{
 		host:   host,
 		token:  "",
 		client: &http.Client{},
 	}
+
+	id, err := machineid.ProtectedID(config.AppName)
+	if err != nil {
+		return a, fmt.Errorf("failed to get unique host id: %v", err)
+	}
+	a.DeviceId = id
+	a.SessionId = randomKey(15)
+	return a, nil
 }
 
 func (a *Api) Host() string {
@@ -74,4 +91,40 @@ func (a *Api) UserId() string {
 
 func (a *Api) IsLoggedIn() bool {
 	return a.loggedIn
+}
+
+func (a *Api) ConnectionOk() bool {
+	name, version, err := a.GetServerVersion()
+	if err != nil {
+		logrus.Error("No connection to server: %v", err)
+		return false
+	}
+
+	logrus.Infof("Connected to %s version %s", name, version)
+	return true
+
+}
+
+func (a *Api) loop() {
+	for true {
+		select {
+		case <-a.StopChan():
+			break
+
+		}
+	}
+
+}
+
+const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
+
+func randomKey(length int) string {
+	r := rand.Reader
+	data := make([]byte, length)
+	r.Read(data)
+
+	for i, b := range data {
+		data[i] = letters[b%byte(len(letters))]
+	}
+	return string(data)
 }

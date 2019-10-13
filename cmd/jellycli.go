@@ -46,7 +46,11 @@ func main() {
 	}
 
 	logrus.Info("Connecting to ", host)
-	client := api.NewApi(host)
+	client, err := api.NewApi(host)
+	if err != nil {
+		logrus.Errorf("Failed to initialize api: %v", err)
+		os.Exit(1)
+	}
 
 	token, err := conf.GetKey("token")
 	if token == "" {
@@ -100,6 +104,10 @@ func main() {
 
 	exitCode := 0
 
+	if !client.ConnectionOk() {
+		os.Exit(1)
+	}
+
 	p, err := player.NewPlayer(client)
 	if err != nil {
 		logrus.Error("failed to start media player: %v", err)
@@ -139,8 +147,7 @@ func main() {
 }
 
 func setLogging() *os.File {
-	logrus.SetLevel(logrus.InfoLevel)
-
+	logrus.SetLevel(logrus.DebugLevel)
 	format := &prefixed.TextFormatter{
 		ForceColors:      false,
 		DisableColors:    true,

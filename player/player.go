@@ -3,7 +3,6 @@ package player
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"os"
 	"time"
 	"tryffel.net/pkg/jellycli/api"
 	"tryffel.net/pkg/jellycli/config"
@@ -79,18 +78,12 @@ type Player struct {
 	// chanAction is for user interactions
 	chanAction chan Action
 	// chanState is updated when state is changed
-	chanState chan PlayingState
-
+	chanState          chan PlayingState
 	chanStreamComplete chan bool
-
-	ticker *time.Ticker
-
-	state      PlayingState
-	lastAction *Action
-
-	audio *audio
-
-	file *os.File
+	ticker             *time.Ticker
+	state              PlayingState
+	lastAction         *Action
+	audio              *audio
 }
 
 // NewPlayer constructs new player instance
@@ -110,18 +103,15 @@ func NewPlayer(a *api.Api) (*Player, error) {
 	}
 	p.SetLoop(p.loop)
 
-	file, err := os.Open("my-music-file.mp3")
+	reader, err := p.Api.GetSongDirect("id", "mp3")
 	if err != nil {
-		logrus.Error("failed to open audio file")
-	}
-	err = p.audio.newStream(file, FormatMp3)
-	if err != nil {
-		logrus.Error("failed to add stream: %v", err)
+		logrus.Error("failed to request file over http: %v", err)
+	} else {
+		err = p.audio.newFileStream(reader, FormatMp3)
 	}
 	p.playMedia()
 	p.audio.pause(true)
 	p.state.State = Pause
-	p.file = file
 	p.state.Volume = 50
 	return p, nil
 }
@@ -152,7 +142,7 @@ func (p *Player) loop() {
 
 			err := p.audio.streamer.Err()
 			if err != nil {
-				logrus.Error("error in streamer: ", err.Error())
+				logrus.Error("error in streamers: ", err.Error())
 			}
 			p.RefreshState()
 		case action := <-p.chanAction:
@@ -196,7 +186,6 @@ func (p *Player) loop() {
 			break
 		}
 	}
-	p.file.Close()
 }
 
 //RefreshState pushes current state into state channel

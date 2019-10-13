@@ -20,18 +20,28 @@ import (
 	"fmt"
 	"github.com/jroimartin/gocui"
 	"log"
+	"sync"
+	"tryffel.net/pkg/jellycli/player"
+	"tryffel.net/pkg/jellycli/task"
 	"tryffel.net/pkg/jellycli/ui/components"
 )
 
 type Gui struct {
+	task.Task
+	lock        sync.RWMutex
 	gui         *gocui.Gui
 	initialized bool
 	artists     *components.Artists
-	progress    *components.ProgressBar
+	progress    *components.StatusBar
+	stateChan   chan player.PlayingState
+	actionChan  chan player.Action
+
+	lastState *player.PlayingState
 }
 
 func NewGui() (*Gui, error) {
 	ui := &Gui{}
+	ui.SetLoop(ui.loop)
 	var err error
 	ui.gui, err = gocui.NewGui(gocui.Output256)
 	if err != nil {
@@ -42,7 +52,7 @@ func NewGui() (*Gui, error) {
 	ui.gui.InputEsc = true
 
 	ui.artists = components.NewArtistsView()
-	ui.progress = components.NewProgressBar()
+	ui.progress = components.NewStatusBar(ui.pauseFunc)
 	ui.initialized = true
 	ui.gui.SetManagerFunc(ui.layout)
 	_, err = ui.gui.SetCurrentView(ui.artists.Name())
@@ -62,6 +72,15 @@ func NewGui() (*Gui, error) {
 		}
 	}
 	return ui, nil
+}
+
+func (g *Gui) AssignChannels(state chan player.PlayingState, action chan player.Action) {
+	if g.stateChan == nil {
+		g.stateChan = state
+	}
+	if g.actionChan == nil {
+		g.actionChan = action
+	}
 }
 
 func (g *Gui) Show() error {
@@ -97,4 +116,39 @@ func (gui *Gui) layout(g *gocui.Gui) error {
 		err = nil
 	}
 	return err
+}
+
+func (g *Gui) loop() {
+	for true {
+		select {
+		case <-g.StopChan():
+			// Stop gui updates
+			break
+		case state := <-g.stateChan:
+			// New event on media player
+			//fmt.Println(state)
+			g.lock.Lock()
+			g.lastState = &state
+			g.lock.Unlock()
+			g.gui.Update(g.updateState)
+		}
+	}
+}
+
+func (g *Gui) updateState(gui *gocui.Gui) error {
+	g.lock.RLock()
+	state := g.lastState
+	g.lock.RUnlock()
+	g.progress.Update(state)
+	return nil
+}
+
+func (g *Gui) pauseFunc(pause bool) {
+	action := player.Action{}
+	if pause {
+		action.State = player.Pause
+	} else {
+		action.State = player.Play
+	}
+	g.actionChan <- action
 }

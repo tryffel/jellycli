@@ -19,13 +19,21 @@ package main
 import (
 	"fmt"
 	"github.com/jroimartin/gocui"
+	"github.com/sirupsen/logrus"
+	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 	"os"
+	"sync"
 	"tryffel.net/pkg/jellycli/api"
 	"tryffel.net/pkg/jellycli/config"
+	"tryffel.net/pkg/jellycli/player"
 	"tryffel.net/pkg/jellycli/ui"
 )
 
 func main() {
+	logFile := setLogging()
+	defer logFile.Close()
+	logrus.Info("Starting jellycli")
+
 	conf, err := config.NewSecretStore()
 	if err != nil {
 		fmt.Println("Failed to start application:", err)
@@ -37,7 +45,7 @@ func main() {
 		fmt.Printf("Failed to get jellyfin host: %v", err)
 	}
 
-	fmt.Println("Connecting to ", host)
+	logrus.Info("Connecting to ", host)
 	client := api.NewApi(host)
 
 	token, err := conf.GetKey("token")
@@ -75,7 +83,7 @@ func main() {
 		client.SetUserId(userid)
 	} else {
 		if err != nil {
-			fmt.Println(fmt.Errorf("failed to set wallet value: %v", err))
+			logrus.Error(fmt.Errorf("failed to set wallet value: %v", err))
 			os.Exit(1)
 		}
 	}
@@ -84,16 +92,76 @@ func main() {
 		fmt.Printf("failure in login: %v", err)
 	}
 
-	client.GetUserViews()
-
 	gui, err := ui.NewGui()
 	if err != nil {
-		fmt.Print(err.Error())
+		logrus.Error(err.Error())
 		os.Exit(1)
 	}
 
+	exitCode := 0
+
+	p, err := player.NewPlayer(client)
+	if err != nil {
+		logrus.Error("failed to start media player: %v", err)
+		os.Exit(1)
+	}
+	gui.AssignChannels(p.StateChannel(), p.ActionChannel())
+	err = gui.Start()
+	if err != nil {
+		logrus.Error("failed to start gui update task: %v", err)
+		exitCode = 1
+	}
+	err = p.Start()
+	if err != nil {
+		logrus.Error("failed to start media player task: %v", err)
+		exitCode = 1
+	}
+	//p.RefreshState()
 	err = gui.Show()
 	if err != nil && err != gocui.ErrQuit {
-		fmt.Printf("Gui error: %v", err)
+		logrus.Error("Gui error: %v", err)
+		exitCode = 1
 	}
+
+	err = p.Stop()
+	if err != nil {
+		logrus.Error("failed to stop media player task: %v", err)
+		exitCode = 1
+	}
+	err = gui.Stop()
+	if err != nil {
+		logrus.Error("failed to stop gui update task: %v", err)
+		exitCode = 1
+	}
+
+	logrus.Info("Stopping applicaton")
+	os.Exit(exitCode)
+}
+
+func setLogging() *os.File {
+	logrus.SetLevel(logrus.InfoLevel)
+
+	format := &prefixed.TextFormatter{
+		ForceColors:      false,
+		DisableColors:    true,
+		ForceFormatting:  true,
+		DisableTimestamp: false,
+		DisableUppercase: false,
+		FullTimestamp:    true,
+		TimestampFormat:  "",
+		DisableSorting:   false,
+		QuoteEmptyFields: false,
+		QuoteCharacter:   "'",
+		SpacePadding:     0,
+		Once:             sync.Once{},
+	}
+	logrus.SetFormatter(format)
+	file, err := os.OpenFile("jellycli.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.FileMode(0760))
+	if err != nil {
+		logrus.Error("failed to open log file: ", err.Error())
+		return nil
+	}
+
+	logrus.SetOutput(file)
+	return file
 }

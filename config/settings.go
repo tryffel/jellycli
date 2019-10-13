@@ -16,7 +16,12 @@
 
 package config
 
+import "time"
+
 const (
 	AppName = "jellycli"
 	Version = "0.0.1"
+
+	AudioSamplingRate = 44100
+	AudioBufferPeriod = time.Millisecond * 100
 )

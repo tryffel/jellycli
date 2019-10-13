@@ -23,5 +23,15 @@ const (
 	Version = "0.0.1"
 
 	AudioSamplingRate = 44100
-	AudioBufferPeriod = time.Millisecond * 100
+	AudioBufferPeriod = time.Millisecond * 50
+
+	// Volume range, not absolute values
+	AudioMinVolumeDb = -6
+	AudioMaxVolumeDb = 0
+
+	AudioMinVolume = 0
+	AudioMaxVolume = 100
+
+	// Audio volume is logarithmic, which base to use
+	AudioVolumeLogBase = 2
 )

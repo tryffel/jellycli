@@ -17,8 +17,9 @@ type Status int
 //Action includes instruction for player to play
 type Action struct {
 	// What to do
-	State State
-	Type  Playtype
+	State  State
+	Type   Playtype
+	Volume int
 
 	// Provide either artist/album/song or audio id
 	Artist  string
@@ -35,17 +36,22 @@ type PlayingState struct {
 	Artist      string
 	Album       string
 
+	// Content duration in sec
 	CurrentSongDuration int
 	CurrentSongPast     int
 	PlaylistDuration    int
 	PlaylistLeft        int
+	// Volume [0,100]
+	Volume int
 }
 
 const (
 	// Player states
-	Play  State = 1
-	Pause State = 2
-	Stop  State = 0
+	// Stop -> Play -> Pause -> Continue -> Stop
+	Play     State = 1
+	Continue State = 3
+	Pause    State = 2
+	Stop     State = 0
 
 	// Playing single song
 	Song Playtype = 0
@@ -113,10 +119,10 @@ func NewPlayer(a *api.Api) (*Player, error) {
 		logrus.Error("failed to add stream: %v", err)
 	}
 	p.playMedia()
+	p.audio.pause(true)
 	p.state.State = Pause
-
 	p.file = file
-
+	p.state.Volume = 50
 	return p, nil
 }
 
@@ -152,19 +158,32 @@ func (p *Player) loop() {
 		case action := <-p.chanAction:
 			logrus.Debug("Player received action")
 			// User has requested action
-			p.lastAction = &action
-			if p.state.State != action.State {
-				if action.State == Play || action.State == Pause {
-					_ = p.audio.pause()
-					if p.audio.ctrl.Paused {
-						p.state.State = Pause
-					} else {
-						if action.State == Play {
-							p.state.State = Play
-						}
-					}
+			currentState := p.state.State
+			newState := action.State
+			if currentState != newState {
+				if newState == Pause {
+					p.audio.pause(true)
+					p.state.State = Pause
+				} else if newState == Continue || newState == Play {
+					p.audio.pause(false)
+					p.state.State = Play
 				}
 			}
+			currentVolume := p.state.Volume
+			newVolume := action.Volume
+			if currentVolume != newVolume {
+				if newVolume > config.AudioMaxVolume {
+					newVolume = config.AudioMaxVolume
+				} else if newVolume < config.AudioMinVolume {
+					newVolume = config.AudioMinVolume
+				}
+
+				logrus.Infof("Setting volume to %d %", newVolume)
+				p.audio.setVolume(newVolume)
+				p.state.Volume = newVolume
+			}
+
+			p.lastAction = &action
 			p.RefreshState()
 
 		case <-p.chanStreamComplete:

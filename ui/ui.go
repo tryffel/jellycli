@@ -52,7 +52,7 @@ func NewGui() (*Gui, error) {
 	ui.gui.InputEsc = true
 
 	ui.artists = components.NewArtistsView()
-	ui.progress = components.NewStatusBar(ui.pauseFunc)
+	ui.progress = components.NewStatusBar(ui.playerCtrl)
 	ui.initialized = true
 	ui.gui.SetManagerFunc(ui.layout)
 	_, err = ui.gui.SetCurrentView(ui.artists.Name())
@@ -143,12 +143,15 @@ func (g *Gui) updateState(gui *gocui.Gui) error {
 	return nil
 }
 
-func (g *Gui) pauseFunc(pause bool) {
-	action := player.Action{}
-	if pause {
-		action.State = player.Pause
-	} else {
-		action.State = player.Play
+func (g *Gui) playerCtrl(state player.State, volume int) {
+	action := player.Action{
+		State:   state,
+		Type:    0,
+		Volume:  volume,
+		Artist:  "",
+		Album:   "",
+		Song:    "",
+		AudioId: "",
 	}
 	g.actionChan <- action
 }

@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/faiface/beep"
+	"github.com/faiface/beep/effects"
 	"github.com/faiface/beep/flac"
 	"github.com/faiface/beep/mp3"
 	"github.com/faiface/beep/speaker"
@@ -36,6 +37,14 @@ const (
 	FormatFlac = 2
 )
 
+// Transform volume to db
+var volumeToDbA = float32(config.AudioMaxVolumeDb-config.AudioMinVolumeDb) / (config.AudioMaxVolume - config.AudioMinVolume)
+var volumeToDbB = float32(config.AudioMinVolumeDb - config.AudioMinVolume)
+
+func volumeToDb(volume int) float32 {
+	return volumeToDbA*float32(volume) + volumeToDbB
+}
+
 //Initialize speaker
 func initAudio() error {
 	err := speaker.Init(config.AudioSamplingRate, config.AudioSamplingRate/1000*int(config.AudioBufferPeriod.Seconds()*1000))
@@ -48,6 +57,7 @@ func initAudio() error {
 type audio struct {
 	streamer        beep.StreamSeekCloser
 	ctrl            *beep.Ctrl
+	volume          *effects.Volume
 	streamCompleted chan bool
 }
 
@@ -58,6 +68,12 @@ func newAudio(streamDoneChan chan bool) *audio {
 		ctrl: &beep.Ctrl{
 			Streamer: nil,
 			Paused:   false,
+		},
+		volume: &effects.Volume{
+			Streamer: nil,
+			Base:     config.AudioVolumeLogBase,
+			Volume:   (config.AudioMinVolumeDb + config.AudioMaxVolumeDb) / 2,
+			Silent:   false,
 		},
 	}
 	return a
@@ -106,9 +122,11 @@ func (a *audio) playStream() error {
 	}
 	// Play stream first, then call callback
 	a.ctrl.Streamer = beep.Seq(a.streamer, beep.Callback(a.streamCompletedCB))
+	a.volume.Streamer = a.ctrl
 	logrus.Debug("Speaker set new play")
-	speaker.Play(a.ctrl)
-	logrus.Debug("Speaker got new play")
+	speaker.Play(a.volume)
+
+	a.pause(false)
 	return nil
 }
 
@@ -123,14 +141,41 @@ func (a *audio) timePast() time.Duration {
 	return time.Second * time.Duration(left)
 }
 
-func (a *audio) pause() error {
-	if a.ctrl == nil || a.streamer == nil {
-		return errors.New("no active stream")
+func (a *audio) pause(state bool) {
+	if a.ctrl == nil {
+		return
 	}
-	logrus.Info("Toggle speaker pause")
+	if state {
+		logrus.Info("Pause")
+	} else {
+		logrus.Info("Continue")
+	}
 	speaker.Lock()
-	a.ctrl.Paused = !a.ctrl.Paused
+	a.ctrl.Paused = state
 	speaker.Unlock()
-	logrus.Debug("Speaker pause toggled")
-	return nil
+}
+
+func (a *audio) setVolume(percent int) {
+	decibels := volumeToDb(percent)
+	logrus.Infof("Set volume to %f Db", decibels)
+	speaker.Lock()
+	defer speaker.Unlock()
+	if decibels <= config.AudioMinVolumeDb {
+		a.volume.Silent = true
+		a.volume.Volume = config.AudioMinVolumeDb
+	} else if decibels >= config.AudioMaxVolumeDb {
+		a.volume.Volume = config.AudioMaxVolumeDb
+		a.volume.Silent = false
+	} else {
+		a.volume.Silent = false
+		a.volume.Volume = float64(decibels)
+	}
+}
+
+func (a *audio) stop() {
+	a.pause(true)
+	//if a.streamer != nil {
+	//	a.streamer.
+	//}
+
 }

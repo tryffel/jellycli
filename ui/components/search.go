@@ -19,6 +19,7 @@ package components
 import (
 	"github.com/jroimartin/gocui"
 	"github.com/sirupsen/logrus"
+	"strings"
 )
 
 const SearchBarView = "searchbar"
@@ -61,13 +62,15 @@ func (s *SearchBar) AssignKeyBindings(g *gocui.Gui) error {
 	if err := g.SetKeybinding(s.name, gocui.MouseLeft, gocui.ModNone, s.activate); err != nil {
 		return err
 	}
+	if err := g.SetKeybinding(s.name, gocui.MouseRelease, gocui.ModNone, s.activate); err != nil {
+		return err
+	}
 	if err := g.SetKeybinding("", gocui.KeyCtrlF, gocui.ModNone, s.activate); err != nil {
 		return err
 	}
 	if err := g.SetKeybinding(s.name, gocui.KeyEsc, gocui.ModNone, s.onEscape); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -78,13 +81,21 @@ func (s *SearchBar) activate(g *gocui.Gui, v *gocui.View) error {
 	}
 	s.Highlight = true
 
-	g.SetCurrentView(s.name)
-	//s.view.SetCursor(0,0)
-	return nil
+	_, err := g.SetCurrentView(s.name)
+
+	text := s.view.ViewBuffer()
+	cx, cy := s.view.Cursor()
+	if len(text) == 0 {
+		err = s.view.SetCursor(0, cy)
+	} else if cx > len(text) {
+		err = s.view.SetCursor(len(text)-1, cy)
+	}
+	return err
 }
 
 func (s *SearchBar) onEnter(g *gocui.Gui, v *gocui.View) error {
 	clause, _ := s.view.Line(0)
+	clause = strings.Trim(clause, " ")
 	err := s.searchFunc(clause)
 	if err != nil {
 		s.view.Clear()

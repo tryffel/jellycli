@@ -19,28 +19,32 @@ package ui
 import (
 	"fmt"
 	"github.com/jroimartin/gocui"
+	"github.com/sirupsen/logrus"
 	"log"
 	"sync"
 	"tryffel.net/pkg/jellycli/player"
 	"tryffel.net/pkg/jellycli/task"
 	"tryffel.net/pkg/jellycli/ui/components"
+	"tryffel.net/pkg/jellycli/ui/controller"
 )
 
 type Gui struct {
 	task.Task
 	lock        sync.RWMutex
 	gui         *gocui.Gui
+	content     *controller.Content
 	initialized bool
-	artists     *components.Artists
+	artists     *components.Content
 	progress    *components.StatusBar
+	searchBar   *components.SearchBar
 	stateChan   chan player.PlayingState
 	actionChan  chan player.Action
-
-	lastState *player.PlayingState
+	lastState   *player.PlayingState
 }
 
-func NewGui() (*Gui, error) {
+func NewGui(content *controller.Content) (*Gui, error) {
 	ui := &Gui{}
+	ui.content = content
 	ui.SetLoop(ui.loop)
 	var err error
 	ui.gui, err = gocui.NewGui(gocui.Output256)
@@ -51,14 +55,15 @@ func NewGui() (*Gui, error) {
 	ui.gui.Cursor = true
 	ui.gui.InputEsc = true
 
-	ui.artists = components.NewArtistsView()
+	ui.artists = components.NewContentView()
 	ui.progress = components.NewStatusBar(ui.playerCtrl)
+	ui.searchBar = components.NewSearchBar(ui.search)
 	ui.initialized = true
 	ui.gui.SetManagerFunc(ui.layout)
 	_, err = ui.gui.SetCurrentView(ui.artists.Name())
 
 	components := []components.Component{
-		ui.artists, ui.progress,
+		ui.artists, ui.progress, ui.searchBar,
 	}
 
 	// Quit UI on Ctrl+C
@@ -111,10 +116,18 @@ func (gui *Gui) layout(g *gocui.Gui) error {
 	}
 
 	_, pY := gui.progress.Size()
-	_, err = gui.artists.Draw(g, components.Rectangle{X0: 0, Y0: pY, X1: w, Y1: h})
+
+	_, err = gui.searchBar.Draw(g, components.Rectangle{X0: 0, Y0: pY + 1, X1: w, Y1: pY + gui.searchBar.SizeMax.Y + 1})
 	if err == gocui.ErrUnknownView {
 		err = nil
 	}
+
+	_, pY = gui.searchBar.Size()
+	_, err = gui.artists.Draw(g, components.Rectangle{X0: 0, Y0: 7, X1: w, Y1: 20})
+	if err == gocui.ErrUnknownView {
+		err = nil
+	}
+
 	return err
 }
 
@@ -131,6 +144,16 @@ func (g *Gui) loop() {
 			g.lastState = &state
 			g.lock.Unlock()
 			g.gui.Update(g.updateState)
+		case action := <-g.content.SearchCompleteChan():
+			if action == controller.ActionSearch {
+
+				err := g.setSearchResults()
+				if err != nil {
+					logrus.Error("Failed to update content view: ", err.Error())
+				}
+			} else {
+				logrus.Errorf("Unknown search action type received: %d", action)
+			}
 		}
 	}
 }
@@ -154,4 +177,26 @@ func (g *Gui) playerCtrl(state player.State, volume int) {
 		AudioId: "",
 	}
 	g.actionChan <- action
+}
+
+func (g *Gui) search(q string) error {
+	logrus.Info("Searching: \"", q, "\"")
+	go g.content.Search(q)
+	return nil
+}
+
+func (g *Gui) setSearchResults() error {
+	results := g.content.SearchResults()
+	if results == nil {
+		return fmt.Errorf("no results available")
+	}
+	logrus.Debugf("Gui got %d search results", len(results.Items))
+
+	lines := make([]string, len(results.Items))
+	for i, v := range results.Items {
+		lines[i] = fmt.Sprintf("%d %s (%s) - %s",
+			i, v.Name, v.AlbumArtist, components.SecToString(int(v.Duration.Seconds())))
+	}
+
+	return g.artists.SetText(lines)
 }

@@ -89,8 +89,11 @@ type component struct {
 	Frame       bool
 	Editable    bool
 	Wrap        bool
-	BgColor     int
-	FgColor     int
+	BgColor     gocui.Attribute
+	FgColor     gocui.Attribute
+	SelBgColor  gocui.Attribute
+	SelFgColor  gocui.Attribute
+	Highlight   bool
 	SizeMin     Point
 	SizeCurrent Point
 	SizeMax     Point
@@ -107,9 +110,15 @@ func (c *component) Apply(view *gocui.View) {
 	view.Frame = c.Frame
 	view.Editable = c.Editable
 	view.Wrap = c.Wrap
-	//view.SelFgColor = gocui.ColorWhite
-	//view.SelBgColor = gocui.ColorGreen
-	//view.Highlight = true
+	view.SelBgColor = gocui.ColorGreen
+	view.SelFgColor = gocui.ColorWhite
+
+	view.BgColor = setColor(c.BgColor, gocui.ColorDefault)
+	view.FgColor = setColor(c.FgColor, gocui.ColorDefault)
+	view.SelBgColor = setColor(c.SelBgColor, gocui.ColorDefault)
+	view.SelFgColor = setColor(c.SelFgColor, gocui.ColorDefault)
+
+	view.Highlight = c.Highlight
 }
 
 func (c *component) CurrentSize() (int, int) {
@@ -228,4 +237,12 @@ func NewComponent(name string) component {
 func clearComponent(g *gocui.Gui, v *gocui.View) error {
 	v.Clear()
 	return nil
+}
+
+//Set non zero value or default value
+func setColor(color gocui.Attribute, defaultVal gocui.Attribute) gocui.Attribute {
+	if color != 0 {
+		return color
+	}
+	return defaultVal
 }

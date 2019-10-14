@@ -38,8 +38,8 @@ func Test_secToString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := secToString(tt.args.sec); got != tt.want {
-				t.Errorf("secToString() = %v, want %v", got, tt.want)
+			if got := SecToString(tt.args.sec); got != tt.want {
+				t.Errorf("SecToString() = %v, want %v", got, tt.want)
 			}
 		})
 	}

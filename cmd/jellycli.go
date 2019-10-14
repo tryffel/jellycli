@@ -27,6 +27,7 @@ import (
 	"tryffel.net/pkg/jellycli/config"
 	"tryffel.net/pkg/jellycli/player"
 	"tryffel.net/pkg/jellycli/ui"
+	"tryffel.net/pkg/jellycli/ui/controller"
 )
 
 func main() {
@@ -96,7 +97,9 @@ func main() {
 		fmt.Printf("failure in login: %v", err)
 	}
 
-	gui, err := ui.NewGui()
+	content := controller.NewContent(client)
+
+	gui, err := ui.NewGui(content)
 	if err != nil {
 		logrus.Error(err.Error())
 		os.Exit(1)
@@ -119,6 +122,7 @@ func main() {
 		logrus.Error("failed to start gui update task: %v", err)
 		exitCode = 1
 	}
+	_ = content.Start()
 	err = p.Start()
 	if err != nil {
 		logrus.Error("failed to start media player task: %v", err)
@@ -141,6 +145,8 @@ func main() {
 		logrus.Error("failed to stop gui update task: %v", err)
 		exitCode = 1
 	}
+
+	_ = content.Stop()
 
 	logrus.Info("Stopping applicaton")
 	os.Exit(exitCode)

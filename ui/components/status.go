@@ -19,7 +19,6 @@ package components
 import (
 	"fmt"
 	"github.com/jroimartin/gocui"
-	"github.com/sirupsen/logrus"
 	"tryffel.net/pkg/jellycli/player"
 )
 
@@ -61,7 +60,7 @@ func NewStatusBar(ctrlFunc func(state player.State, volume int)) *StatusBar {
 }
 
 func (p *StatusBar) AssignKeyBindings(gui *gocui.Gui) error {
-	if err := gui.SetKeybinding("", gocui.KeySpace, gocui.ModNone, p.onSpace); err != nil {
+	if err := gui.SetKeybinding("", gocui.KeyCtrlSpace, gocui.ModNone, p.onSpace); err != nil {
 		return err
 	}
 
@@ -112,7 +111,6 @@ func (p *StatusBar) setVolume(amount int) {
 }
 
 func (p *StatusBar) Update(state *player.PlayingState) {
-	logrus.Debug("Update progress bar view")
 	p.view.Clear()
 	p.playing = state.State
 	p.volume = state.Volume
@@ -121,10 +119,10 @@ func (p *StatusBar) Update(state *player.PlayingState) {
 	}
 
 	status := ""
-	status += secToString(state.CurrentSongPast) + " "
+	status += SecToString(state.CurrentSongPast) + " "
 	status += p.progressBar.Draw(state.CurrentSongPast)
 	status += " "
-	status += secToString(state.CurrentSongDuration)
+	status += SecToString(state.CurrentSongDuration)
 
 	status += " Volume: " + p.volumeBar.Draw(state.Volume)
 
@@ -144,7 +142,7 @@ func (p *StatusBar) Update(state *player.PlayingState) {
 // Print seconds as formatted time:
 // 50, 1:50,
 // 0:05, 1.05, 1:05:05
-func secToString(sec int) string {
+func SecToString(sec int) string {
 	if sec < 60 {
 		return fmt.Sprintf("0:%02d", sec)
 	}

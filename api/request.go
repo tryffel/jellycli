@@ -30,6 +30,13 @@ const (
 	errServerError          = "server error"
 )
 
+func (a *Api) defaultParams() *map[string]string {
+	params := *(&map[string]string{})
+	params["UserId"] = a.userId
+	params["DeviceId"] = a.DeviceId
+	return &params
+}
+
 func (a *Api) get(url string, params *map[string]string) (io.ReadCloser, error) {
 	return a.makeRequest("GET", url, nil, params)
 }
@@ -74,7 +81,7 @@ func (a *Api) makeRequest(method, url string, body *[]byte, params *map[string]s
 		return resp.Body, nil
 	}
 	if resp.StatusCode > 400 && resp.StatusCode < 500 {
-		return resp.Body, errors.New(errInvalidRequest)
+		return resp.Body, fmt.Errorf("%s, code: %d", errInvalidRequest, resp.StatusCode)
 	}
 	if resp.StatusCode >= 500 {
 		return resp.Body, errors.New(errServerError)

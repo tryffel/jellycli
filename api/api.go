@@ -22,6 +22,8 @@ import (
 	"fmt"
 	"github.com/denisbrodbeck/machineid"
 	"github.com/sirupsen/logrus"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"tryffel.net/pkg/jellycli/config"
 	"tryffel.net/pkg/jellycli/task"
@@ -114,6 +116,19 @@ func (a *Api) loop() {
 		}
 	}
 
+}
+
+func getBodyMsg(body io.ReadCloser) string {
+	if body == nil {
+		return ""
+	}
+
+	bytes, err := ioutil.ReadAll(body)
+	if err != nil {
+		return ""
+	}
+
+	return string(bytes)
 }
 
 const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"

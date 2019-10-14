@@ -20,8 +20,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
+	"time"
 )
 
 const (
@@ -71,11 +73,13 @@ func (a *Api) makeRequest(method, url string, body *[]byte, params *map[string]s
 		}
 		req.URL.RawQuery = q.Encode()
 	}
-
+	start := time.Now()
 	resp, err := a.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed make request: %v", err)
 	}
+	took := time.Since(start)
+	logrus.Debugf("%s %s: %d (%d ms)", req.Method, req.URL.Path, resp.StatusCode, took.Milliseconds())
 
 	if resp.StatusCode == 200 {
 		return resp.Body, nil

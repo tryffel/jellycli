@@ -55,7 +55,7 @@ func NewGui(content *controller.Content) (*Gui, error) {
 	ui.gui.Cursor = true
 	ui.gui.InputEsc = true
 
-	ui.artists = components.NewContentView()
+	ui.artists = components.NewContentView(ui.playSong)
 	ui.progress = components.NewStatusBar(ui.playerCtrl)
 	ui.searchBar = components.NewSearchBar(ui.search)
 	ui.initialized = true
@@ -189,14 +189,39 @@ func (g *Gui) setSearchResults() error {
 	results := g.content.SearchResults()
 	if results == nil {
 		return fmt.Errorf("no results available")
+		return g.artists.SetText([]string{"No results"})
 	}
 	logrus.Debugf("Gui got %d search results", len(results.Items))
 
 	lines := make([]string, len(results.Items))
 	for i, v := range results.Items {
 		lines[i] = fmt.Sprintf("%d %s (%s) - %s",
-			i, v.Name, v.AlbumArtist, components.SecToString(int(v.Duration.Seconds())))
+			i, v.Name, v.AlbumArtist, components.SecToString(v.Duration))
 	}
 
 	return g.artists.SetText(lines)
+}
+
+func (g *Gui) playSong(index int) {
+	songs := g.content.SearchResults()
+	if songs == nil {
+		return
+	}
+
+	if len(songs.Items)-1 < index {
+		return
+	}
+
+	item := songs.Items[index]
+	g.actionChan <- player.Action{
+		State:    player.Play,
+		Type:     0,
+		Volume:   -1,
+		Artist:   item.AlbumArtist,
+		Album:    item.Album,
+		Song:     item.Name,
+		AudioId:  item.Id,
+		Duration: item.Duration,
+	}
+
 }

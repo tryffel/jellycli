@@ -19,18 +19,17 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 )
 
 type SearchHint struct {
-	Id          string        `json:"Id"`
-	Name        string        `json:"Name"`
-	Year        int           `json:"ProductionYear"`
-	Type        string        `json:"Type"`
-	Duration    time.Duration `json:"RunTimeTicks"`
-	Album       string        `json:"Album"`
-	AlbumId     string        `json:"AlbumId"`
-	AlbumArtist string        `json:"AlbumArtist"`
+	Id          string `json:"Id"`
+	Name        string `json:"Name"`
+	Year        int    `json:"ProductionYear"`
+	Type        string `json:"Type"`
+	Duration    int    `json:"RunTimeTicks"`
+	Album       string `json:"Album"`
+	AlbumId     string `json:"AlbumId"`
+	AlbumArtist string `json:"AlbumArtist"`
 }
 
 type SearchResult struct {
@@ -43,6 +42,8 @@ func (a *Api) Search(q string, limit int) (*SearchResult, error) {
 		limit = 20
 	}
 	params := *a.defaultParams()
+	delete(params, "UserId")
+	delete(params, "DeviceId")
 	params["SearchTerm"] = q
 	params["Limit"] = fmt.Sprint(limit)
 	params["IncludeItemTypes"] = "Audio"
@@ -57,6 +58,12 @@ func (a *Api) Search(q string, limit int) (*SearchResult, error) {
 	err = json.NewDecoder(body).Decode(result)
 	if err != nil {
 		err = fmt.Errorf("json parsing failed: %v", err)
+	}
+
+	if len(result.Items) > 0 {
+		for i, _ := range result.Items {
+			result.Items[i].Duration /= 10000000
+		}
 	}
 
 	return result, err

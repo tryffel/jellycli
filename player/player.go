@@ -3,6 +3,7 @@ package player
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"io"
 	"time"
 	"tryffel.net/pkg/jellycli/api"
 	"tryffel.net/pkg/jellycli/config"
@@ -21,10 +22,11 @@ type Action struct {
 	Volume int
 
 	// Provide either artist/album/song or audio id
-	Artist  string
-	Album   string
-	Song    string
-	AudioId string
+	Artist   string
+	Album    string
+	Song     string
+	AudioId  string
+	Duration int
 }
 
 //PlayerState holds data about currently playing song if any
@@ -78,12 +80,17 @@ type Player struct {
 	// chanAction is for user interactions
 	chanAction chan Action
 	// chanState is updated when state is changed
-	chanState          chan PlayingState
+	chanState chan PlayingState
+
 	chanStreamComplete chan bool
-	ticker             *time.Ticker
-	state              PlayingState
-	lastAction         *Action
-	audio              *audio
+
+	ticker *time.Ticker
+
+	state      PlayingState
+	lastAction *Action
+
+	audio  *audio
+	reader io.ReadCloser
 }
 
 // NewPlayer constructs new player instance
@@ -103,13 +110,6 @@ func NewPlayer(a *api.Api) (*Player, error) {
 	}
 	p.SetLoop(p.loop)
 
-	reader, err := p.Api.GetSongDirect("id", "mp3")
-	if err != nil {
-		logrus.Error("failed to request file over http: %v", err)
-	} else {
-		err = p.audio.newFileStream(reader, FormatMp3)
-	}
-	p.playMedia()
 	p.audio.pause(true)
 	p.state.State = Pause
 	p.state.Volume = 50
@@ -139,11 +139,6 @@ func (p *Player) loop() {
 			}
 			at := p.audio.timePast()
 			p.state.CurrentSongPast = int(at.Seconds())
-
-			err := p.audio.streamer.Err()
-			if err != nil {
-				logrus.Error("error in streamers: ", err.Error())
-			}
 			p.RefreshState()
 		case action := <-p.chanAction:
 			logrus.Debug("Player received action")
@@ -154,35 +149,41 @@ func (p *Player) loop() {
 				if newState == Pause {
 					p.audio.pause(true)
 					p.state.State = Pause
-				} else if newState == Continue || newState == Play {
+				} else if newState == Continue {
 					p.audio.pause(false)
 					p.state.State = Play
+				} else if newState == Play {
+					p.PlaySong(action)
 				}
 			}
 			currentVolume := p.state.Volume
 			newVolume := action.Volume
-			if currentVolume != newVolume {
+			if currentVolume != newVolume && newVolume != -1 {
 				if newVolume > config.AudioMaxVolume {
 					newVolume = config.AudioMaxVolume
 				} else if newVolume < config.AudioMinVolume {
 					newVolume = config.AudioMinVolume
 				}
-
-				logrus.Infof("Setting volume to %d %", newVolume)
 				p.audio.setVolume(newVolume)
 				p.state.Volume = newVolume
 			}
-
 			p.lastAction = &action
 			p.RefreshState()
 
 		case <-p.chanStreamComplete:
 			logrus.Debug("Stream complete")
-			p.audio.streamer.Close()
+			if p.reader != nil {
+				err := p.reader.Close()
+				if err != nil {
+					logrus.Errorf("Failed to close reader: %v", err)
+				}
+				p.reader = nil
+			}
 			p.state.State = Stop
 			p.RefreshState()
 		case <-p.StopChan():
 			// Program is stopping
+			p.audio.stop()
 			break
 		}
 	}
@@ -190,20 +191,29 @@ func (p *Player) loop() {
 
 //RefreshState pushes current state into state channel
 func (p *Player) RefreshState() {
-	logrus.Debug("emitting player state")
 	p.chanState <- p.state
 }
 
-func (p *Player) playMedia() {
-	length := p.audio.streamer.Len() / config.AudioSamplingRate
-	logrus.Infof("Song length is %d sec.", length)
-
-	err := p.audio.playStream()
+func (p *Player) PlaySong(action Action) {
+	reader, err := p.Api.GetSongDirect(action.AudioId, "mp3")
 	if err != nil {
-		logrus.Error("Failed to play media: ", err.Error())
+		logrus.Error("failed to request file over http: %v", err)
+		return
+	} else {
+		err = p.audio.newFileStream(reader, FormatMp3)
+		if err != nil {
+			logrus.Error("Failed to create new stream: ", err.Error())
+			return
+		}
 	}
+	if p.reader != nil {
+		p.reader.Close()
+	}
+	p.reader = reader
 	p.state.State = Play
-	p.state.CurrentSongDuration = length
-	p.state.CurrentSongPast = 0
-
+	p.state.Song = action.Song
+	p.state.Artist = action.Artist
+	p.state.Album = action.Album
+	p.state.CurrentSongDuration = action.Duration
+	p.RefreshState()
 }

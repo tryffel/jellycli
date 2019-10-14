@@ -26,10 +26,11 @@ const ContentView = "content"
 //Content Provides unified view for artist, playlists, albums and songs
 type Content struct {
 	component
-	count int
+	count    int
+	playFunc func(int)
 }
 
-func NewContentView() *Content {
+func NewContentView(playFunc func(int)) *Content {
 	a := &Content{
 		count: 0,
 	}
@@ -42,6 +43,7 @@ func NewContentView() *Content {
 	a.SizeMax = Point{X: 100, Y: 20}
 	a.initialized = true
 	a.Highlight = true
+	a.playFunc = playFunc
 	return a
 }
 
@@ -55,15 +57,20 @@ func (c *Content) AssignKeyBindings(gui *gocui.Gui) error {
 	if err := gui.SetKeybinding(c.name, gocui.MouseLeft, gocui.ModNone, c.activate); err != nil {
 		return err
 	}
+	if err := gui.SetKeybinding(c.name, gocui.KeyEnter, gocui.ModNone, c.play); err != nil {
+		return err
+	}
 	return nil
 }
 
 func (c *Content) scrollDown(gui *gocui.Gui, v *gocui.View) error {
-	return nil
+	cx, cy := v.Cursor()
+	return v.SetCursor(cx, cy+1)
 }
 
 func (c *Content) scrollUp(gui *gocui.Gui, v *gocui.View) error {
-	return nil
+	cx, cy := v.Cursor()
+	return v.SetCursor(cx, cy-1)
 }
 
 func (c *Content) activate(gui *gocui.Gui, v *gocui.View) error {
@@ -75,4 +82,13 @@ func (c *Content) SetText(text []string) error {
 	c.view.Clear()
 	_, err := c.view.Write([]byte(strings.Join(text, "\n")))
 	return err
+}
+
+func (c *Content) play(gui *gocui.Gui, v *gocui.View) error {
+	_, index := v.Cursor()
+	if c.playFunc != nil {
+		c.playFunc(index)
+	}
+
+	return nil
 }

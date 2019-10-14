@@ -52,7 +52,7 @@ func NewStatusBar(ctrlFunc func(state player.State, volume int)) *StatusBar {
 	p.updateFunc = p.refresh
 	p.ctrlFunc = ctrlFunc
 
-	p.progressBar = newProgressBar(15, 100)
+	p.progressBar = newProgressBar(20, 100)
 	p.volumeBar = newProgressBar(10, 100)
 	p.volume = 50
 	p.playing = player.Stop
@@ -101,7 +101,7 @@ func (p *StatusBar) pause() {
 	if p.playing == player.Play {
 		p.ctrlFunc(player.Pause, p.volume)
 	} else if p.playing == player.Pause || p.playing == player.Stop {
-		p.ctrlFunc(player.Play, p.volume)
+		p.ctrlFunc(player.Continue, p.volume)
 	}
 }
 
@@ -128,10 +128,12 @@ func (p *StatusBar) Update(state *player.PlayingState) {
 
 	status += "\n          "
 	if state.State == player.Play {
-		status += "⏮ ■ ⏸ ⏯ " + state.Song
+		status += "⏮ ■ ⏸ ⏯ "
 	} else {
-		status += "⏮ ■ ▶ ⏯ " + state.Song
+		status += "⏮ ■ ▶ ⏯ "
 	}
+
+	status += fmt.Sprintf("%s - %s (%s)", state.Song, state.Album, state.Artist)
 
 	p.view.Write([]byte(status))
 	p.updatePending = false

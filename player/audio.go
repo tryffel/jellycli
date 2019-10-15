@@ -210,3 +210,9 @@ func (a *audio) stop() {
 	a.mixer.Clear()
 	a.lock.Unlock()
 }
+
+func (a *audio) hasStreamer() bool {
+	a.lock.RLock()
+	defer a.lock.RUnlock()
+	return a.streamer != nil
+}

@@ -19,6 +19,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -136,6 +137,8 @@ func (a *Api) ReportProgress(state *PlaybackState) error {
 			Event:           state.Event,
 		}
 	}
+
+	logrus.Debug("Progress event: ", state.Event)
 
 	body, err := json.Marshal(&report)
 

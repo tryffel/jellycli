@@ -107,7 +107,7 @@ func (p *StatusBar) pause() {
 
 func (p *StatusBar) setVolume(amount int) {
 	volume := p.volume + amount
-	p.ctrlFunc(p.playing, volume)
+	p.ctrlFunc(player.SetVolume, volume)
 }
 
 func (p *StatusBar) Update(state *player.PlayingState) {

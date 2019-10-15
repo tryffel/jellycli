@@ -48,11 +48,17 @@ type PlayingState struct {
 
 const (
 	// Player states
-	// Stop -> Play -> Pause -> Continue -> Stop
-	Play     State = 1
+	// Stop -> Play -> Pause -> (Continue) -> Stop
+	// Play new song
+	Play State = 1
+	// Continue paused song, only a transition mode, never state of the player
 	Continue State = 3
-	Pause    State = 2
-	Stop     State = 0
+	//SetVolume, only transition mode
+	SetVolume State = 4
+	// Pause song
+	Pause State = 2
+	// Stop playing
+	Stop State = 0
 
 	// Playing single song
 	Song Playtype = 0
@@ -143,40 +149,16 @@ func (p *Player) loop() {
 			}
 			at := p.audio.timePast()
 			p.state.CurrentSongPast = int(at.Seconds())
-
 			p.RefreshState()
 		case action := <-p.chanAction:
-			logrus.Debug("Player received action")
 			// User has requested action
-			currentState := p.state.State
-			newState := action.State
-			if currentState != newState {
-				if newState == Pause {
-					p.audio.pause(true)
-					p.state.State = Pause
-				} else if newState == Continue {
-					p.audio.pause(false)
-					p.state.State = Play
-				} else if newState == Play {
-					p.PlaySong(action)
-				}
-				go p.reportStatus(api.EventPause)
+			if ok, event := p.handleAction(action); ok {
+				p.lastAction = &action
+				p.RefreshState()
+				go p.reportStatus(event)
+			} else {
+				logrus.Error("Invalid action, probably incorrect transition")
 			}
-			currentVolume := p.state.Volume
-			newVolume := action.Volume
-			if currentVolume != newVolume && newVolume != -1 {
-				if newVolume > config.AudioMaxVolume {
-					newVolume = config.AudioMaxVolume
-				} else if newVolume < config.AudioMinVolume {
-					newVolume = config.AudioMinVolume
-				}
-				p.audio.setVolume(newVolume)
-				p.state.Volume = newVolume
-				go p.reportStatus(api.EventVolumeChange)
-			}
-			p.lastAction = &action
-			p.RefreshState()
-
 		case <-p.chanStreamComplete:
 			logrus.Debug("Stream complete")
 			if p.reader != nil {
@@ -186,15 +168,73 @@ func (p *Player) loop() {
 				}
 				p.reader = nil
 			}
-			p.state.State = Stop
+			p.stop()
 			p.RefreshState()
 		case <-p.StopChan():
 			// Program is stopping
-			p.reportStatus(api.EventStop)
-			p.audio.stop()
+			p.stop()
 			break
 		}
 	}
+}
+
+//handle any incoming actions. Return true if state has changed
+func (p *Player) handleAction(action Action) (bool, api.PlaybackEvent) {
+	defaultEvent := api.EventTimeUpdate
+	switch action.State {
+	case SetVolume:
+		if p.state.Volume != action.Volume && action.Volume != -1 {
+			if action.Volume > config.AudioMaxVolume {
+				action.Volume = config.AudioMaxVolume
+			} else if action.Volume < config.AudioMinVolume {
+				action.Volume = config.AudioMinVolume
+			}
+			p.audio.setVolume(action.Volume)
+			p.state.Volume = action.Volume
+			go p.reportStatus(api.EventVolumeChange)
+			return true, api.EventVolumeChange
+		}
+	case Pause:
+		if p.state.State == Play && p.audio.hasStreamer() {
+			p.audio.pause(true)
+			p.state.State = Pause
+			return true, api.EventPause
+		}
+		return false, defaultEvent
+	case Play:
+		if p.state.State == Stop || p.state.State == Pause || p.state.State == Play {
+			if p.PlaySong(action) {
+				return true, api.EventPlaylistItemAdd
+			}
+			return false, defaultEvent
+		}
+	case Stop:
+		if p.state.State == Pause || p.state.State == Play {
+			p.stop()
+			p.state.State = Stop
+			return true, api.EventStop
+		}
+	case Continue:
+		if p.state.State == Pause && p.audio.hasStreamer() {
+			p.audio.pause(false)
+			p.state.State = Play
+			return true, api.EventUnpause
+		}
+		return false, defaultEvent
+	default:
+		logrus.Error("Got invalid action: ", action.State)
+		return false, defaultEvent
+	}
+	return false, defaultEvent
+
+}
+
+func (p *Player) stop() {
+	if p.state.State == Play || p.state.State == Pause {
+		p.audio.stop()
+		p.reportStatus(api.EventStop)
+	}
+	p.state.State = Stop
 }
 
 //RefreshState pushes current state into state channel
@@ -202,16 +242,16 @@ func (p *Player) RefreshState() {
 	p.chanState <- p.state
 }
 
-func (p *Player) PlaySong(action Action) {
+func (p *Player) PlaySong(action Action) bool {
 	reader, err := p.Api.GetSongDirect(action.AudioId, "mp3")
 	if err != nil {
 		logrus.Error("failed to request file over http: %v", err)
-		return
+		return false
 	} else {
 		err = p.audio.newFileStream(reader, FormatMp3)
 		if err != nil {
 			logrus.Error("Failed to create new stream: ", err.Error())
-			return
+			return false
 		}
 	}
 	if p.reader != nil {
@@ -224,9 +264,7 @@ func (p *Player) PlaySong(action Action) {
 	p.state.Artist = action.Artist
 	p.state.Album = action.Album
 	p.state.CurrentSongDuration = action.Duration
-
-	go p.reportStatus(api.EventStart)
-	p.RefreshState()
+	return true
 }
 
 func (p *Player) reportStatus(event api.PlaybackEvent) {

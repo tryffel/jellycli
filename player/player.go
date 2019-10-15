@@ -91,6 +91,7 @@ type Player struct {
 
 	audio  *audio
 	reader io.ReadCloser
+	itemId string
 }
 
 // NewPlayer constructs new player instance
@@ -134,11 +135,15 @@ func (p *Player) loop() {
 		select {
 		case tick := <-p.ticker.C:
 			if (tick.Second() - chunkStarted.Second()) >= 10 {
+				if p.state.State == Play || p.state.State == Pause {
+					go p.reportStatus(api.EventTimeUpdate)
+				}
 				// Query new chunk every 10 sec
 				chunkStarted = time.Now()
 			}
 			at := p.audio.timePast()
 			p.state.CurrentSongPast = int(at.Seconds())
+
 			p.RefreshState()
 		case action := <-p.chanAction:
 			logrus.Debug("Player received action")
@@ -155,6 +160,7 @@ func (p *Player) loop() {
 				} else if newState == Play {
 					p.PlaySong(action)
 				}
+				go p.reportStatus(api.EventPause)
 			}
 			currentVolume := p.state.Volume
 			newVolume := action.Volume
@@ -166,6 +172,7 @@ func (p *Player) loop() {
 				}
 				p.audio.setVolume(newVolume)
 				p.state.Volume = newVolume
+				go p.reportStatus(api.EventVolumeChange)
 			}
 			p.lastAction = &action
 			p.RefreshState()
@@ -183,6 +190,7 @@ func (p *Player) loop() {
 			p.RefreshState()
 		case <-p.StopChan():
 			// Program is stopping
+			p.reportStatus(api.EventStop)
 			p.audio.stop()
 			break
 		}
@@ -209,11 +217,35 @@ func (p *Player) PlaySong(action Action) {
 	if p.reader != nil {
 		p.reader.Close()
 	}
+	p.itemId = action.AudioId
 	p.reader = reader
 	p.state.State = Play
 	p.state.Song = action.Song
 	p.state.Artist = action.Artist
 	p.state.Album = action.Album
 	p.state.CurrentSongDuration = action.Duration
+
+	go p.reportStatus(api.EventStart)
 	p.RefreshState()
+}
+
+func (p *Player) reportStatus(event api.PlaybackEvent) {
+	state := &api.PlaybackState{
+		Event:          event,
+		ItemId:         p.itemId,
+		IsPaused:       false,
+		IsMuted:        false,
+		PlaylistLength: p.state.CurrentSongDuration,
+		Position:       p.state.CurrentSongPast,
+		Volume:         p.state.Volume,
+	}
+
+	if p.state.State == Pause {
+		state.IsPaused = true
+	}
+
+	err := p.Api.ReportProgress(state)
+	if err != nil {
+		logrus.Error("Failed to report status: %v", err)
+	}
 }

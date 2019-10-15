@@ -41,7 +41,8 @@ func (a *Api) directplayParams() *map[string]string {
 	params["AudioSamplingRate"] = fmt.Sprint(config.AudioSamplingRate)
 
 	// Every new request requires new playsession
-	params["PlaySessionId"] = randomKey(20)
+	a.SessionId = randomKey(20)
+	params["PlaySessionId"] = a.SessionId
 	params["AudioCodec"] = "mp3"
 	params["api_key"] = a.token
 	return &params

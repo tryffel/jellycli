@@ -18,10 +18,10 @@ package api
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"time"
 )
@@ -30,6 +30,9 @@ const (
 	errInvalidRequest       = "invalid request"
 	errUnexpectedStatusCode = "unexpected statuscode"
 	errServerError          = "server error"
+	errNotFound             = "page not found"
+	errUnauthorized         = "needs authorization"
+	errForbidden            = "forbidden"
 )
 
 func (a *Api) defaultParams() *map[string]string {
@@ -64,6 +67,9 @@ func (a *Api) makeRequest(method, url string, body *[]byte, params *map[string]s
 	if err != nil {
 		return http.Response{}.Body, fmt.Errorf("failed to make request: %v", err)
 	}
+	if method == "POST" {
+		req.Header.Set("Content-Type", "application/json")
+	}
 	req.Header.Set("X-Emby-Authorization", a.token)
 
 	if params != nil {
@@ -81,15 +87,28 @@ func (a *Api) makeRequest(method, url string, body *[]byte, params *map[string]s
 	took := time.Since(start)
 	logrus.Debugf("%s %s: %d (%d ms)", req.Method, req.URL.Path, resp.StatusCode, took.Milliseconds())
 
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == 200 || resp.StatusCode == 204 {
 		return resp.Body, nil
 	}
-	if resp.StatusCode > 400 && resp.StatusCode < 500 {
-		return resp.Body, fmt.Errorf("%s, code: %d", errInvalidRequest, resp.StatusCode)
+	bytes, _ := ioutil.ReadAll(resp.Body)
+	var msg string = "no body"
+	if len(bytes) > 0 {
+		msg = string(bytes)
 	}
-	if resp.StatusCode >= 500 {
-		return resp.Body, errors.New(errServerError)
-	} else {
-		return resp.Body, errors.New(errUnexpectedStatusCode)
+	var errMsg string
+	switch resp.StatusCode {
+	case 400:
+		errMsg = errInvalidRequest
+	case 401:
+		errMsg = errUnauthorized
+	case 403:
+		errMsg = errForbidden
+	case 404:
+		errMsg = errNotFound
+	case 500:
+		errMsg = errServerError
+	default:
+		errMsg = errUnexpectedStatusCode
 	}
+	return resp.Body, fmt.Errorf("%s, code: %d, msg: %s", errMsg, resp.StatusCode, msg)
 }

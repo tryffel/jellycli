@@ -21,6 +21,10 @@ import (
 	"fmt"
 )
 
+const (
+	ticksToSecond = 10000000
+)
+
 type infoResponse struct {
 	ServerName string `json:"ServerName"`
 	Version    string `json:"Version"`
@@ -40,4 +44,110 @@ func (a *Api) GetServerVersion() (string, string, error) {
 	}
 
 	return response.ServerName, response.Version, nil
+}
+
+type playbackStarted struct {
+	QueueableMediaTypes []string
+	CanSeek             bool
+	ItemId              string
+	MediaSourceId       string
+	PositionTicks       int
+	VolumeLevel         int
+	IsPaused            bool
+	IsMuted             bool
+	PlayMethod          string
+	PlaySessionId       string
+	LiveStreamId        string
+	PlaylistLength      int
+	PlaylistIndex       int
+}
+
+type PlaybackEvent string
+
+const (
+	// Internal events
+	EventStart PlaybackEvent = "start"
+	EventStop  PlaybackEvent = "stop"
+
+	// Outgoing events
+	EventTimeUpdate          PlaybackEvent = "TimeUpdate"
+	EventPause               PlaybackEvent = "Pause"
+	EventUnpause             PlaybackEvent = "Unnpause"
+	EventVolumeChange        PlaybackEvent = "VolumeChange"
+	EventRepeatModeChange    PlaybackEvent = "RepeatModeChange"
+	EventAudioTrackChange    PlaybackEvent = "AudioTrackChange"
+	EventSubtitleTrackChange PlaybackEvent = "SubtitleTrackChange"
+	EventPlaylistItemMove    PlaybackEvent = "PlaylistItemMove"
+	EventPlaylistItemRemove  PlaybackEvent = "PlaylistItemRemove"
+	EventPlaylistItemAdd     PlaybackEvent = "PlaylistItemAdd"
+	EventQualityChange       PlaybackEvent = "QualityChange"
+)
+
+type playbackProgress struct {
+	playbackStarted
+	Event PlaybackEvent
+}
+
+//Playbackstate reports playback back to server
+type PlaybackState struct {
+	Event    PlaybackEvent
+	ItemId   string
+	IsPaused bool
+	IsMuted  bool
+	// Total length of current playlist in seconds
+	PlaylistLength int
+	// Position in seconds
+	Position int
+	// Volume in 0-100
+	Volume int
+}
+
+func (a *Api) ReportProgress(state *PlaybackState) error {
+	params := *a.defaultParams()
+	params["api_key"] = a.token
+	var report interface{}
+	var url string
+
+	started := playbackStarted{
+		QueueableMediaTypes: []string{"Audio"},
+		CanSeek:             true,
+		ItemId:              state.ItemId,
+		MediaSourceId:       state.ItemId,
+		PositionTicks:       state.Position * ticksToSecond,
+		VolumeLevel:         state.Volume,
+		IsPaused:            state.IsPaused,
+		IsMuted:             state.IsPaused,
+		PlayMethod:          "DirectPlay",
+		PlaySessionId:       a.SessionId,
+		LiveStreamId:        "",
+		PlaylistLength:      state.PlaylistLength * ticksToSecond,
+	}
+
+	if state.Event == EventStart {
+		url = "/Sessions/Playing"
+		report = started
+	} else if state.Event == EventStop {
+		url = "/Sessions/Playing/Stopped"
+		report = started
+	} else {
+		url = "/Sessions/Playing/Progress"
+		report = playbackProgress{
+			playbackStarted: started,
+			Event:           state.Event,
+		}
+	}
+
+	body, err := json.Marshal(&report)
+
+	//logrus.Debug(string(body))
+	if err != nil {
+		return fmt.Errorf("json marshaling failed: %v", err)
+	}
+
+	_, err = a.post(url, body, &params)
+	if err == nil {
+		return nil
+	} else {
+		return fmt.Errorf("failed to post progress: %v", err)
+	}
 }

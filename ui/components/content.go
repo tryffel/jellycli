@@ -44,6 +44,8 @@ func NewContentView(playFunc func(int)) *Content {
 	a.initialized = true
 	a.Highlight = true
 	a.playFunc = playFunc
+	a.SelFgColor = gocui.ColorYellow | gocui.AttrBold
+	a.SelBgColor = gocui.ColorDefault
 	return a
 }
 
@@ -58,6 +60,9 @@ func (c *Content) AssignKeyBindings(gui *gocui.Gui) error {
 		return err
 	}
 	if err := gui.SetKeybinding(c.name, gocui.KeyEnter, gocui.ModNone, c.play); err != nil {
+		return err
+	}
+	if err := gui.SetKeybinding(c.name, gocui.MouseRelease, gocui.ModNone, c.release); err != nil {
 		return err
 	}
 	return nil
@@ -76,6 +81,12 @@ func (c *Content) scrollUp(gui *gocui.Gui, v *gocui.View) error {
 func (c *Content) activate(gui *gocui.Gui, v *gocui.View) error {
 	_, err := gui.SetCurrentView(c.name)
 	return err
+}
+
+func (c *Content) release(g *gocui.Gui, v *gocui.View) error {
+	c.Highlight = true
+	_, cy := c.view.Cursor()
+	return c.view.SetCursor(0, cy)
 }
 
 func (c *Content) SetText(text []string) error {

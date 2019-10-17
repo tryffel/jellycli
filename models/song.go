@@ -14,24 +14,34 @@
  * limitations under the License.
  */
 
-package config
+package models
 
-import "time"
+type Song struct {
+	Id     string
+	Name   string
+	Length int
+}
 
-const (
-	AppName = "Jellycli"
-	Version = "0.0.1"
+func (s *Song) GetId() string {
+	return s.Id
+}
 
-	AudioSamplingRate = 44100
-	AudioBufferPeriod = time.Millisecond * 50
+func (s *Song) HasChildren() bool {
+	return false
+}
 
-	// Volume range, not absolute values
-	AudioMinVolumeDb = -6
-	AudioMaxVolumeDb = 0
+func (s *Song) GetChildren() []Item {
+	return []Item{}
+}
 
-	AudioMinVolume = 0
-	AudioMaxVolume = 100
+func (s *Song) GetParent() string {
+	return ""
+}
 
-	// Audio volume is logarithmic, which base to use
-	AudioVolumeLogBase = 2
-)
+func (s *Song) GetName() string {
+	return s.Name
+}
+
+func (s *Song) GetType() ListElement {
+	return SongList
+}

@@ -27,14 +27,20 @@ const (
 	empty     = "╍"
 )
 
+type ProgressBar interface {
+	SetWidth(w int)
+	SetMaximum(m int)
+	Draw(val int) string
+}
+
 type progressBar struct {
 	maximumValue int
 	width        int
 	splits       int
 }
 
-//newProgressBar creates new progress bar with given character width
-func newProgressBar(width int, maxValue int) *progressBar {
+//NewProgressBar creates new progress bar with given character width
+func NewProgressBar(width int, maxValue int) ProgressBar {
 	p := &progressBar{}
 	p.SetWidth(width)
 	p.SetMaximum(maxValue)

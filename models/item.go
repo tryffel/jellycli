@@ -14,24 +14,24 @@
  * limitations under the License.
  */
 
-package config
+package models
 
-import "time"
+type Item interface {
+	GetId() string
+	GetName() string
+	HasChildren() bool
+	GetChildren() []Item
+	GetParent() string
+	GetType() ListElement
+}
+
+type ListElement string
 
 const (
-	AppName = "Jellycli"
-	Version = "0.0.1"
-
-	AudioSamplingRate = 44100
-	AudioBufferPeriod = time.Millisecond * 50
-
-	// Volume range, not absolute values
-	AudioMinVolumeDb = -6
-	AudioMaxVolumeDb = 0
-
-	AudioMinVolume = 0
-	AudioMaxVolume = 100
-
-	// Audio volume is logarithmic, which base to use
-	AudioVolumeLogBase = 2
+	ArtistList  ListElement = "Artist"
+	AlbumList   ListElement = "Album"
+	Playlist    ListElement = "Playlist"
+	QueueList   ListElement = "Queue"
+	HistoryList ListElement = "History"
+	SongList    ListElement = "Song"
 )

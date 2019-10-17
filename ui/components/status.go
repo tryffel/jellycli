@@ -34,8 +34,8 @@ type StatusBar struct {
 	updatePending bool
 	ctrlFunc      func(state player.State, volume int)
 	currentStatus string
-	progressBar   *progressBar
-	volumeBar     *progressBar
+	progressBar   ProgressBar
+	volumeBar     ProgressBar
 }
 
 func NewStatusBar(ctrlFunc func(state player.State, volume int)) *StatusBar {
@@ -52,8 +52,8 @@ func NewStatusBar(ctrlFunc func(state player.State, volume int)) *StatusBar {
 	p.updateFunc = p.refresh
 	p.ctrlFunc = ctrlFunc
 
-	p.progressBar = newProgressBar(20, 100)
-	p.volumeBar = newProgressBar(10, 100)
+	p.progressBar = NewProgressBar(20, 100)
+	p.volumeBar = NewProgressBar(10, 100)
 	p.volume = 50
 	p.playing = player.Stop
 	return p

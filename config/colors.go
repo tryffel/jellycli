@@ -16,22 +16,19 @@
 
 package config
 
-import "time"
+import "github.com/gdamore/tcell"
 
-const (
-	AppName = "Jellycli"
-	Version = "0.0.1"
-
-	AudioSamplingRate = 44100
-	AudioBufferPeriod = time.Millisecond * 50
-
-	// Volume range, not absolute values
-	AudioMinVolumeDb = -6
-	AudioMaxVolumeDb = 0
-
-	AudioMinVolume = 0
-	AudioMaxVolume = 100
-
-	// Audio volume is logarithmic, which base to use
-	AudioVolumeLogBase = 2
+var (
+	ColorBackground   = tcell.Color234 //Dark gray
+	ColorPrimary      = tcell.Color51  // Cyan
+	ColorPrimaryDim   = tcell.Color44  // Ligh cyan
+	ColorSecondary    = tcell.Color141 //
+	ColorSecondaryDim = tcell.Color134
+	ColorBorder       = tcell.Color248 // Gray
+	ColroMainFrame    = tcell.Color246 // Lighter gray
+	ColorControls     = tcell.Color202 // Orange
+	ColorProgress     = tcell.Color202 // Orange
+	ColorNavBar       = tcell.Color24
+	ColorNavBarBtn    = tcell.Color31
+	ColorLightext     = tcell.Color250
 )

@@ -17,7 +17,7 @@
 package task
 
 import (
-	"errors"
+	"fmt"
 	"sync"
 )
 
@@ -63,15 +63,15 @@ func (t *Task) Start() error {
 	defer t.lock.Unlock()
 
 	if t.running {
-		return errors.New("background task already running")
-	}
-
-	if !t.initialized {
-		return errors.New("task not initialized properly")
+		return fmt.Errorf("task '%s' background task already running", t.Name)
 	}
 
 	if t.loop == nil {
-		return errors.New("no loop function defined")
+		return fmt.Errorf("task '%s' has no loop function defined", t.Name)
+	}
+
+	if !t.initialized {
+		return fmt.Errorf("task '%s' task not initialized properly", t.Name)
 	}
 
 	if t.chanStop == nil {
@@ -79,7 +79,7 @@ func (t *Task) Start() error {
 	}
 
 	t.running = true
-	go t.loop()
+	go t.run()
 	return nil
 }
 
@@ -89,14 +89,20 @@ func (t *Task) Stop() error {
 	defer t.lock.Unlock()
 
 	if !t.running {
-		return errors.New("background task not running")
+		return fmt.Errorf("task '%s' goroutine not running", t.Name)
 	}
 
 	t.chanStop <- true
-	t.running = false
 	return nil
 }
 
 func (t *Task) init() {
 	t.chanStop = make(chan bool, 2)
+}
+
+func (t *Task) run() {
+	t.loop()
+	t.lock.Lock()
+	t.running = false
+	t.lock.Unlock()
 }

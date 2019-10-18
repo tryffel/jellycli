@@ -18,7 +18,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/jroimartin/gocui"
 	"github.com/sirupsen/logrus"
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 	"os"
@@ -26,130 +25,172 @@ import (
 	"tryffel.net/pkg/jellycli/api"
 	"tryffel.net/pkg/jellycli/config"
 	"tryffel.net/pkg/jellycli/player"
+	"tryffel.net/pkg/jellycli/task"
 	"tryffel.net/pkg/jellycli/ui"
 	"tryffel.net/pkg/jellycli/ui/controller"
 )
 
 func main() {
-	logFile := setLogging()
-	defer logFile.Close()
-	logrus.Info("Starting jellycli")
 
-	conf, err := config.NewSecretStore()
+	app, err := NewApplication()
+	//gui.AssignChannels(p.StateChannel(), p.ActionChannel())
 	if err != nil {
-		fmt.Println("Failed to start application:", err)
+		logrus.Fatal(err)
+		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	host, err := conf.EnsureKey("jellyfin_host")
-	if err != nil {
-		fmt.Printf("Failed to get jellyfin host: %v", err)
+	startstartErr := app.Start()
+	logrus.Error(startstartErr)
+	stopErr := app.Stop()
+
+	if startstartErr == nil && stopErr == nil {
+		os.Exit(0)
 	}
 
-	logrus.Info("Connecting to ", host)
-	client, err := api.NewApi(host)
-	if err != nil {
-		logrus.Errorf("Failed to initialize api: %v", err)
-		os.Exit(1)
-	}
+	os.Exit(1)
+}
 
-	token, err := conf.GetKey("token")
+// Application is the root struct for interactive player
+type Application struct {
+	secrets config.Secret
+	api     *api.Api
+	gui     *ui.GUI
+	player  *player.Player
+	content *controller.Content
+	logfile *os.File
+}
+
+//NewApplication instantiates new player
+func NewApplication() (*Application, error) {
+	var err error
+	a := &Application{}
+
+	a.logfile = setLogging()
+	err = a.initConfig()
+	if err != nil {
+		return a, err
+	}
+	err = a.initApi()
+	if err != nil {
+		return a, err
+	}
+	err = a.login()
+	if err != nil {
+		return a, err
+	}
+	err = a.initApplication()
+	return a, err
+}
+
+func (a *Application) Start() error {
+	logrus.Infof("############# %s v%s ############", config.AppName, config.Version)
+	tasks := []task.Tasker{a.player, a.content}
+	var err error
+	for _, v := range tasks {
+		err = v.Start()
+		if err != nil {
+			_ = v.Stop()
+			return err
+		}
+	}
+	return a.gui.Start()
+}
+
+func (a *Application) Stop() error {
+	logrus.Info("Stopping application")
+	a.gui.Stop()
+	tasks := []task.Tasker{a.player, a.content}
+	var err error
+	var hasError bool
+	for _, v := range tasks {
+		err = v.Stop()
+		if err != nil {
+			logrus.Error(err)
+			hasError = true
+		}
+	}
+	if a.logfile != nil {
+		ferr := a.logfile.Close()
+		logrus.Error("close log file: ", ferr)
+		hasError = true
+	}
+	if err == nil && hasError == false {
+		return nil
+	}
+	return fmt.Errorf("stop application: %v", err)
+}
+
+func (a *Application) initConfig() error {
+	var err error
+	a.secrets, err = config.NewSecretStore()
+	if err != nil {
+		return fmt.Errorf("wallet failed: %v", err)
+	}
+	return nil
+}
+
+func (a *Application) initApi() error {
+	var err error
+	host, err := a.secrets.EnsureKey("jellyfin_host")
+	if err != nil {
+		return fmt.Errorf("no jellyfin host provided: %v", err)
+	}
+	a.api, err = api.NewApi(host)
+	if err != nil {
+		return fmt.Errorf("api init: %v", err)
+	}
+	if !a.api.ConnectionOk() {
+		return fmt.Errorf("no connection to server")
+	}
+	return nil
+}
+
+func (a *Application) login() error {
+	token, _ := a.secrets.GetKey("token")
 	if token == "" {
 		username, err := config.ReadUserInput("username", false)
 		if err != nil {
-			fmt.Printf("failed read username: %v", err)
-			os.Exit(1)
+			return fmt.Errorf("failed read username: %v", err)
 		}
 
 		password, err := config.ReadUserInput("password", true)
 		if err != nil {
-			fmt.Printf("failed to read password: %v", err)
-			os.Exit(1)
+			return fmt.Errorf("failed to read password: %v", err)
 		}
 
-		err = client.Login(username, password)
-		if err == nil && client.IsLoggedIn() {
-			err = conf.SetKey("token", client.Token())
+		err = a.api.Login(username, password)
+		if err == nil && a.api.IsLoggedIn() {
+			err = a.secrets.SetKey("token", a.api.Token())
 			if err != nil {
-				fmt.Printf("failed to store token: %v", err)
-				os.Exit(1)
+				return fmt.Errorf("failed to store token: %v", err)
 			}
 		} else {
-			fmt.Println(err.Error())
-			os.Exit(1)
+			return fmt.Errorf("login failed")
 		}
+		return nil
 
 	} else {
-		err = client.SetToken(token)
-	}
-
-	userid, err := conf.GetKey("userid")
-	if userid != "" {
-		client.SetUserId(userid)
-	} else {
+		err := a.api.SetToken(token)
 		if err != nil {
-			logrus.Error(fmt.Errorf("failed to set wallet value: %v", err))
-			os.Exit(1)
+			return fmt.Errorf("set token: %v", err)
 		}
+		return nil
 	}
 
+	// TODO: Store userid, deviceid, serverid
+}
+
+func (a *Application) initApplication() error {
+	var err error
+	a.content = controller.NewContent(a.api)
+	a.player, err = player.NewPlayer(a.api)
 	if err != nil {
-		fmt.Printf("failure in login: %v", err)
+		return fmt.Errorf("create player: %v", err)
 	}
+	a.gui = ui.NewUi(a.player, a.content)
 
-	content := controller.NewContent(client)
-
-	gui, err := ui.NewGui(content)
-	if err != nil {
-		logrus.Error(err.Error())
-		os.Exit(1)
-	}
-
-	exitCode := 0
-
-	if !client.ConnectionOk() {
-		os.Exit(1)
-	}
-
-	p, err := player.NewPlayer(client)
-	if err != nil {
-		logrus.Error("failed to start media player: %v", err)
-		os.Exit(1)
-	}
-	gui.AssignChannels(p.StateChannel(), p.ActionChannel())
-	err = gui.Start()
-	if err != nil {
-		logrus.Error("failed to start gui update task: %v", err)
-		exitCode = 1
-	}
-	_ = content.Start()
-	err = p.Start()
-	if err != nil {
-		logrus.Error("failed to start media player task: %v", err)
-		exitCode = 1
-	}
-	//p.RefreshState()
-	err = gui.Show()
-	if err != nil && err != gocui.ErrQuit {
-		logrus.Error("Gui error: %v", err)
-		exitCode = 1
-	}
-
-	err = p.Stop()
-	if err != nil {
-		logrus.Error("failed to stop media player task: %v", err)
-		exitCode = 1
-	}
-	err = gui.Stop()
-	if err != nil {
-		logrus.Error("failed to stop gui update task: %v", err)
-		exitCode = 1
-	}
-
-	_ = content.Stop()
-
-	logrus.Info("Stopping applicaton")
-	os.Exit(exitCode)
+	return nil
 }
 
 func setLogging() *os.File {

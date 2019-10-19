@@ -104,17 +104,14 @@ func (w *Window) keyHandler(key *tcell.Key) *tcell.Key {
 	case navbar.Quit:
 		w.app.Stop()
 	case navbar.Search:
-		w.window.RemoveItem(w.browser)
-		w.window.AddItem(w.search, 1, 0, 1, 1, 15, 10, false)
-		w.app.SetFocus(w.search)
+		w.browser.AddModal(w.search, 10, 50, true)
+		w.app.SetFocus(w.browser)
 	case navbar.Help:
-		w.window.RemoveItem(w.browser)
-		w.window.AddItem(w.help, 1, 0, 1, 1, 15, 10, false)
-		w.app.SetFocus(w.help)
+		w.browser.AddModal(w.help, 25, 50, true)
+		w.app.SetFocus(w.browser)
 	case tcell.KeyCtrlR:
-		w.window.RemoveItem(w.browser)
-		w.window.AddItem(w.help, 1, 0, 1, 1, 15, 10, false)
-		w.app.SetFocus(w.help)
+		w.browser.AddModal(w.help, 25, 50, true)
+		w.app.SetFocus(w.browser)
 	default:
 		return key
 
@@ -124,9 +121,7 @@ func (w *Window) keyHandler(key *tcell.Key) *tcell.Key {
 
 func (w *Window) searchCb(query string, doSearch bool) {
 	logrus.Debug("In search callback")
-	w.search.Blur()
-	w.window.RemoveItem(w.search)
-	w.window.AddItem(w.browser, 1, 0, 1, 1, 15, 10, false)
+	w.browser.RemoveModal(w.search)
 	w.app.SetFocus(w.browser)
 
 	if !doSearch {
@@ -136,9 +131,7 @@ func (w *Window) searchCb(query string, doSearch bool) {
 }
 
 func (w *Window) closeHelp() {
-	w.help.Blur()
-	w.window.RemoveItem(w.help)
-	w.window.AddItem(w.browser, 1, 0, 1, 1, 15, 10, false)
+	w.browser.RemoveModal(w.help)
 	w.app.SetFocus(w.browser)
 
 }

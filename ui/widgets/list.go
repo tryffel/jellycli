@@ -19,6 +19,7 @@ package widgets
 import (
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
+	"tryffel.net/pkg/jellycli/config"
 	"tryffel.net/pkg/jellycli/models"
 )
 
@@ -31,6 +32,15 @@ func NewList() *List {
 	l := &List{
 		list: tview.NewList(),
 	}
+	l.list.SetBorder(true)
+	l.list.SetBorderColor(config.ColorBorder)
+	l.list.SetTitleColor(config.ColorBorder)
+	l.list.SetTitleAlign(tview.AlignLeft)
+	l.list.ShowSecondaryText(false)
+	l.list.SetShortcutColor(tcell.ColorDefault)
+	l.list.SetBackgroundColor(config.ColorBackground)
+	l.list.SetSelectedTextColor(config.ColorSecondary)
+	l.list.SetMainTextColor(config.ColorPrimary)
 	return l
 }
 

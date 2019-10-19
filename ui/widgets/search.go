@@ -108,16 +108,15 @@ func NewSearch(searchCb func(string, bool)) *Search {
 	s.okBtn.SetLabel("Search")
 	s.cancelBtn.SetLabel("Cancel")
 
-	s.grid.SetRows(1, 1, 1, -1)
-	s.grid.SetColumns(-1, 8, -2, 8, -1)
+	s.grid.SetRows(-1, 1, 1, 1, -1)
+	s.grid.SetColumns(-2, 8, -1, 8, -2)
 	s.grid.SetBackgroundColor(config.ColorBackground)
 	s.grid.SetBorder(true)
 	s.grid.SetTitle("Search")
 	s.grid.SetBorderColor(config.ColorBorder)
 	s.grid.SetTitleColor(config.ColorPrimary)
 	s.grid.SetBorderPadding(1, 1, 2, 2)
-	s.grid.SetMinSize(5, 30)
-	s.grid.SetGap(3, 3)
+	s.grid.SetMinSize(1, 4)
 	config.DebugGridBorders(s.grid)
 
 	s.input.SetLabel("Search: ")
@@ -138,9 +137,9 @@ func NewSearch(searchCb func(string, bool)) *Search {
 
 	s.searchCb = searchCb
 
-	s.grid.AddItem(s.input, 0, 1, 1, 4, 1, 40, true)
-	s.grid.AddItem(s.okBtn, 2, 1, 1, 1, 1, 5, false)
-	s.grid.AddItem(s.cancelBtn, 2, 3, 1, 1, 1, 5, false)
+	s.grid.AddItem(s.input, 1, 0, 1, 5, 1, 30, true)
+	s.grid.AddItem(s.okBtn, 3, 1, 1, 1, 1, 4, false)
+	s.grid.AddItem(s.cancelBtn, 3, 3, 1, 1, 1, 4, false)
 	return s
 }
 

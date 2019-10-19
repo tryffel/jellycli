@@ -21,7 +21,7 @@ type Album struct {
 	Name          string
 	Year          string
 	TotalDuration int
-	Songs         []Song
+	Songs         []*Song
 }
 
 func (a *Album) GetId() string {
@@ -35,7 +35,7 @@ func (a *Album) HasChildren() bool {
 func (a *Album) GetChildren() []Item {
 	m := make([]Item, len(a.Songs))
 	for i, v := range a.Songs {
-		m[i] = &v
+		m[i] = v
 	}
 	return m
 }

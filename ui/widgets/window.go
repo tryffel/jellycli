@@ -53,7 +53,8 @@ func NewWindow() Window {
 	w.setLayout()
 	w.app.SetRoot(w.window, true)
 
-	w.browser.setData(testData(), models.ArtistList)
+	data := testData()
+	w.browser.setData(&data, models.ArtistList)
 	w.window.SetInputCapture(w.eventHandler)
 	w.search = NewSearch(w.searchCb)
 	w.help = NewHelp(w.closeHelp)
@@ -105,13 +106,10 @@ func (w *Window) keyHandler(key *tcell.Key) *tcell.Key {
 		w.app.Stop()
 	case navbar.Search:
 		w.browser.AddModal(w.search, 10, 50, true)
-		w.app.SetFocus(w.browser)
-	case navbar.Help:
+		w.app.SetFocus(w.search)
+	case tcell.KeyF1:
 		w.browser.AddModal(w.help, 25, 50, true)
-		w.app.SetFocus(w.browser)
-	case tcell.KeyCtrlR:
-		w.browser.AddModal(w.help, 25, 50, true)
-		w.app.SetFocus(w.browser)
+		w.app.SetFocus(w.help)
 	default:
 		return key
 
@@ -122,7 +120,7 @@ func (w *Window) keyHandler(key *tcell.Key) *tcell.Key {
 func (w *Window) searchCb(query string, doSearch bool) {
 	logrus.Debug("In search callback")
 	w.browser.RemoveModal(w.search)
-	w.app.SetFocus(w.browser)
+	w.app.SetFocus(w.window)
 
 	if !doSearch {
 
@@ -132,6 +130,6 @@ func (w *Window) searchCb(query string, doSearch bool) {
 
 func (w *Window) closeHelp() {
 	w.browser.RemoveModal(w.help)
-	w.app.SetFocus(w.browser)
+	w.app.SetFocus(w.window)
 
 }

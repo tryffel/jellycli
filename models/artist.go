@@ -19,7 +19,7 @@ package models
 type Artist struct {
 	Id            string
 	Name          string
-	Albums        []Album
+	Albums        []*Album
 	TotalDuration int
 }
 
@@ -34,7 +34,7 @@ func (a *Artist) HasChildren() bool {
 func (a *Artist) GetChildren() []Item {
 	m := make([]Item, len(a.Albums))
 	for i, v := range a.Albums {
-		m[i] = &v
+		m[i] = v
 	}
 	return m
 }

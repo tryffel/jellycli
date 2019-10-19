@@ -45,13 +45,13 @@ func (h *Help) SetRect(x, y, width, height int) {
 }
 
 func (h *Help) InputHandler() func(event *tcell.EventKey, setfocus func(p tview.Primitive)) {
-	return h.grid.WrapInputHandler(func(event *tcell.EventKey, setfocus func(p tview.Primitive)) {
+	return func(event *tcell.EventKey, setfocus func(p tview.Primitive)) {
 		if event.Key() == tcell.KeyEscape {
 			if h.closeCb != nil {
 				h.closeCb()
 			}
 		}
-	})
+	}
 }
 
 func (h *Help) Focus(delegate func(p tview.Primitive)) {
@@ -102,7 +102,7 @@ func NewHelp(doneCb func()) *Help {
 	_, _ = h.text.Write([]byte(helpText()))
 
 	h.grid.AddItem(h.logo, 0, 0, 1, 3, 6, 40, false)
-	h.grid.AddItem(h.text, 1, 0, 1, 3, 6, 30, true)
+	h.grid.AddItem(h.text, 1, 0, 1, 3, 6, 30, false)
 	return h
 }
 

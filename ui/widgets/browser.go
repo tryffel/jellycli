@@ -23,15 +23,15 @@ import (
 	"tryffel.net/pkg/jellycli/models"
 )
 
-func testData() *[]models.Item {
+func testData() []models.Item {
 
 	data := &[]models.Artist{}
 
 	items := make([]models.Item, len(*data))
 	for i, v := range *data {
-		items[i] = models.Item(&v)
+		items[i] = v
 	}
-	return &items
+	return items
 }
 
 // Browser is a listR-like viewer user can navigate content with
@@ -47,6 +47,7 @@ type Browser struct {
 	gridAxis   []int
 	gridSize   int
 	customGrid bool
+	modal      tview.Primitive
 }
 
 func (b *Browser) Draw(screen tcell.Screen) {
@@ -62,7 +63,13 @@ func (b *Browser) SetRect(x, y, width, height int) {
 }
 
 func (b *Browser) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-	return b.grid.InputHandler()
+	return func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+		if b.hasModal {
+			b.modal.InputHandler()
+		} else {
+			b.grid.InputHandler()
+		}
+	}
 }
 
 func (b *Browser) Focus(delegate func(p tview.Primitive)) {
@@ -125,6 +132,7 @@ func (b *Browser) AddModal(view tview.Primitive, height, width uint, lockSize bo
 		b.grid.AddItem(view, 2, 2, 2, 2, int(height), int(width), true)
 	}
 	b.hasModal = true
+	b.modal = view
 }
 
 //RemoveModal removes modal
@@ -132,7 +140,7 @@ func (b *Browser) RemoveModal(view tview.Primitive) {
 	if b.hasModal {
 		b.grid.RemoveItem(view)
 		b.hasModal = false
-
+		b.modal = nil
 		if b.customGrid {
 			b.grid.SetRows(b.gridAxis...)
 			b.grid.SetColumns(b.gridAxis...)

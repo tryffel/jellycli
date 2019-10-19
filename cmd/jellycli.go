@@ -55,7 +55,7 @@ func main() {
 type Application struct {
 	secrets config.Secret
 	api     *api.Api
-	gui     *ui.GUI
+	gui     *ui.Gui
 	player  *player.Player
 	content *controller.Content
 	logfile *os.File

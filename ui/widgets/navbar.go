@@ -17,14 +17,16 @@
 package widgets
 
 import (
+	"fmt"
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 	"tryffel.net/pkg/jellycli/config"
 )
 
 type NavBar struct {
-	grid *tview.Grid
-	btns []*tview.Button
+	grid     *tview.Grid
+	btns     []*tview.Button
+	callback func(key *tcell.Key)
 }
 
 func (n *NavBar) Draw(screen tcell.Screen) {
@@ -55,16 +57,18 @@ func (n *NavBar) GetFocusable() tview.Focusable {
 	return n.grid.GetFocusable()
 }
 
-func NewNavBar() *NavBar {
+func NewNavBar(callback func(key *tcell.Key)) *NavBar {
 	nb := &NavBar{
-		grid: tview.NewGrid(),
-		btns: nil,
+		grid:     tview.NewGrid(),
+		btns:     nil,
+		callback: callback,
 	}
 
 	nb.grid.SetBorder(false)
 	nb.grid.SetBorderColor(config.ColorNavBar)
 	nb.grid.SetBackgroundColor(config.ColorNavBar)
 	nb.grid.SetRows(-1)
+	config.DebugGridBorders(nb.grid)
 
 	buttons := []string{
 		"Help",
@@ -73,6 +77,15 @@ func NewNavBar() *NavBar {
 		"History",
 		"Settings",
 		"Quit",
+	}
+
+	keybindings := []tcell.Key{
+		config.KeyBinds.NavigationBar.Help,
+		config.KeyBinds.NavigationBar.Search,
+		config.KeyBinds.NavigationBar.Queue,
+		config.KeyBinds.NavigationBar.History,
+		config.KeyBinds.NavigationBar.Settings,
+		config.KeyBinds.NavigationBar.Help,
 	}
 
 	// Use grid of |<space><button>space><button><space>...|
@@ -88,8 +101,8 @@ func NewNavBar() *NavBar {
 	nb.grid.SetColumns(widths...)
 	nb.btns = make([]*tview.Button, len(buttons))
 	for i, name := range buttons {
-		nb.btns[i] = tview.NewButton(name)
-		nb.btns[i].SetSelectedFunc(nb.namedCb(name))
+		nb.btns[i] = tview.NewButton(fmt.Sprintf("%s %s", tcell.KeyNames[keybindings[i]], name))
+		nb.btns[i].SetSelectedFunc(nb.namedCb(keybindings[i]))
 		nb.btns[i].SetBackgroundColor(config.ColorNavBar)
 		nb.btns[i].SetLabelColor(config.ColorLightext)
 		nb.grid.AddItem(nb.btns[i], 0, i*2, 1, 1, 1, 4, false)
@@ -97,12 +110,15 @@ func NewNavBar() *NavBar {
 	return nb
 }
 
-func (n *NavBar) namedCb(name string) func() {
+func (n *NavBar) namedCb(key tcell.Key) func() {
 	return func() {
-		n.buttonCb(name)
+		n.buttonCb(key)
 	}
 }
 
-func (n *NavBar) buttonCb(name string) {
-
+func (n *NavBar) buttonCb(key tcell.Key) {
+	if n.callback == nil {
+		return
+	}
+	n.callback(&key)
 }

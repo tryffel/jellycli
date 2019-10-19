@@ -16,7 +16,10 @@
 
 package config
 
-import "time"
+import (
+	"github.com/rivo/tview"
+	"time"
+)
 
 const (
 	AppName = "Jellycli"
@@ -34,4 +37,20 @@ const (
 
 	// Audio volume is logarithmic, which base to use
 	AudioVolumeLogBase = 2
+
+	Debug = false
 )
+
+var GridBordersShow = true
+var GridBordersColor = ColorSecondary
+
+//DebugGridBorders enables grid borders if config.Debug is true and if config.GridBordesShow is true
+// Else do nothing
+func DebugGridBorders(view *tview.Grid) {
+	if Debug && GridBordersShow {
+		view.SetBorders(true)
+		view.SetBordersColor(GridBordersColor)
+
+	}
+
+}

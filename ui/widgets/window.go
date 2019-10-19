@@ -17,7 +17,9 @@
 package widgets
 
 import (
+	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
+	"github.com/sirupsen/logrus"
 	"tryffel.net/pkg/jellycli/config"
 	"tryffel.net/pkg/jellycli/models"
 )
@@ -30,16 +32,20 @@ type Window struct {
 	navBar  *NavBar
 	status  *status
 	browser *Browser
+	search  *Search
+	help    *Help
 }
 
 func NewWindow() Window {
 	w := Window{
 		app:     tview.NewApplication(),
-		navBar:  NewNavBar(),
 		status:  newStatus(),
 		window:  tview.NewGrid(),
 		browser: NewBrowser(),
 	}
+
+	w.navBar = NewNavBar(w.keyHandlerCb)
+
 	w.window.SetTitle(" " + config.AppName + " ")
 	w.window.SetTitleColor(config.ColorPrimary)
 	w.window.SetBackgroundColor(config.ColorBackground)
@@ -48,11 +54,23 @@ func NewWindow() Window {
 	w.app.SetRoot(w.window, true)
 
 	w.browser.setData(testData(), models.ArtistList)
+	w.window.SetInputCapture(w.eventHandler)
+	w.search = NewSearch(w.searchCb)
+	w.help = NewHelp(w.closeHelp)
 
 	return w
 }
 
+func (w *Window) Run() error {
+	return w.app.Run()
+}
+
+func (w *Window) Stop() {
+	w.app.Stop()
+}
+
 func (w *Window) setLayout() {
+	w.window.Clear()
 	w.window.SetBorder(true)
 	w.window.SetRows(1, -1, 4)
 	w.window.SetColumns(-1)
@@ -62,7 +80,65 @@ func (w *Window) setLayout() {
 	w.window.AddItem(w.status, 2, 0, 1, 1, 3, 10, false)
 }
 
-func (w *Window) Run() {
-	w.app.Run()
+func (w *Window) eventHandler(event *tcell.EventKey) *tcell.EventKey {
+	key := event.Key()
+
+	out := w.keyHandler(&key)
+	if out == nil {
+		return nil
+	} else {
+		return event
+	}
+
+}
+
+// Keyhandler that has to react to buttons or drop them completely
+func (w *Window) keyHandlerCb(key *tcell.Key) {
+
+}
+
+// Key handler, if match, return nil
+func (w *Window) keyHandler(key *tcell.Key) *tcell.Key {
+	navbar := config.KeyBinds.NavigationBar
+	switch *key {
+	case navbar.Quit:
+		w.app.Stop()
+	case navbar.Search:
+		w.window.RemoveItem(w.browser)
+		w.window.AddItem(w.search, 1, 0, 1, 1, 15, 10, false)
+		w.app.SetFocus(w.search)
+	case navbar.Help:
+		w.window.RemoveItem(w.browser)
+		w.window.AddItem(w.help, 1, 0, 1, 1, 15, 10, false)
+		w.app.SetFocus(w.help)
+	case tcell.KeyCtrlR:
+		w.window.RemoveItem(w.browser)
+		w.window.AddItem(w.help, 1, 0, 1, 1, 15, 10, false)
+		w.app.SetFocus(w.help)
+	default:
+		return key
+
+	}
+	return nil
+}
+
+func (w *Window) searchCb(query string, doSearch bool) {
+	logrus.Debug("In search callback")
+	w.search.Blur()
+	w.window.RemoveItem(w.search)
+	w.window.AddItem(w.browser, 1, 0, 1, 1, 15, 10, false)
+	w.app.SetFocus(w.browser)
+
+	if !doSearch {
+
+	}
+
+}
+
+func (w *Window) closeHelp() {
+	w.help.Blur()
+	w.window.RemoveItem(w.help)
+	w.window.AddItem(w.browser, 1, 0, 1, 1, 15, 10, false)
+	w.app.SetFocus(w.browser)
 
 }

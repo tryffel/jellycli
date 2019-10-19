@@ -22,6 +22,8 @@ import (
 	"github.com/rivo/tview"
 	"github.com/sirupsen/logrus"
 	"tryffel.net/pkg/jellycli/config"
+	"tryffel.net/pkg/jellycli/models"
+	"tryffel.net/pkg/jellycli/player"
 	"tryffel.net/pkg/jellycli/ui/components"
 )
 
@@ -34,8 +36,6 @@ const (
 	btnForward  = ">>"
 	btnBackward = "<<"
 	btnQueue    = "☰"
-
-	//■ ▶ ⏯
 
 	btnLessVolume = "\xF0\x9F\x94\x89"
 	btnMoreVolume = ""
@@ -52,7 +52,7 @@ func effect(text string, e string) string {
 	return fmt.Sprintf("[::%s]%s[::-]", e, text)
 }
 
-type status struct {
+type Status struct {
 	frame   *tview.Box
 	layout  *tview.Grid
 	details *tview.TextView
@@ -66,9 +66,9 @@ type status struct {
 	btnStop     *tview.Button
 	btnQueue    *tview.Button
 
-	buttons []*tview.Button
-
-	progress progressBar
+	buttons  []*tview.Button
+	progress components.ProgressBar
+	volume   components.ProgressBar
 
 	controlsFgColor tcell.Color
 	controlsBgColor tcell.Color
@@ -78,11 +78,15 @@ type status struct {
 
 	detailsMainColor tcell.Color
 	detailsDimColor  tcell.Color
-	playing          bool
+
+	state player.PlayingState
+	song  *models.SongInfo
+
+	actionCb func(state player.State, volume int)
 }
 
-func newStatus() *status {
-	s := &status{frame: tview.NewBox()}
+func newStatus(actionCb func(state player.State, volume int)) *Status {
+	s := &Status{frame: tview.NewBox()}
 	s.controlsBgColor = config.ColorBackground
 	s.controlsFgColor = config.ColorControls
 	s.detailsMainColor = config.ColorPrimary
@@ -98,7 +102,6 @@ func newStatus() *status {
 	s.frame.SetBorder(true)
 	s.frame.SetBorderAttributes(tcell.AttrBold)
 	s.frame.SetBorderColor(s.controlsFgColor)
-	//s.frame.SetTitle("[red:]Status")
 
 	s.details = tview.NewTextView()
 
@@ -118,6 +121,24 @@ func newStatus() *status {
 	s.btnStop.SetSelectedFunc(s.namedCbFunc(btnStop))
 	s.btnQueue = tview.NewButton(btnQueue)
 
+	s.progress = components.NewProgressBar(40, 100)
+	s.volume = components.NewProgressBar(10, 100)
+
+	s.actionCb = actionCb
+
+	s.state = player.PlayingState{
+		State:               player.Stop,
+		PlayingType:         player.Playlist,
+		Song:                "",
+		Artist:              "",
+		Album:               "",
+		CurrentSongDuration: 0,
+		CurrentSongPast:     0,
+		PlaylistDuration:    0,
+		PlaylistLeft:        0,
+		Volume:              50,
+	}
+
 	s.buttons = []*tview.Button{
 		s.btnPrevious, s.btnBackward, s.btnPlay, s.btnForward, s.btnNext,
 	}
@@ -127,24 +148,21 @@ func newStatus() *status {
 		v.SetLabelColor(s.controlsBgColor)
 		v.SetBorder(false)
 	}
-
-	p := newProgressBar()
-	p.value = 3
-	s.progress = p
-
 	return s
 }
 
-func (s *status) Draw(screen tcell.Screen) {
+func (s *Status) Draw(screen tcell.Screen) {
+	// TODO: Make drawing responsive
 	s.frame.Draw(screen)
 	x, y, w, _ := s.frame.GetInnerRect()
 
-	p := components.NewProgressBar(60, 100)
-	v := components.NewProgressBar(10, 100)
-	t := p.Draw(30)
+	progress := fmt.Sprintf(" %s %s %s ",
+		components.SecToString(s.state.CurrentSongPast), s.progress.Draw(s.state.CurrentSongPast),
+		components.SecToString(s.state.CurrentSongDuration))
+	volume := fmt.Sprintf(" Volume %s ", s.volume.Draw(s.state.Volume))
 
-	tview.Print(screen, " "+components.SecToString(125)+" "+t+" "+components.SecToString(225)+" ", x+1, y-1, w, tview.AlignLeft, s.controlsFgColor)
-	tview.Print(screen, "Volume "+v.Draw(65), x+75, y-1, w, tview.AlignLeft, s.controlsFgColor)
+	tview.Print(screen, progress, x+1, y-1, w, tview.AlignLeft, config.ColorControls)
+	tview.Print(screen, volume, x+75, y-1, w, tview.AlignLeft, config.ColorControls)
 
 	btnY := y + 2
 	btnX := x + 1
@@ -154,59 +172,77 @@ func (s *status) Draw(screen tcell.Screen) {
 		v.Draw(screen)
 		btnX += 4
 	}
-	s.WriteStatus("Song", "Artist", "Album", 2018, screen, x+2, y)
+	s.WriteStatus(screen, x+2, y)
 }
 
-func (s *status) GetRect() (int, int, int, int) {
+func (s *Status) GetRect() (int, int, int, int) {
 	return s.frame.GetRect()
 }
 
-func (s *status) SetRect(x, y, width, height int) {
+func (s *Status) SetRect(x, y, width, height int) {
 	s.frame.SetRect(x, y, width, height)
 }
 
-func (s *status) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+func (s *Status) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 	return s.frame.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 		//key := event.Key()
 
 	})
 }
 
-func (s *status) Focus(delegate func(p tview.Primitive)) {
+func (s *Status) Focus(delegate func(p tview.Primitive)) {
 	s.frame.Focus(delegate)
 }
 
-func (s *status) Blur() {
+func (s *Status) Blur() {
 	s.frame.Blur()
 }
 
-func (s *status) GetFocusable() tview.Focusable {
+func (s *Status) GetFocusable() tview.Focusable {
 	return s.frame.GetFocusable()
 }
 
-func (s *status) WriteStatus(song, artist, album string, year int, screen tcell.Screen, x, y int) {
+func (s *Status) WriteStatus(screen tcell.Screen, x, y int) {
 	xi := x
 	w, _ := screen.Size()
-	tview.Print(screen, effect(song, "b")+" - ", x, y, w, tview.AlignLeft, s.detailsMainColor)
-	x += len(song) + 3
-	tview.Print(screen, effect(artist, "b")+" ", x, y, w, tview.AlignLeft, s.detailsMainColor)
-	x += len(artist) + 1
-	x = xi + 4
-	tview.Print(screen, album+" ", x, y+1, w, tview.AlignLeft, s.detailsDimColor)
-	x += len(album) + 1
-	tview.Print(screen, fmt.Sprintf("(%d)", year), x, y+1, w, tview.AlignLeft, s.detailsDimColor)
+	if s.song == nil {
+		tview.Print(screen, effect("-", "b")+" - ", x, y, w, tview.AlignLeft, s.detailsMainColor)
+	} else {
+		tview.Print(screen, effect(s.song.Name, "b")+" - ", x, y, w, tview.AlignLeft, s.detailsMainColor)
+		x += len(s.song.Name) + 3
+		tview.Print(screen, effect(s.song.Artist, "b")+" ", x, y, w, tview.AlignLeft, s.detailsMainColor)
+		x += len(s.song.Artist) + 1
+		x = xi + 4
+		tview.Print(screen, s.song.Album+" ", x, y+1, w, tview.AlignLeft, s.detailsDimColor)
+		x += len(s.song.Album) + 1
+		tview.Print(screen, fmt.Sprintf("(%d)", s.song.Year), x, y+1, w, tview.AlignLeft, s.detailsDimColor)
+	}
 }
 
 // Return cb func that includes name
-func (s *status) namedCbFunc(name string) func() {
+func (s *Status) namedCbFunc(name string) func() {
 	return func() {
 		s.buttonCb(name)
 	}
 }
 
 // Button pressed cb with name of the button
-func (s *status) buttonCb(name string) {
+func (s *Status) buttonCb(name string) {
 	logrus.Infof("Button %s was pressed!", name)
+	if s.actionCb == nil {
+		return
+	}
+	switch name {
+	case btnPlay:
+		s.actionCb(player.Play, -1)
+	case btnPause:
+		s.actionCb(player.Pause, -1)
+	}
+}
+
+func (s *Status) UpdateState(state player.PlayingState, song *models.SongInfo) {
+	s.state = state
+	s.song = song
 }
 
 type progressBar struct {

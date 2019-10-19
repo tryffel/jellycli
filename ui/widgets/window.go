@@ -22,6 +22,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"tryffel.net/pkg/jellycli/config"
 	"tryffel.net/pkg/jellycli/models"
+	"tryffel.net/pkg/jellycli/player"
+	"tryffel.net/pkg/jellycli/ui/controller"
 )
 
 type Window struct {
@@ -30,21 +32,24 @@ type Window struct {
 
 	// Widgets
 	navBar  *NavBar
-	status  *status
+	status  *Status
 	browser *Browser
 	search  *Search
 	help    *Help
+
+	mediaController controller.MediaController
 }
 
-func NewWindow() Window {
+func NewWindow(mc controller.MediaController) Window {
 	w := Window{
 		app:     tview.NewApplication(),
-		status:  newStatus(),
+		status:  newStatus(mc.Control),
 		window:  tview.NewGrid(),
 		browser: NewBrowser(),
 	}
 
 	w.navBar = NewNavBar(w.keyHandlerCb)
+	w.mediaController = mc
 
 	w.window.SetTitle(" " + config.AppName + " ")
 	w.window.SetTitleColor(config.ColorPrimary)
@@ -58,6 +63,28 @@ func NewWindow() Window {
 	w.window.SetInputCapture(w.eventHandler)
 	w.search = NewSearch(w.searchCb)
 	w.help = NewHelp(w.closeHelp)
+
+	w.status.UpdateState(player.PlayingState{
+		State:               player.Play,
+		PlayingType:         player.Song,
+		Song:                "Song",
+		Artist:              "Artist",
+		Album:               "Album",
+		CurrentSongDuration: 185,
+		CurrentSongPast:     92,
+		PlaylistDuration:    0,
+		PlaylistLeft:        0,
+		Volume:              50,
+	}, &models.SongInfo{
+		Id:       "song1",
+		Name:     "Song",
+		Length:   185,
+		Artist:   "Artist A",
+		ArtistId: "a1",
+		Album:    "Album B",
+		AlbumId:  "ab2",
+		Year:     2019,
+	})
 
 	return w
 }
@@ -122,8 +149,8 @@ func (w *Window) searchCb(query string, doSearch bool) {
 	w.browser.RemoveModal(w.search)
 	w.app.SetFocus(w.window)
 
-	if !doSearch {
-
+	if doSearch {
+		w.mediaController.Search(query)
 	}
 
 }

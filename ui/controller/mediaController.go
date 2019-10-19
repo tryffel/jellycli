@@ -14,45 +14,14 @@
  * limitations under the License.
  */
 
-package models
+package controller
 
-type Song struct {
-	Id     string
-	Name   string
-	Length int
-}
+import "tryffel.net/pkg/jellycli/player"
 
-func (s *Song) GetId() string {
-	return s.Id
-}
-
-func (s *Song) HasChildren() bool {
-	return false
-}
-
-func (s *Song) GetChildren() []Item {
-	return []Item{}
-}
-
-func (s *Song) GetParent() string {
-	return ""
-}
-
-func (s *Song) GetName() string {
-	return s.Name
-}
-
-func (s *Song) GetType() ListElement {
-	return SongList
-}
-
-type SongInfo struct {
-	Id       string
-	Name     string
-	Length   int
-	Artist   string
-	ArtistId string
-	Album    string
-	AlbumId  string
-	Year     int
+//MediaController can control media and media player
+type MediaController interface {
+	//Control player
+	Control(state player.State, volume int)
+	//Search for content
+	Search(query string)
 }

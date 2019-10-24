@@ -19,38 +19,150 @@ package widgets
 import (
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
+	"sync"
 	"tryffel.net/pkg/jellycli/config"
+	"tryffel.net/pkg/jellycli/controller"
 	"tryffel.net/pkg/jellycli/models"
 )
 
 func testData() []models.Item {
 
-	data := &[]models.Artist{}
+	/*
+		data := &[]*models.Artist{
+			{
+				Id:            "artis1",
+				Name:          "Empire of the sun",
+				TotalDuration: 7200,
+				Albums: []*models.Album{
+					{
+						Id:            "album1",
+						Name:          "Two Vines",
+						TotalDuration: 3600,
+						Songs: []*models.Song{
+							{
+								Id:     "song1",
+								Name:   "Two Vines",
+								Length: 185,
+							},
+							{
+								Id:   "song2",
+								Name: "Before",
+							},
+							{
+								Id:   "song3",
+								Name: "High and Low",
+							},
+						},
+					},
+					{
+						Id:            "album2",
+						Name:          "Ice on the Dune",
+						TotalDuration: 7300,
+						Songs: []*models.Song{
+							{
+								Id:   "song4",
+								Name: "LUX",
+							},
+							{
+								Id:   "song5",
+								Name: "Dna",
+							},
+						},
+					},
+				},
+			},
+			{
+				Id:            "artist2",
+				Name:          "Toto",
+				TotalDuration: 18323,
+				Albums: []*models.Album{
+					{
+						Id:            "album3",
+						Name:          "Fahrenheit",
+						TotalDuration: 3205,
+						Songs: []*models.Song{
+							{
+								Id:   "song6",
+								Name: "Till the End",
+							},
+							{
+								Id:   "song7",
+								Name: "We Can Make It Tonight",
+							},
+							{
+								Id:   "song8",
+								Name: "Without Your Love",
+							},
+							{
+								Id:   "song9",
+								Name: "Can't Stand It Any Longer",
+							},
+						},
+					},
+					{
+						Id:   "album4",
+						Name: "Toto IV",
+						Songs: []*models.Song{
+							{
+								Id:   "song10",
+								Name: "Rosanna",
+							},
+							{
+								Id:   "song10",
+								Name: "Make Believe",
+							},
+							{
+								Id:   "song11",
+								Name: "I Won't Hold You back",
+							},
+						},
+					},
+				},
+			},
+			{
+				Id:   "artist3",
+				Name: "Daft Punk",
+			},
+		}
+	*/
 
-	items := make([]models.Item, len(*data))
-	for i, v := range *data {
-		items[i] = v
-	}
-	return items
+	return nil
 }
+
+const panelL = 0
+const panelR = 1
 
 // Browser is a listR-like viewer user can navigate content with
 type Browser struct {
+	// Widgets
 	grid  *tview.Grid
 	listR *List
 	listL *List
 
-	data    []models.Artist
-	element models.ListElement
+	controller controller.MediaController
+
+	// State
+	rContent      models.ItemType
+	lContent      models.ItemType
+	panelAwaiting int
+
+	dataL   []models.Item
+	dataR   []models.Item
+	element models.ItemType
 
 	hasModal   bool
 	gridAxis   []int
 	gridSize   int
 	customGrid bool
 	modal      tview.Primitive
+	focused    int
+
+	lock sync.RWMutex
 }
 
 func (b *Browser) Draw(screen tcell.Screen) {
+	b.lock.RLock()
+	defer b.lock.RUnlock()
 	b.grid.Draw(screen)
 }
 
@@ -66,14 +178,37 @@ func (b *Browser) InputHandler() func(event *tcell.EventKey, setFocus func(p tvi
 	return func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 		if b.hasModal {
 			b.modal.InputHandler()
-		} else {
+			return
+		}
+
+		if event.Key() == tcell.KeyTAB {
+			if b.focused == panelL {
+				b.focused = panelR
+			} else {
+				b.focused = panelL
+			}
+			return
+		}
+		if event.Key() == tcell.KeyEnter {
+			if b.focused == panelL {
+				b.listL.InputHandler()
+			} else {
+				b.listR.InputHandler()
+			}
 			b.grid.InputHandler()
 		}
 	}
 }
 
 func (b *Browser) Focus(delegate func(p tview.Primitive)) {
-	b.grid.Focus(delegate)
+	if b.focused == panelL {
+		b.listL.Focus(delegate)
+		b.listR.Blur()
+	} else {
+		b.listR.Focus(delegate)
+		b.listL.Blur()
+	}
+	//b.grid.Focus(delegate)
 }
 
 func (b *Browser) Blur() {
@@ -84,13 +219,34 @@ func (b *Browser) GetFocusable() tview.Focusable {
 	return b.grid.GetFocusable()
 }
 
-func (b *Browser) setData(data *[]models.Item, element models.ListElement) {
-	b.listL.SetData(element, *data)
-	b.listR.SetData((*data)[0].GetChildren()[0].GetType(), (*data)[0].GetChildren())
+func (b *Browser) setData(data []models.Item) {
+	b.lock.Lock()
+	defer b.lock.Unlock()
+	if b.panelAwaiting == panelR {
+		b.listR.SetData(data)
+		b.dataR = data
+	} else if b.panelAwaiting == panelL {
+		b.listL.SetData(data)
+		b.dataL = data
+	} else {
+		return
+	}
+	b.panelAwaiting = -1
 }
 
-func NewBrowser() *Browser {
-	b := &Browser{data: nil, listR: NewList(), listL: NewList(), grid: tview.NewGrid()}
+func NewBrowser(controller controller.MediaController) *Browser {
+	b := &Browser{
+		listR:      nil,
+		listL:      nil,
+		grid:       tview.NewGrid(),
+		controller: controller,
+	}
+
+	b.listR = NewList(b.wrapEnter(panelR))
+	b.listL = NewList(b.wrapEnter(panelL))
+
+	b.listL.itemType = models.TypeArtist
+	b.listR.itemType = models.TypeAlbum
 
 	config.DebugGridBorders(b.grid)
 	// Split grid to 6x6, normally use 3x6 panes for both lists
@@ -107,6 +263,12 @@ func NewBrowser() *Browser {
 	b.grid.AddItem(b.listL, 0, 0, b.gridSize, b.gridSize/2, 4, 10, false)
 	b.grid.AddItem(b.listR, 0, b.gridSize/2, b.gridSize, b.gridSize/2, 4, 10, false)
 	return b
+}
+
+func (b *Browser) SetInitialData(items []models.Item) {
+	b.listL.SetData(items)
+	b.dataL = items
+	b.lContent = items[0].GetType()
 }
 
 //AddModal adds modal to center of browser
@@ -147,4 +309,48 @@ func (b *Browser) RemoveModal(view tview.Primitive) {
 			b.customGrid = false
 		}
 	}
+}
+
+func (b *Browser) wrapEnter(panel int) func(item models.Item) {
+	return func(item models.Item) {
+		b.enter(panel, item)
+	}
+}
+
+func (b *Browser) enter(panel int, item models.Item) {
+	b.transition(panel, tcell.KeyEnter)
+}
+
+func (b *Browser) transition(panel int, key tcell.Key) {
+	/* State transitions
+	Possible item types:
+	Left panel: album, artist
+	Right panel: playlist, album, song, queue, history
+
+	On left panel & enter open right panel with corresponding content
+	On right panel if album:
+		move album to left
+		show songs on right
+	else:
+		play
+
+	*/
+
+	if panel == panelL {
+		if key == tcell.KeyEnter {
+			index := b.listL.list.GetCurrentItem()
+			switch b.lContent {
+			case models.TypeAlbum:
+				b.panelAwaiting = panelR
+
+				b.controller.GetChildren(b.dataL[index].GetId())
+
+			}
+
+		}
+
+	} else if panel == panelR {
+
+	}
+
 }

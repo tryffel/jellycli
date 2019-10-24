@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package controller
+package api
 
 import (
 	"testing"
@@ -74,7 +74,6 @@ func TestCache_Put(t *testing.T) {
 			if c.Count() != (i + 1) {
 				t.Errorf("Cache count doesn't match, want %d, got %d", i+1, c.Count())
 			}
-
 		})
 	}
 }

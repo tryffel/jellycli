@@ -17,6 +17,7 @@
 package controller
 
 import (
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"sync"
 	"tryffel.net/pkg/jellycli/api"
@@ -34,7 +35,6 @@ const (
 type Content struct {
 	task.Task
 	api    *api.Api
-	cache  *Cache
 	player *player.Player
 	lock   sync.RWMutex
 
@@ -51,32 +51,33 @@ func (c *Content) GetChildren(id models.Id) {
 	if c.itemsCb == nil {
 		return
 	}
-	parent, found := c.cache.Get(id)
-	if !found {
-		return
+	items, err := c.api.GetChildItems(id)
+	if err != nil {
+		logrus.Errorf("Failed to get children for %s: %v", id, err)
+	} else if items != nil {
+		c.flushItems(items...)
 	}
-	children := c.getItems(parent.GetChildren())
-	c.itemsCb(children)
-	c.flushItems(children...)
 }
 
 func (c *Content) GetParent(id models.Id) {
-	child, found := c.cache.Get(id)
-	if !found {
-		return
+	parent, err := c.api.GetParentItem(id)
+	if err != nil {
+		logrus.Errorf("Failed to get parent for %s: %v", id, err)
+	} else if parent != nil {
+		c.flushItems(parent)
 	}
-	parentId := child.GetParent()
-	parent := c.getItem(parentId)
-	c.flushItems(parent)
 }
 
 func (c *Content) GetItem(id models.Id) {
+	if c.itemsCb == nil {
+		return
+	}
 	item := c.getItem(id)
 	c.flushItems(item)
 }
 
 func (c *Content) GetItems(ids []models.Id) {
-	if c.itemsCb == nil {
+	if c.itemsCb == nil || ids == nil {
 		return
 	}
 	items := c.getItems(ids)
@@ -84,23 +85,18 @@ func (c *Content) GetItems(ids []models.Id) {
 }
 
 func (c *Content) getItem(id models.Id) models.Item {
-	if c.itemsCb == nil {
+	item, err := c.api.GetItem(id)
+	if err != nil {
+		logrus.Errorf("Failed to get item %s: %v", id, err)
 		return nil
 	}
-	item, found := c.cache.Get(id)
-	if found {
-		return item
-	}
-	return nil
+	return item
 }
 
 func (c *Content) getItems(ids []models.Id) []models.Item {
-	items := make([]models.Item, 0)
-	for _, v := range ids {
-		item, found := c.cache.Get(v)
-		if found && item != nil {
-			items = append(items, item)
-		}
+	items, err := c.api.GetItems(ids)
+	if err != nil {
+		logrus.Errorf("Failed to multiple items (%d), first item: %s: %s", len(ids), ids[0], err)
 	}
 	return items
 }
@@ -168,7 +164,7 @@ func (c *Content) Continue() {
 	c.flushStatus(a)
 }
 
-func (c *Content) Stop() {
+func (c *Content) StopMedia() {
 	a := player.Action{
 		State: player.Stop,
 	}
@@ -204,20 +200,19 @@ func (c *Content) flushItems(items ...models.Item) {
 	}
 }
 
-func NewContent(a *api.Api, cache *Cache) *Content {
+func NewContent(a *api.Api, p *player.Player) (*Content, error) {
+	var err error
 	c := &Content{
-		api:   a,
-		cache: cache,
+		api:    a,
+		player: p,
 	}
+
 	c.SetLoop(c.loop)
 	c.chanComplete = make(chan Action)
-
-	data := testData()
-	for _, v := range data {
-		c.cache.Put(v.GetId(), v, true)
+	if err != nil {
+		return c, fmt.Errorf("init media player: %v", err)
 	}
-
-	return c
+	return c, nil
 }
 
 // Search performs search query
@@ -256,4 +251,16 @@ func (c *Content) loop() {
 		}
 	}
 
+}
+
+func (c *Content) GetDefault() []models.Item {
+	id := "c690ebe1ba9f7d63d0b497735cc452c0"
+	item, err := c.api.GetItem(models.Id(id))
+	if err != nil {
+		logrus.Errorf("Failed to get default items: %v", err)
+	}
+	if item == nil {
+		return nil
+	}
+	return []models.Item{item}
 }

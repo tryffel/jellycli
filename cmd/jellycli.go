@@ -24,10 +24,10 @@ import (
 	"sync"
 	"tryffel.net/pkg/jellycli/api"
 	"tryffel.net/pkg/jellycli/config"
+	"tryffel.net/pkg/jellycli/controller"
 	"tryffel.net/pkg/jellycli/player"
 	"tryffel.net/pkg/jellycli/task"
 	"tryffel.net/pkg/jellycli/ui"
-	"tryffel.net/pkg/jellycli/ui/controller"
 )
 
 func main() {
@@ -41,7 +41,10 @@ func main() {
 	}
 
 	startstartErr := app.Start()
-	logrus.Error(startstartErr)
+	if startstartErr != nil {
+		logrus.Error("Failed to start application: %v", startstartErr)
+	}
+
 	stopErr := app.Stop()
 
 	if startstartErr == nil && stopErr == nil {
@@ -71,6 +74,7 @@ func NewApplication() (*Application, error) {
 	if err != nil {
 		return a, err
 	}
+	logrus.Infof("############# %s v%s ############", config.AppName, config.Version)
 	err = a.initApi()
 	if err != nil {
 		return a, err
@@ -84,23 +88,20 @@ func NewApplication() (*Application, error) {
 }
 
 func (a *Application) Start() error {
-	logrus.Infof("############# %s v%s ############", config.AppName, config.Version)
-	tasks := []task.Tasker{a.player, a.content}
+	tasks := []task.Tasker{a.player, a.content, a.gui}
 	var err error
 	for _, v := range tasks {
 		err = v.Start()
 		if err != nil {
-			_ = v.Stop()
-			return err
+			return fmt.Errorf("failed to start tasks: %v", err)
 		}
 	}
-	return a.gui.Start()
+	return nil
 }
 
 func (a *Application) Stop() error {
 	logrus.Info("Stopping application")
-	a.gui.Stop()
-	tasks := []task.Tasker{a.player, a.content}
+	tasks := []task.Tasker{a.gui, a.player, a.content}
 	var err error
 	var hasError bool
 	for _, v := range tasks {
@@ -165,6 +166,16 @@ func (a *Application) login() error {
 			if err != nil {
 				return fmt.Errorf("failed to store token: %v", err)
 			}
+
+			err = a.secrets.SetKey("userid", a.api.UserId())
+			if err != nil {
+				return fmt.Errorf("failed to store userid: %v", err)
+			}
+			err = a.secrets.SetKey("deviceid", a.api.DeviceId)
+			if err != nil {
+				return fmt.Errorf("failed to store deviceid: %v", err)
+			}
+
 		} else {
 			return fmt.Errorf("login failed")
 		}
@@ -175,21 +186,36 @@ func (a *Application) login() error {
 		if err != nil {
 			return fmt.Errorf("set token: %v", err)
 		}
+		userid, err := a.secrets.GetKey("userid")
+		if err != nil {
+			return err
+		}
+		a.api.SetUserId(userid)
+
+		deviceid, err := a.secrets.GetKey("deviceid")
+		if err != nil {
+			return err
+		}
+		a.api.DeviceId = deviceid
+
 		return nil
 	}
 
-	// TODO: Store userid, deviceid, serverid
+	// TODO: Store serverid
 }
 
 func (a *Application) initApplication() error {
 	var err error
-	a.content = controller.NewContent(a.api)
 	a.player, err = player.NewPlayer(a.api)
 	if err != nil {
 		return fmt.Errorf("create player: %v", err)
 	}
-	a.gui = ui.NewUi(a.player, a.content)
+	a.content, err = controller.NewContent(a.api, a.player)
+	if err != nil {
+		return fmt.Errorf("create content controller: %v", err)
+	}
 
+	a.gui = ui.NewUi(a.content)
 	return nil
 }
 

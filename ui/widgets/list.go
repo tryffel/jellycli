@@ -24,11 +24,13 @@ import (
 )
 
 type List struct {
-	list    *tview.List
-	element models.ListElement
+	list     *tview.List
+	itemType models.ItemType
+	items    []models.Item
+	enterCb  func(item models.Item)
 }
 
-func NewList() *List {
+func NewList(enterCb func(item models.Item)) *List {
 	l := &List{
 		list: tview.NewList(),
 	}
@@ -41,6 +43,7 @@ func NewList() *List {
 	l.list.SetBackgroundColor(config.ColorBackground)
 	l.list.SetSelectedTextColor(config.ColorSecondary)
 	l.list.SetMainTextColor(config.ColorPrimary)
+	l.enterCb = enterCb
 	return l
 }
 
@@ -50,7 +53,6 @@ func (l *List) Draw(screen tcell.Screen) {
 
 func (l *List) GetRect() (int, int, int, int) {
 	return l.list.GetRect()
-
 }
 
 func (l *List) SetRect(x, y, width, height int) {
@@ -58,7 +60,13 @@ func (l *List) SetRect(x, y, width, height int) {
 }
 
 func (l *List) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-	return l.list.InputHandler()
+	return l.list.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+		key := event.Key()
+		if key == tcell.KeyEnter && l.enterCb != nil {
+			index := l.list.GetCurrentItem()
+			l.enterCb(l.items[index])
+		}
+	})
 }
 
 func (l *List) Focus(delegate func(p tview.Primitive)) {
@@ -73,13 +81,16 @@ func (l *List) GetFocusable() tview.Focusable {
 	return l.list.GetFocusable()
 }
 
-func (l *List) SetData(element models.ListElement, items []models.Item) {
-	l.element = element
+func (l *List) SetData(items []models.Item) {
+	if len(items) == 0 {
+		return
+	}
 
+	l.itemType = items[0].GetType()
 	l.list.Clear()
-	l.list.SetTitle(string(element))
+	l.list.SetTitle(string(l.itemType))
 	for i, v := range items {
-		l.list.AddItem(v.GetName(), "", '?', l.namedCb(i, v.GetId()))
+		l.list.AddItem(v.GetName(), "", '?', l.namedCb(i, string(v.GetId())))
 	}
 }
 

@@ -17,72 +17,83 @@
 package ui
 
 import (
-	"github.com/sirupsen/logrus"
+	"tryffel.net/pkg/jellycli/controller"
 	"tryffel.net/pkg/jellycli/player"
 	"tryffel.net/pkg/jellycli/task"
-	"tryffel.net/pkg/jellycli/ui/controller"
 	"tryffel.net/pkg/jellycli/ui/widgets"
 )
 
 type Gui struct {
-	task    *task.Task
-	window  widgets.Window
-	player  *player.Player
-	content *controller.Content
+	task.Task
+	window     widgets.Window
+	controller *controller.Content
 }
 
-func NewUi(player *player.Player, content *controller.Content) *Gui {
+func NewUi(controller *controller.Content) *Gui {
 	u := &Gui{
-		task: &task.Task{},
-
-		player:  player,
-		content: content,
+		controller: controller,
 	}
-	u.window = widgets.NewWindow(u)
-	u.task.Name = "Gui"
-	u.task.SetLoop(u.loop)
+	u.window = widgets.NewWindow(controller)
+	u.Name = "Gui"
+	u.SetLoop(u.loop)
 	return u
 }
 
 func (gui *Gui) Start() error {
-	err := gui.task.Start()
+	err := gui.Task.Start()
 	if err != nil {
 		return err
 	}
 	return gui.window.Run()
 }
 
-func (gui *Gui) Stop() {
+func (gui *Gui) Stop() error {
 	gui.window.Stop()
-	_ = gui.task.Stop()
+	return gui.Task.Stop()
 }
 
 func (gui *Gui) loop() {
+	gui.window.InitBrowser(gui.controller.GetDefault())
+
 	for true {
 		select {
-		case <-gui.task.StopChan():
+		case <-gui.StopChan():
 			break
-		case state := <-gui.player.StateChannel():
-			logrus.Info(state)
-		case <-gui.content.SearchCompleteChan():
-			logrus.Info("Got some results yay")
+			//case state := <-gui.player.StateChannel():
+			//	logrus.Info(state)
+			//case <-gui.content.SearchCompleteChan():
+			//	logrus.Info("Got some results yay")
+			//}
 		}
 	}
 }
 
 func (gui *Gui) Control(state player.State, volume int) {
-	action := player.Action{
-		State:   state,
-		Type:    0,
-		Volume:  volume,
-		Artist:  "",
-		Album:   "",
-		Song:    "",
-		AudioId: "",
+	switch state {
+	case player.Continue:
+		gui.controller.Continue()
+	case player.Pause:
+		gui.controller.Pause()
+	case player.Stop:
+		gui.controller.StopMedia()
+	case player.SetVolume:
+		gui.controller.SetVolume(volume)
 	}
-	gui.player.ActionChannel() <- action
 }
 
 func (gui *Gui) Search(q string) {
-	go gui.content.Search(q)
+	//go gui.controller.Search(q)
 }
+
+//func (gui *Gui) GetChildren(parentId string, cb func(item []models.Item)) {
+//	parent := gui.content.GetItem(parentId)
+//	items := gui.content.GetItemMultiple(parent.GetChildren())
+//	cb(items)
+//}
+
+//func (gui *Gui) GetParent(childId string, cb func(item models.Item)) {
+//	child := gui.content.GetItem(childId)
+//	parent := gui.content.GetItem(string(child.GetParent()))
+//	cb(parent)
+
+//}

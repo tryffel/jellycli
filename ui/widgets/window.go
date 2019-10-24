@@ -21,9 +21,9 @@ import (
 	"github.com/rivo/tview"
 	"github.com/sirupsen/logrus"
 	"tryffel.net/pkg/jellycli/config"
+	"tryffel.net/pkg/jellycli/controller"
 	"tryffel.net/pkg/jellycli/models"
 	"tryffel.net/pkg/jellycli/player"
-	"tryffel.net/pkg/jellycli/ui/controller"
 )
 
 type Window struct {
@@ -42,14 +42,14 @@ type Window struct {
 
 func NewWindow(mc controller.MediaController) Window {
 	w := Window{
-		app:     tview.NewApplication(),
-		status:  newStatus(mc.Control),
-		window:  tview.NewGrid(),
-		browser: NewBrowser(),
+		app:    tview.NewApplication(),
+		status: newStatus(mc),
+		window: tview.NewGrid(),
 	}
 
 	w.navBar = NewNavBar(w.keyHandlerCb)
 	w.mediaController = mc
+	w.browser = NewBrowser(mc)
 
 	w.window.SetTitle(" " + config.AppName + " ")
 	w.window.SetTitleColor(config.ColorPrimary)
@@ -57,9 +57,13 @@ func NewWindow(mc controller.MediaController) Window {
 	w.window.SetBorderColor(config.ColroMainFrame)
 	w.setLayout()
 	w.app.SetRoot(w.window, true)
+	w.app.SetFocus(w.browser)
 
-	data := testData()
-	w.browser.setData(&data, models.ArtistList)
+	//data := testData()
+	//w.browser.setData(&data, models.TypeArtist)
+
+	//w.browser.SetInitialData(mc.)
+
 	w.window.SetInputCapture(w.eventHandler)
 	w.search = NewSearch(w.searchCb)
 	w.help = NewHelp(w.closeHelp)
@@ -109,15 +113,12 @@ func (w *Window) setLayout() {
 }
 
 func (w *Window) eventHandler(event *tcell.EventKey) *tcell.EventKey {
-	key := event.Key()
 
-	out := w.keyHandler(&key)
+	out := w.keyHandler(event)
 	if out == nil {
 		return nil
-	} else {
-		return event
 	}
-
+	return event
 }
 
 // Keyhandler that has to react to buttons or drop them completely
@@ -126,22 +127,59 @@ func (w *Window) keyHandlerCb(key *tcell.Key) {
 }
 
 // Key handler, if match, return nil
-func (w *Window) keyHandler(key *tcell.Key) *tcell.Key {
-	navbar := config.KeyBinds.NavigationBar
-	switch *key {
-	case navbar.Quit:
+func (w *Window) keyHandler(event *tcell.EventKey) *tcell.Key {
+	key := event.Key()
+
+	if w.mediaCtrl(event) {
+		return nil
+	}
+	if w.navBarCtrl(key) {
+		return nil
+	}
+	if w.moveCtrl(key) {
+		return nil
+	}
+	// Moving around
+	return &key
+}
+
+func (w *Window) mediaCtrl(event *tcell.EventKey) bool {
+	ctrls := config.KeyBinds.Global
+	key := event.Key()
+	switch key {
+	case ctrls.PlayPause:
+		break
+	case ctrls.VolumeDown:
+		break
+	case ctrls.VolumeUp:
+		break
+	default:
+		return false
+	}
+	w.status.InputHandler()(event, nil)
+	return true
+}
+
+func (w *Window) navBarCtrl(key tcell.Key) bool {
+	navBar := config.KeyBinds.NavigationBar
+	switch key {
+	// Navigation bar
+	case navBar.Quit:
 		w.app.Stop()
-	case navbar.Search:
+	case navBar.Search:
 		w.browser.AddModal(w.search, 10, 50, true)
 		w.app.SetFocus(w.search)
-	case tcell.KeyF1:
+	case navBar.Help:
 		w.browser.AddModal(w.help, 25, 50, true)
 		w.app.SetFocus(w.help)
 	default:
-		return key
-
+		return false
 	}
-	return nil
+	return true
+}
+
+func (w *Window) moveCtrl(key tcell.Key) bool {
+	return false
 }
 
 func (w *Window) searchCb(query string, doSearch bool) {
@@ -150,7 +188,7 @@ func (w *Window) searchCb(query string, doSearch bool) {
 	w.app.SetFocus(w.window)
 
 	if doSearch {
-		w.mediaController.Search(query)
+		//w.mediaController.Search(query)
 	}
 
 }
@@ -158,5 +196,18 @@ func (w *Window) searchCb(query string, doSearch bool) {
 func (w *Window) closeHelp() {
 	w.browser.RemoveModal(w.help)
 	w.app.SetFocus(w.window)
+
+}
+
+func (w *Window) statusCb(state player.PlayingState) {
+	w.status.UpdateState(state, nil)
+}
+
+func (w *Window) itemsCb(items []models.Item) {
+	w.browser.setData(items)
+}
+
+func (w *Window) InitBrowser(items []models.Item) {
+	w.browser.setData(items)
 
 }

@@ -21,7 +21,9 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 	"github.com/sirupsen/logrus"
+	"sync"
 	"tryffel.net/pkg/jellycli/config"
+	"tryffel.net/pkg/jellycli/controller"
 	"tryffel.net/pkg/jellycli/models"
 	"tryffel.net/pkg/jellycli/player"
 	"tryffel.net/pkg/jellycli/ui/components"
@@ -53,6 +55,8 @@ func effect(text string, e string) string {
 }
 
 type Status struct {
+	lock sync.RWMutex
+
 	frame   *tview.Box
 	layout  *tview.Grid
 	details *tview.TextView
@@ -83,10 +87,15 @@ type Status struct {
 	song  *models.SongInfo
 
 	actionCb func(state player.State, volume int)
+
+	controller controller.MediaController
 }
 
-func newStatus(actionCb func(state player.State, volume int)) *Status {
+func newStatus(ctrl controller.MediaController) *Status {
 	s := &Status{frame: tview.NewBox()}
+	s.controller = ctrl
+	s.controller.SetStatusCallback(s.stateCb)
+
 	s.controlsBgColor = config.ColorBackground
 	s.controlsFgColor = config.ColorControls
 	s.detailsMainColor = config.ColorPrimary
@@ -124,8 +133,6 @@ func newStatus(actionCb func(state player.State, volume int)) *Status {
 	s.progress = components.NewProgressBar(40, 100)
 	s.volume = components.NewProgressBar(10, 100)
 
-	s.actionCb = actionCb
-
 	s.state = player.PlayingState{
 		State:               player.Stop,
 		PlayingType:         player.Playlist,
@@ -155,6 +162,9 @@ func (s *Status) Draw(screen tcell.Screen) {
 	// TODO: Make drawing responsive
 	s.frame.Draw(screen)
 	x, y, w, _ := s.frame.GetInnerRect()
+
+	s.lock.RLock()
+	defer s.lock.RUnlock()
 
 	progress := fmt.Sprintf(" %s %s %s ",
 		components.SecToString(s.state.CurrentSongPast), s.progress.Draw(s.state.CurrentSongPast),
@@ -243,6 +253,12 @@ func (s *Status) buttonCb(name string) {
 func (s *Status) UpdateState(state player.PlayingState, song *models.SongInfo) {
 	s.state = state
 	s.song = song
+}
+
+func (s *Status) stateCb(state player.PlayingState) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.state = state
 }
 
 type progressBar struct {

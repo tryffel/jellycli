@@ -31,6 +31,7 @@ import (
 
 type Api struct {
 	task.Task
+	cache     *Cache
 	host      string
 	token     string
 	userId    string
@@ -54,6 +55,11 @@ func NewApi(host string) (*Api, error) {
 	}
 	a.DeviceId = id
 	a.SessionId = randomKey(15)
+
+	a.cache, err = NewCache()
+	if err != nil {
+		return a, fmt.Errorf("create cache: %v", err)
+	}
 	return a, nil
 }
 

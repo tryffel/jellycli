@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package controller
+package api
 
 import (
 	"github.com/patrickmn/go-cache"

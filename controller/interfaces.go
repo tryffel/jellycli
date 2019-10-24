@@ -29,13 +29,16 @@ type MediaController interface {
 }
 
 //ItemController retrieves children and returns them with ItemsCallback
+//Manages item metadata and not the files themselves.
 type ItemController interface {
+	//GetItem gets item with given id. If none found or if errors, return nil
+	GetItem(id models.Id)
 	//GetChildren returns children for given parent id. If there are none, returns nil
-	GetChildren(parent models.Id) []models.Item
+	GetChildren(parent models.Id)
 	//GetParent returns parent for child id. If there is no parent, return nil
-	GetParent(child models.Id) models.Item
+	GetParent(child models.Id)
 	//SetItemsCallback sets callback that gets called when items are retrieved
-	SetItemsCallback(func([]models.Id))
+	SetItemsCallback(func([]models.Item))
 	//RemoveItemsCallback removes items callback if there's any
 	RemoveItemsCallback()
 }
@@ -43,33 +46,45 @@ type ItemController interface {
 //QueueController controls queue and history
 type QueueController interface {
 	//GetQueue gets currently ongoing queue of items
-	GetQueue() []models.Song
+	GetQueue() []*models.Song
 	//ClearQueue clears queue. This also calls QueueChangedCallback
 	ClearQueue()
 	//QueueDuration gets number of queue items
 	QueueDuration() int
 	//AddItems adds items to the end of queue.
 	//Adding items calls QueueChangedCallback
-	AddSongs([]models.Song)
+	AddSongs([]*models.Song)
 	//Reorder sets item in index currentIndex to newIndex.
 	//If either currentIndex or NewIndex is not valid, do nothing.
 	//On successful order QueueChangedCallback gets called.
 	Reorder(currentIndex, newIndex int)
 	//GetHistory get's n past songs that has been played.
-	GetHistory(n int) []models.Song
+	GetHistory(n int) []*models.Song
 	//SetQueueChangedCallback sets function that is called every time queue changes.
-	SetQueueChangedCallback(func(content []models.Song))
+	SetQueueChangedCallback(func(content []*models.Song))
 	//RemoveQueueChangedCallback removes queue changed callback
 	RemoveQueueChangedCallback()
 }
 
+//PlaybackController controls media playback. Current status is sent to StatusCallback, if set.
 type PlaybackController interface {
+	//Pause pauses media that's currently playing. If none, do nothing.
 	Pause()
+	//Continue continues currently paused media.
 	Continue()
+	//Stop stops playing media.
 	Stop()
+	//Next plays currently next item in queue, if any.
 	Next()
+	//Previous plays last played song (first in history)
 	Previous()
+	//Seek seeks forward given seconds
 	Seek(seconds int)
+	//SeekBackwards seeks backwards given seconds
 	SeekBackwards(seconds int)
+	//SetStatusCallback sets callback that get's called every time status has changed,
+	//including playback progress
 	SetStatusCallback(func(state player.PlayingState))
+	//SetVolume sets volume to given level in range of [0,100]
+	SetVolume(level int)
 }

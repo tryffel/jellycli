@@ -16,22 +16,24 @@
 
 package models
 
+type Id string
+
 type Item interface {
-	GetId() string
+	GetId() Id
 	GetName() string
 	HasChildren() bool
-	GetChildren() []Item
-	GetParent() string
-	GetType() ListElement
+	GetChildren() []Id
+	GetParent() Id
+	GetType() ItemType
 }
 
-type ListElement string
+type ItemType string
 
 const (
-	ArtistList  ListElement = "Artist"
-	AlbumList   ListElement = "Album"
-	Playlist    ListElement = "Playlist"
-	QueueList   ListElement = "Queue"
-	HistoryList ListElement = "History"
-	SongList    ListElement = "Song"
+	TypeArtist   ItemType = "Artist"
+	TypeAlbum    ItemType = "Album"
+	TypePlaylist ItemType = "TypePlaylist"
+	TypeQueue    ItemType = "Queue"
+	TypeHistory  ItemType = "History"
+	TypeSong     ItemType = "Song"
 )

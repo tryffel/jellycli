@@ -17,13 +17,13 @@
 package models
 
 type Artist struct {
-	Id            string
+	Id            Id
 	Name          string
-	Albums        []*Album
+	Albums        []Id
 	TotalDuration int
 }
 
-func (a *Artist) GetId() string {
+func (a *Artist) GetId() Id {
 	return a.Id
 }
 
@@ -31,15 +31,11 @@ func (a *Artist) HasChildren() bool {
 	return len(a.Albums) > 0
 }
 
-func (a *Artist) GetChildren() []Item {
-	m := make([]Item, len(a.Albums))
-	for i, v := range a.Albums {
-		m[i] = v
-	}
-	return m
+func (a *Artist) GetChildren() []Id {
+	return a.Albums
 }
 
-func (a *Artist) GetParent() string {
+func (a *Artist) GetParent() Id {
 	return ""
 }
 
@@ -47,6 +43,6 @@ func (a *Artist) GetName() string {
 	return a.Name
 }
 
-func (a *Artist) GetType() ListElement {
-	return ArtistList
+func (a *Artist) GetType() ItemType {
+	return TypeArtist
 }

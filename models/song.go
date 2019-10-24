@@ -17,12 +17,13 @@
 package models
 
 type Song struct {
-	Id     string
+	Id     Id
 	Name   string
 	Length int
+	Album  Id
 }
 
-func (s *Song) GetId() string {
+func (s *Song) GetId() Id {
 	return s.Id
 }
 
@@ -30,20 +31,20 @@ func (s *Song) HasChildren() bool {
 	return false
 }
 
-func (s *Song) GetChildren() []Item {
-	return []Item{}
+func (s *Song) GetChildren() []Id {
+	return []Id{}
 }
 
-func (s *Song) GetParent() string {
-	return ""
+func (s *Song) GetParent() Id {
+	return s.Album
 }
 
 func (s *Song) GetName() string {
 	return s.Name
 }
 
-func (s *Song) GetType() ListElement {
-	return SongList
+func (s *Song) GetType() ItemType {
+	return TypeSong
 }
 
 type SongInfo struct {

@@ -17,6 +17,7 @@
 package api
 
 import (
+	"fmt"
 	"github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -28,16 +29,19 @@ type Cache struct {
 	cache *cache.Cache
 }
 
+//NewCache creates new cache that's ready to use.
 func NewCache() (*Cache, error) {
 	c := &Cache{}
 	c.cache = cache.New(config.CacheTimeout, config.CacheTimeout*2)
 	return c, nil
 }
 
+//Count returns total count of stored items
 func (c *Cache) Count() int {
 	return c.cache.ItemCount()
 }
 
+//Put puts single item. If expire is true, item expires after default expiration
 func (c *Cache) Put(id models.Id, item models.Item, expire bool) {
 	var timeout time.Duration
 	if expire {
@@ -48,6 +52,7 @@ func (c *Cache) Put(id models.Id, item models.Item, expire bool) {
 	c.cache.Set(string(id), item, timeout)
 }
 
+//Get gets single item fro cache. Returns item and flag whether item is found
 func (c *Cache) Get(id models.Id) (models.Item, bool) {
 	count := c.Count()
 	logrus.Debugf("Cache has %d items", count)
@@ -65,6 +70,44 @@ func (c *Cache) Get(id models.Id) (models.Item, bool) {
 	return item, true
 }
 
+//Delete deletes item with given id. If item is not found, do nothing.
 func (c *Cache) Delete(id models.Id) {
 	c.cache.Delete(string(id))
+}
+
+//PutBatch put's multiple items with expiration. Each item must have a valid id
+//or operation fails returning error.
+func (c *Cache) PutBatch(items []models.Item, expire bool) error {
+	for i, v := range items {
+		id := v.GetId()
+		if id == "" {
+			return fmt.Errorf("%d item has no id", i)
+		}
+		c.Put(id, v, expire)
+	}
+	return nil
+}
+
+//GetBatch returns batch of items with given ids.
+//Return array is always same length of ids. However, if not all items are found,
+//return flag is set to false.
+func (c *Cache) GetBatch(ids []models.Id) ([]models.Item, bool) {
+	count := len(ids)
+	foundTotal := 0
+	items := make([]models.Item, count)
+
+	for _, v := range ids {
+		item, found := c.Get(v)
+		if found {
+			items[foundTotal] = item
+			foundTotal += 1
+		}
+	}
+
+	if count == foundTotal {
+		return items, true
+	}
+
+	items = items[:foundTotal]
+	return items, false
 }

@@ -146,7 +146,7 @@ func (a *Api) GetArtist(id models.Id) (models.Artist, error) {
 		return ar, fmt.Errorf("parse artist: %v", err)
 	}
 
-	ar = dto.toArtist()
+	ar = *dto.toArtist()
 
 	albums, err := a.GetArtistAlbums(id)
 	if err != nil {
@@ -282,4 +282,28 @@ func (a *Api) GetAlbumSongs(album models.Id) ([]models.Song, error) {
 	}
 
 	return songs, nil
+}
+
+func (a *Api) GetFavoriteArtists() ([]*models.Artist, error) {
+	params := *a.defaultParams()
+	params["api_key"] = a.token
+	params["IsFavorite"] = "true"
+
+	resp, err := a.get("/Artists", &params)
+	if err != nil {
+		return nil, fmt.Errorf("get favorite artists: %v", err)
+	}
+
+	dto := artists{}
+	err = json.NewDecoder(resp).Decode(&dto)
+	if err != nil {
+		return nil, fmt.Errorf("parse artists: %v", err)
+	}
+
+	artists := make([]*models.Artist, len(dto.Artists))
+
+	for i, v := range dto.Artists {
+		artists[i] = v.toArtist()
+	}
+	return artists, nil
 }

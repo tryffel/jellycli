@@ -254,13 +254,16 @@ func (c *Content) loop() {
 }
 
 func (c *Content) GetDefault() []models.Item {
-	id := "c690ebe1ba9f7d63d0b497735cc452c0"
-	item, err := c.api.GetItem(models.Id(id))
+	artists, err := c.api.GetFavoriteArtists()
 	if err != nil {
-		logrus.Errorf("Failed to get default items: %v", err)
-	}
-	if item == nil {
+		logrus.Error("Failed to retrieve favorite artists:", err)
 		return nil
 	}
-	return []models.Item{item}
+
+	items := make([]models.Item, len(artists))
+	for i, v := range artists {
+		items[i] = v
+	}
+
+	return items
 }

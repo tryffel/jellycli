@@ -38,6 +38,9 @@ type Window struct {
 	help    *Help
 
 	mediaController controller.MediaController
+
+	hasModal  bool
+	lastFocus tview.Primitive
 }
 
 func NewWindow(mc controller.MediaController) Window {
@@ -64,7 +67,8 @@ func NewWindow(mc controller.MediaController) Window {
 
 	//w.browser.SetInitialData(mc.)
 
-	w.window.SetInputCapture(w.eventHandler)
+	w.app.SetInputCapture(w.eventHandler)
+	//w.window.SetInputCapture(w.eventHandler)
 	w.search = NewSearch(w.searchCb)
 	w.help = NewHelp(w.closeHelp)
 
@@ -129,6 +133,22 @@ func (w *Window) keyHandlerCb(key *tcell.Key) {
 // Key handler, if match, return nil
 func (w *Window) keyHandler(event *tcell.EventKey) *tcell.Key {
 	key := event.Key()
+	/*
+		if key >= tcell.KeyF1 && key <= tcell.KeyF12 && !w.navBarFocused{
+			//Activate navigation bar on function button
+			w.lastFocus = w.app.GetFocus()
+			w.lastFocus.Blur()
+			w.app.SetFocus(w.navBar)
+			w.navBarFocused = true
+		} else if key == tcell.KeyEscape && w.navBarFocused {
+			//Deactivate navigation bar and return to last focus
+			w.navBarFocused = false
+			w.navBar.Blur()
+			w.app.SetFocus(w.lastFocus)
+			w.lastFocus = nil
+			return nil
+		}
+	*/
 
 	if w.mediaCtrl(event) {
 		return nil
@@ -167,11 +187,29 @@ func (w *Window) navBarCtrl(key tcell.Key) bool {
 	case navBar.Quit:
 		w.app.Stop()
 	case navBar.Search:
-		w.browser.AddModal(w.search, 10, 50, true)
-		w.app.SetFocus(w.search)
+		if !w.hasModal {
+			w.hasModal = true
+			w.lastFocus = w.app.GetFocus()
+			w.lastFocus.Blur()
+			w.browser.AddModal(w.search, 10, 50, true)
+			w.app.SetFocus(w.search)
+		}
 	case navBar.Help:
-		w.browser.AddModal(w.help, 25, 50, true)
-		w.app.SetFocus(w.help)
+		if !w.hasModal {
+			w.hasModal = true
+			w.lastFocus = w.app.GetFocus()
+			w.lastFocus.Blur()
+			w.browser.AddModal(w.help, 25, 50, true)
+			w.app.SetFocus(w.help)
+		}
+	case tcell.KeyEscape:
+		if w.hasModal {
+			w.hasModal = false
+			w.browser.Blur()
+			w.lastFocus.Focus(nil)
+			w.lastFocus = nil
+			return false
+		}
 	default:
 		return false
 	}

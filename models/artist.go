@@ -21,6 +21,7 @@ type Artist struct {
 	Name          string
 	Albums        []Id
 	TotalDuration int
+	AlbumCount    int
 }
 
 func (a *Artist) GetId() Id {
@@ -28,7 +29,7 @@ func (a *Artist) GetId() Id {
 }
 
 func (a *Artist) HasChildren() bool {
-	return len(a.Albums) > 0
+	return a.AlbumCount > 0
 }
 
 func (a *Artist) GetChildren() []Id {

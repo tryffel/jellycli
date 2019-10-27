@@ -35,6 +35,11 @@ type nameId struct {
 	Id   string `json:"Id"`
 }
 
+type artists struct {
+	Artists      []artist `json:"Items"`
+	TotalArtists int      `json:"TotalRecordCount"`
+}
+
 type artist struct {
 	Name          string `json:"Name"`
 	Id            string `json:"Id"`
@@ -44,8 +49,8 @@ type artist struct {
 	TotalAlbums   int    `json:"AlbumCount"`
 }
 
-func (a *artist) toArtist() models.Artist {
-	return models.Artist{
+func (a *artist) toArtist() *models.Artist {
+	return &models.Artist{
 		Id:            models.Id(a.Id),
 		Name:          a.Name,
 		Albums:        nil,

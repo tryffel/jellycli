@@ -27,10 +27,10 @@ type List struct {
 	list     *tview.List
 	itemType models.ItemType
 	items    []models.Item
-	enterCb  func(item models.Item)
+	enterCb  func(index int)
 }
 
-func NewList(enterCb func(item models.Item)) *List {
+func NewList(enterCb func(index int)) *List {
 	l := &List{
 		list: tview.NewList(),
 	}
@@ -60,13 +60,14 @@ func (l *List) SetRect(x, y, width, height int) {
 }
 
 func (l *List) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-	return l.list.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+	return func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 		key := event.Key()
 		if key == tcell.KeyEnter && l.enterCb != nil {
 			index := l.list.GetCurrentItem()
-			l.enterCb(l.items[index])
+			l.enterCb(index)
 		}
-	})
+		l.list.InputHandler()(event, setFocus)
+	}
 }
 
 func (l *List) Focus(delegate func(p tview.Primitive)) {

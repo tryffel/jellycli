@@ -19,6 +19,7 @@ package widgets
 import (
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
+	"github.com/sirupsen/logrus"
 	"sync"
 	"tryffel.net/pkg/jellycli/config"
 	"tryffel.net/pkg/jellycli/controller"
@@ -129,8 +130,39 @@ func testData() []models.Item {
 	return nil
 }
 
-const panelL = 0
-const panelR = 1
+type panelSplit int
+
+const (
+	panelL panelSplit = iota
+	panelR
+)
+
+type browserTransition int
+
+const (
+	transitionSelectArtist browserTransition = iota
+	transitionShowAlbums
+	transitionSelectAlbum
+	transitionShowSongs
+	transitionReset
+)
+
+type browserState int
+
+const (
+	stateArtists browserState = iota
+	stateArtistAlbums
+	stateAlbumSongs
+)
+
+type browserAction int
+
+const (
+	//Enter, for artist show albums, for albums show songs
+	actionEnter browserAction = iota
+	//Back, for songs go to albums, for albums go to artists
+	actionBack
+)
 
 // Browser is a listR-like viewer user can navigate content with
 type Browser struct {
@@ -144,7 +176,7 @@ type Browser struct {
 	// State
 	rContent      models.ItemType
 	lContent      models.ItemType
-	panelAwaiting int
+	panelAwaiting panelSplit
 
 	dataL   []models.Item
 	dataR   []models.Item
@@ -155,7 +187,10 @@ type Browser struct {
 	gridSize   int
 	customGrid bool
 	modal      tview.Primitive
-	focused    int
+	focused    panelSplit
+
+	transition browserTransition
+	state      browserState
 
 	lock sync.RWMutex
 }
@@ -177,26 +212,31 @@ func (b *Browser) SetRect(x, y, width, height int) {
 func (b *Browser) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 	return func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 		if b.hasModal {
-			b.modal.InputHandler()
+			b.modal.InputHandler()(event, setFocus)
 			return
 		}
 
 		if event.Key() == tcell.KeyTAB {
 			if b.focused == panelL {
 				b.focused = panelR
+				b.listR.Focus(nil)
+				b.listL.Blur()
 			} else {
 				b.focused = panelL
+				b.listL.Focus(nil)
+				b.listR.Blur()
 			}
 			return
 		}
-		if event.Key() == tcell.KeyEnter {
-			if b.focused == panelL {
-				b.listL.InputHandler()
-			} else {
-				b.listR.InputHandler()
-			}
-			b.grid.InputHandler()
+
+		//if event.Key() == tcell.KeyEnter {
+		if b.focused == panelL {
+			b.listL.InputHandler()(event, setFocus)
+		} else {
+			b.listR.InputHandler()(event, setFocus)
 		}
+		//b.grid.InputHandler()
+		//}
 	}
 }
 
@@ -262,6 +302,9 @@ func NewBrowser(controller controller.MediaController) *Browser {
 
 	b.grid.AddItem(b.listL, 0, 0, b.gridSize, b.gridSize/2, 4, 10, false)
 	b.grid.AddItem(b.listR, 0, b.gridSize/2, b.gridSize, b.gridSize/2, 4, 10, false)
+
+	b.transition = transitionReset
+	b.state = stateArtists
 	return b
 }
 
@@ -311,17 +354,20 @@ func (b *Browser) RemoveModal(view tview.Primitive) {
 	}
 }
 
-func (b *Browser) wrapEnter(panel int) func(item models.Item) {
-	return func(item models.Item) {
-		b.enter(panel, item)
+func (b *Browser) wrapEnter(panel panelSplit) func(index int) {
+	return func(index int) {
+		b.enter(panel, index)
 	}
 }
 
-func (b *Browser) enter(panel int, item models.Item) {
-	b.transition(panel, tcell.KeyEnter)
+func (b *Browser) enter(panel panelSplit, index int) {
+	index, item := b.getSelectedItem(panel)
+	logrus.Debug("Selected: ", item.GetName())
+
+	b.makeTransition(panelSplit(panel), tcell.KeyEnter)
 }
 
-func (b *Browser) transition(panel int, key tcell.Key) {
+func (b *Browser) makeTransition(panel panelSplit, key tcell.Key) {
 	/* State transitions
 	Possible item types:
 	Left panel: album, artist
@@ -336,6 +382,20 @@ func (b *Browser) transition(panel int, key tcell.Key) {
 
 	*/
 
+	action := browserAction(-1)
+	if (key == tcell.KeyEnter) || (key == tcell.KeyRight) {
+		action = actionEnter
+	} else if key == tcell.KeyLeft {
+		action = actionBack
+	} else {
+		return
+	}
+
+	if action == actionEnter {
+		//index, item := b.getSelectedItem(panel)
+
+	}
+
 	if panel == panelL {
 		if key == tcell.KeyEnter {
 			index := b.listL.list.GetCurrentItem()
@@ -346,11 +406,23 @@ func (b *Browser) transition(panel int, key tcell.Key) {
 				b.controller.GetChildren(b.dataL[index].GetId())
 
 			}
-
 		}
 
 	} else if panel == panelR {
 
 	}
 
+}
+
+func (b *Browser) getSelectedItem(split panelSplit) (int, models.Item) {
+	var index int
+	var item models.Item
+	if split == panelL {
+		index = b.listL.list.GetCurrentItem()
+		item = b.dataL[index]
+	} else if split == panelR {
+		index = b.listR.list.GetCurrentItem()
+		item = b.dataR[index]
+	}
+	return index, item
 }

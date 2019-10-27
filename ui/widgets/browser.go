@@ -26,110 +26,6 @@ import (
 	"tryffel.net/pkg/jellycli/models"
 )
 
-func testData() []models.Item {
-
-	/*
-		data := &[]*models.Artist{
-			{
-				Id:            "artis1",
-				Name:          "Empire of the sun",
-				TotalDuration: 7200,
-				Albums: []*models.Album{
-					{
-						Id:            "album1",
-						Name:          "Two Vines",
-						TotalDuration: 3600,
-						Songs: []*models.Song{
-							{
-								Id:     "song1",
-								Name:   "Two Vines",
-								Length: 185,
-							},
-							{
-								Id:   "song2",
-								Name: "Before",
-							},
-							{
-								Id:   "song3",
-								Name: "High and Low",
-							},
-						},
-					},
-					{
-						Id:            "album2",
-						Name:          "Ice on the Dune",
-						TotalDuration: 7300,
-						Songs: []*models.Song{
-							{
-								Id:   "song4",
-								Name: "LUX",
-							},
-							{
-								Id:   "song5",
-								Name: "Dna",
-							},
-						},
-					},
-				},
-			},
-			{
-				Id:            "artist2",
-				Name:          "Toto",
-				TotalDuration: 18323,
-				Albums: []*models.Album{
-					{
-						Id:            "album3",
-						Name:          "Fahrenheit",
-						TotalDuration: 3205,
-						Songs: []*models.Song{
-							{
-								Id:   "song6",
-								Name: "Till the End",
-							},
-							{
-								Id:   "song7",
-								Name: "We Can Make It Tonight",
-							},
-							{
-								Id:   "song8",
-								Name: "Without Your Love",
-							},
-							{
-								Id:   "song9",
-								Name: "Can't Stand It Any Longer",
-							},
-						},
-					},
-					{
-						Id:   "album4",
-						Name: "Toto IV",
-						Songs: []*models.Song{
-							{
-								Id:   "song10",
-								Name: "Rosanna",
-							},
-							{
-								Id:   "song10",
-								Name: "Make Believe",
-							},
-							{
-								Id:   "song11",
-								Name: "I Won't Hold You back",
-							},
-						},
-					},
-				},
-			},
-			{
-				Id:   "artist3",
-				Name: "Daft Punk",
-			},
-		}
-	*/
-
-	return nil
-}
-
 type panelSplit int
 
 const (
@@ -245,8 +141,6 @@ func (b *Browser) InputHandler() func(event *tcell.EventKey, setFocus func(p tvi
 		} else {
 			b.listR.InputHandler()(event, setFocus)
 		}
-		//b.grid.InputHandler()
-		//}
 	}
 }
 

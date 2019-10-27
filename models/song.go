@@ -17,10 +17,11 @@
 package models
 
 type Song struct {
-	Id     Id
-	Name   string
-	Length int
-	Album  Id
+	Id       Id
+	Name     string
+	Duration int
+	Index    int
+	Album    Id
 }
 
 func (s *Song) GetId() Id {

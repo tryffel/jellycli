@@ -30,20 +30,27 @@ type MediaController interface {
 
 //ItemController retrieves children and returns them with ItemsCallback
 //Manages item metadata and not the files themselves.
+// If itemsCallback is not set, no results will be retrieved.
 type ItemController interface {
 	//GetItem gets item with given id. If none found or if errors, return nil
-	GetItem(id models.Id)
+	GetItem(id models.Id, itemType models.ItemType)
+
+	//GetItems get multiple items for given ids.
+	GetItems(ids []models.Id, itemType models.ItemType)
+
 	//GetChildren returns children for given parent id. If there are none, returns nil
-	GetChildren(parent models.Id)
+	GetChildren(parent models.Id, parentType models.ItemType)
 	//GetParent returns parent for child id. If there is no parent, return nil
-	GetParent(child models.Id)
+	GetParent(child models.Id, childType models.ItemType)
 	//SetItemsCallback sets callback that gets called when items are retrieved
 	SetItemsCallback(func([]models.Item))
 	//RemoveItemsCallback removes items callback if there's any
 	RemoveItemsCallback()
+	//GetDefaultItems()
 }
 
 //QueueController controls queue and history
+// If no queueChangedCallback is set, no queue updates will be returned
 type QueueController interface {
 	//GetQueue gets currently ongoing queue of items
 	GetQueue() []*models.Song
@@ -72,8 +79,8 @@ type PlaybackController interface {
 	Pause()
 	//Continue continues currently paused media.
 	Continue()
-	//Stop stops playing media.
-	Stop()
+	//StopMedia stops playing media.
+	StopMedia()
 	//Next plays currently next item in queue, if any.
 	Next()
 	//Previous plays last played song (first in history)

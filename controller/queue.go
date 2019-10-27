@@ -38,7 +38,7 @@ func (q *queue) ClearQueue() {
 func (q *queue) QueueDuration() int {
 	duration := 0
 	for _, v := range q.items {
-		duration += v.Length
+		duration += v.Duration
 	}
 	return duration
 }

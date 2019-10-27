@@ -16,28 +16,6 @@
 
 package models
 
-type Id string
-
-func (i Id) String() string {
-	return string(i)
+type Queue struct {
+	Items []Item
 }
-
-type Item interface {
-	GetId() Id
-	GetName() string
-	HasChildren() bool
-	GetChildren() []Id
-	GetParent() Id
-	GetType() ItemType
-}
-
-type ItemType string
-
-const (
-	TypeArtist   ItemType = "Artist"
-	TypeAlbum    ItemType = "Album"
-	TypePlaylist ItemType = "TypePlaylist"
-	TypeQueue    ItemType = "Queue"
-	TypeHistory  ItemType = "History"
-	TypeSong     ItemType = "Song"
-)

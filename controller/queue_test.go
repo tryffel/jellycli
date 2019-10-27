@@ -24,15 +24,15 @@ import (
 
 func testSongs() []*models.Song {
 	return []*models.Song{
-		{Id: "song-1", Name: "song-1", Length: 60},
-		{Id: "song-2", Name: "song-2", Length: 10},
-		{Id: "song-3", Name: "song-3", Length: 1},
-		{Id: "song-4", Name: "song-4", Length: 350},
-		{Id: "song-5", Name: "song-5", Length: 10},
-		{Id: "song-6", Name: "song-6", Length: 10},
-		{Id: "song-7", Name: "song-7", Length: 10},
-		{Id: "song-8", Name: "song-8", Length: 80},
-		{Id: "song-9", Name: "song-9", Length: 80},
+		{Id: "song-1", Name: "song-1", Duration: 60},
+		{Id: "song-2", Name: "song-2", Duration: 10},
+		{Id: "song-3", Name: "song-3", Duration: 1},
+		{Id: "song-4", Name: "song-4", Duration: 350},
+		{Id: "song-5", Name: "song-5", Duration: 10},
+		{Id: "song-6", Name: "song-6", Duration: 10},
+		{Id: "song-7", Name: "song-7", Duration: 10},
+		{Id: "song-8", Name: "song-8", Duration: 80},
+		{Id: "song-9", Name: "song-9", Duration: 80},
 	}
 }
 
@@ -234,7 +234,7 @@ func Test_queue_QueueDuration(t *testing.T) {
 			want:  0,
 		},
 		{
-			songs: []*models.Song{{Length: 1}},
+			songs: []*models.Song{{Duration: 1}},
 			want:  1,
 		},
 	}

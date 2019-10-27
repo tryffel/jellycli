@@ -17,12 +17,15 @@
 package models
 
 type Album struct {
-	Id            Id
-	Name          string
-	Year          int
-	TotalDuration int
-	Artist        Id
-	Songs         []Id
+	Id       Id
+	Name     string
+	Year     int
+	Duration int
+	Artist   Id
+	Songs    []Id
+	//SongCount, how many songs are there in album.
+	// 0 means album is empty, where -1 means songs need to be gathered separately.
+	SongCount int
 }
 
 func (a *Album) GetId() Id {
@@ -30,7 +33,7 @@ func (a *Album) GetId() Id {
 }
 
 func (a *Album) HasChildren() bool {
-	return len(a.Songs) > 0
+	return a.SongCount != 0
 }
 
 func (a *Album) GetChildren() []Id {

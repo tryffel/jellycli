@@ -36,6 +36,7 @@ type Window struct {
 	browser *Browser
 	search  *Search
 	help    *Help
+	queue   *Queue
 
 	mediaController controller.MediaController
 
@@ -73,6 +74,8 @@ func NewWindow(mc controller.MediaController) Window {
 	w.search.SetDoneFunc(w.wrapCloseModal(w.search))
 	w.help = NewHelp(w.closeHelp)
 	w.help.SetDoneFunc(w.wrapCloseModal(w.help))
+	w.queue = NewQueue()
+	w.queue.SetDoneFunc(w.wrapCloseModal(w.queue))
 
 	w.status.UpdateState(player.PlayingState{
 		State:               player.Play,
@@ -88,7 +91,7 @@ func NewWindow(mc controller.MediaController) Window {
 	}, &models.SongInfo{
 		Id:       "song1",
 		Name:     "Song",
-		Length:   185,
+		Duration: 185,
 		Artist:   "Artist A",
 		ArtistId: "a1",
 		Album:    "Album B",
@@ -199,6 +202,7 @@ func (w *Window) navBarCtrl(key tcell.Key) bool {
 			w.lastFocus.Blur()
 			w.browser.AddModal(w.search, 10, 50, true)
 			w.app.SetFocus(w.search)
+			w.app.QueueUpdateDraw(func() {})
 		}
 	case navBar.Help:
 		if !w.hasModal {
@@ -207,6 +211,17 @@ func (w *Window) navBarCtrl(key tcell.Key) bool {
 			w.lastFocus.Blur()
 			w.browser.AddModal(w.help, 25, 50, true)
 			w.app.SetFocus(w.help)
+			w.app.QueueUpdateDraw(func() {})
+		}
+	case navBar.Queue:
+		if !w.hasModal {
+			w.hasModal = true
+			w.lastFocus = w.app.GetFocus()
+			w.lastFocus.Blur()
+			w.browser.AddModal(w.queue, 20, 60, true)
+			w.app.SetFocus(w.help)
+			w.queue.setData(w.mediaController.GetQueue(), w.mediaController.QueueDuration())
+			w.app.QueueUpdateDraw(func() {})
 		}
 	//case tcell.KeyEscape:
 	//	if w.hasModal {

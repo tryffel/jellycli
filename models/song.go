@@ -48,13 +48,27 @@ func (s *Song) GetType() ItemType {
 	return TypeSong
 }
 
+func (s *Song) ToInfo() *SongInfo {
+	return &SongInfo{
+		Id:       s.Id,
+		Name:     s.Name,
+		Duration: s.Duration,
+		Artist:   "",
+		ArtistId: "",
+		Album:    "",
+		AlbumId:  s.Album,
+		Year:     0,
+	}
+
+}
+
 type SongInfo struct {
-	Id       string
+	Id       Id
 	Name     string
-	Length   int
+	Duration int
 	Artist   string
-	ArtistId string
+	ArtistId Id
 	Album    string
-	AlbumId  string
+	AlbumId  Id
 	Year     int
 }

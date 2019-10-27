@@ -189,8 +189,36 @@ func (c *Content) RemoveItemsCallback() {
 	c.itemsCb = nil
 }
 
-func (c *Content) GetQueue() []*models.Song {
-	return c.queue.GetQueue()
+func (c *Content) GetQueue() []*models.SongInfo {
+	now := time.Now()
+	requests := 0
+	songs := c.queue.GetQueue()
+	infos := make([]*models.SongInfo, len(songs))
+	// This shouldn't take that long since user has added each item just now and thus each item should exist
+	// in cache
+	//TODO: use single or two requests for all items
+	for i, v := range songs {
+		infos[i] = songs[i].ToInfo()
+		album, err := c.api.GetAlbum(v.Album)
+		requests += 1
+		if err != nil {
+			logrus.Warning("Failed to get album for song: ", err)
+		} else {
+			infos[i].Album = album.Name
+			infos[i].Year = album.Year
+			requests += 1
+			artist, err := c.api.GetArtist(album.Artist)
+			if err != nil {
+				logrus.Error("Failed to get artist for album: ", err)
+			} else {
+				infos[i].Artist = artist.Name
+			}
+		}
+	}
+
+	took := time.Since(now)
+	logrus.Debugf("Gathering queue info took %d ms with %d requests", took.Milliseconds(), requests)
+	return infos
 }
 
 func (c *Content) ClearQueue() {

@@ -52,8 +52,8 @@ type ItemController interface {
 //QueueController controls queue and history
 // If no queueChangedCallback is set, no queue updates will be returned
 type QueueController interface {
-	//GetQueue gets currently ongoing queue of items
-	GetQueue() []*models.Song
+	//GetQueue gets currently ongoing queue of items with complete info for each song
+	GetQueue() []*models.SongInfo
 	//ClearQueue clears queue. This also calls QueueChangedCallback
 	ClearQueue()
 	//QueueDuration gets number of queue items

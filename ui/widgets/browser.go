@@ -156,6 +156,8 @@ func (b *Browser) Focus(delegate func(p tview.Primitive)) {
 }
 
 func (b *Browser) Blur() {
+	b.listL.Blur()
+	b.listR.Blur()
 	b.grid.Blur()
 }
 

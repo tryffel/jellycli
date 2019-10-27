@@ -14,17 +14,22 @@
  * limitations under the License.
  */
 
-package components
+package widgets
 
-import (
-	"fmt"
-	"tryffel.net/pkg/jellycli/api"
-)
+import "fmt"
 
-func drawArtists(artists *api.ArtistResponse) string {
-	text := "Total: " + fmt.Sprint(artists.TotalRecords)
-	for i, v := range artists.Artists {
-		text += fmt.Sprintf("%d: %s", i, v.Name)
+// Print seconds as formatted time:
+// 50, 1:50,
+// 0:05, 1.05, 1:05:05
+func SecToString(sec int) string {
+	if sec < 60 {
+		return fmt.Sprintf("0:%02d", sec)
 	}
-	return text
+	minutes := sec / 60
+	if sec < 3600 {
+		return fmt.Sprintf("%d:%02d", minutes, sec%60)
+	} else {
+		hours := sec / 3600
+		return fmt.Sprintf("%d:%02d:%02d", hours, minutes-60*hours, sec%3600%60)
+	}
 }

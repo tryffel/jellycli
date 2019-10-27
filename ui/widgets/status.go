@@ -26,7 +26,6 @@ import (
 	"tryffel.net/pkg/jellycli/controller"
 	"tryffel.net/pkg/jellycli/models"
 	"tryffel.net/pkg/jellycli/player"
-	"tryffel.net/pkg/jellycli/ui/components"
 )
 
 const (
@@ -71,8 +70,8 @@ type Status struct {
 	btnQueue    *tview.Button
 
 	buttons  []*tview.Button
-	progress components.ProgressBar
-	volume   components.ProgressBar
+	progress ProgressBar
+	volume   ProgressBar
 
 	controlsFgColor tcell.Color
 	controlsBgColor tcell.Color
@@ -129,8 +128,8 @@ func newStatus(ctrl controller.MediaController) *Status {
 	s.btnStop.SetSelectedFunc(s.namedCbFunc(btnStop))
 	s.btnQueue = tview.NewButton(btnQueue)
 
-	s.progress = components.NewProgressBar(40, 100)
-	s.volume = components.NewProgressBar(10, 100)
+	s.progress = NewProgressBar(40, 100)
+	s.volume = NewProgressBar(10, 100)
 
 	s.state = player.PlayingState{
 		State:               player.Stop,
@@ -166,8 +165,8 @@ func (s *Status) Draw(screen tcell.Screen) {
 	defer s.lock.RUnlock()
 
 	progress := fmt.Sprintf(" %s %s %s ",
-		components.SecToString(s.state.CurrentSongPast), s.progress.Draw(s.state.CurrentSongPast),
-		components.SecToString(s.state.CurrentSongDuration))
+		SecToString(s.state.CurrentSongPast), s.progress.Draw(s.state.CurrentSongPast),
+		SecToString(s.state.CurrentSongDuration))
 	volume := fmt.Sprintf(" Volume %s ", s.volume.Draw(s.state.Volume))
 
 	tview.Print(screen, progress, x+1, y-1, w, tview.AlignLeft, config.ColorControls)
@@ -258,50 +257,4 @@ func (s *Status) stateCb(state player.PlayingState) {
 	defer s.lock.Unlock()
 	s.state = state
 	s.progress.SetMaximum(s.state.CurrentSongDuration)
-}
-
-type progressBar struct {
-	box   *tview.TextView
-	bar   components.ProgressBar
-	value int
-}
-
-func (p *progressBar) GetRect() (int, int, int, int) {
-	return p.box.GetRect()
-}
-
-func (p *progressBar) SetRect(x, y, width, height int) {
-	p.box.SetRect(x, y, width, height)
-}
-
-func (p *progressBar) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-	return p.box.InputHandler()
-}
-
-func (p *progressBar) Focus(delegate func(p tview.Primitive)) {
-	p.box.Focus(delegate)
-}
-
-func (p *progressBar) Blur() {
-	p.box.Blur()
-}
-
-func (p *progressBar) GetFocusable() tview.Focusable {
-	return p.box.GetFocusable()
-
-}
-
-func newProgressBar() progressBar {
-	p := progressBar{
-		box: tview.NewTextView(),
-		bar: components.NewProgressBar(10, 10),
-	}
-	return p
-}
-
-func (p *progressBar) Draw(screen tcell.Screen) {
-	p.box.Draw(screen)
-	x, y, w, _ := p.box.GetInnerRect()
-	tview.Print(screen, p.bar.Draw(10), x+1, y+1, w, tview.AlignLeft, tcell.ColorGreen)
-
 }

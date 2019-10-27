@@ -67,17 +67,12 @@ func (a *Api) GetItem(id models.Id) (models.Item, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid item type: %v", err)
 	}
-	decoder := json.NewDecoder(resp)
+	//decoder := json.NewDecoder(resp)
 	//var item models.Item
 	switch itemT {
 	case models.TypeAlbum:
 
 	case models.TypeArtist:
-		artist := Artist{}
-		err = decoder.Decode(artist)
-		if err == nil {
-			//item = artist
-		}
 	}
 	return nil, nil
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package components
+package widgets
 
 const (
 	fullBlock     = "█"

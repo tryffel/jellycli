@@ -25,6 +25,7 @@ type Action struct {
 	Artist   string
 	Album    string
 	Song     string
+	Year     int
 	AudioId  string
 	Duration int
 }
@@ -36,6 +37,7 @@ type PlayingState struct {
 	Song        string
 	Artist      string
 	Album       string
+	Year        int
 
 	// Content duration in sec
 	CurrentSongDuration int
@@ -46,19 +48,27 @@ type PlayingState struct {
 	Volume int
 }
 
+type PlaySong struct {
+	Action Action
+	Song   io.ReadCloser
+}
+
 const (
 	// Player states
-	// Stop -> Play -> Pause -> (Continue) -> Stop
+	// StopMedia -> Play -> Pause -> (Continue) -> StopMedia
 	// Play new song
-	Play State = 1
+	Play State = iota
 	// Continue paused song, only a transition mode, never state of the player
-	Continue State = 3
+	Continue
 	//SetVolume, only transition mode
-	SetVolume State = 4
+	SetVolume
 	// Pause song
-	Pause State = 2
-	// Stop playing
-	Stop State = 0
+	Pause
+	// StopMedia playing
+	Stop
+
+	//SongComplete, only transition mode to notify song has changed
+	SongComplete
 
 	// Playing single song
 	Song Playtype = 0
@@ -90,6 +100,8 @@ type Player struct {
 
 	chanStreamComplete chan bool
 
+	chanAddSong chan PlaySong
+
 	ticker *time.Ticker
 
 	state      PlayingState
@@ -107,6 +119,7 @@ func NewPlayer(a *api.Api) (*Player, error) {
 		chanAction:         make(chan Action),
 		chanState:          make(chan PlayingState),
 		chanStreamComplete: make(chan bool),
+		chanAddSong:        make(chan PlaySong),
 		ticker:             nil,
 		audio:              nil,
 	}
@@ -119,7 +132,7 @@ func NewPlayer(a *api.Api) (*Player, error) {
 	p.Name = "AudioPlayer"
 
 	p.audio.pause(true)
-	p.state.State = Pause
+	p.state.State = Stop
 	p.state.Volume = 50
 	return p, nil
 }
@@ -132,6 +145,10 @@ func (p *Player) ActionChannel() chan Action {
 //StateChannel return output channel for player state
 func (p *Player) StateChannel() chan PlayingState {
 	return p.chanState
+}
+
+func (p *Player) AddSongChannel() *chan PlaySong {
+	return &p.chanAddSong
 }
 
 func (p *Player) loop() {
@@ -170,11 +187,16 @@ func (p *Player) loop() {
 				p.reader = nil
 			}
 			p.stop()
+			p.state.State = SongComplete
 			p.RefreshState()
+			p.state.State = Stop
 		case <-p.StopChan():
 			// Program is stopping
 			p.stop()
 			break
+		case song := <-p.chanAddSong:
+			p.playSongFromReader(song)
+
 		}
 	}
 }
@@ -204,9 +226,9 @@ func (p *Player) handleAction(action Action) (bool, api.PlaybackEvent) {
 		return false, defaultEvent
 	case Play:
 		if p.state.State == Stop || p.state.State == Pause || p.state.State == Play {
-			if p.PlaySong(action) {
-				return true, api.EventPlaylistItemAdd
-			}
+			//if p.PlaySong(action) {
+			//	return true, api.EventPlaylistItemAdd
+			//}
 			return false, defaultEvent
 		}
 	case Stop:
@@ -264,8 +286,30 @@ func (p *Player) PlaySong(action Action) bool {
 	p.state.Song = action.Song
 	p.state.Artist = action.Artist
 	p.state.Album = action.Album
+	p.state.Year = action.Year
 	p.state.CurrentSongDuration = action.Duration
 	return true
+}
+
+func (p *Player) playSongFromReader(play PlaySong) {
+	err := p.audio.newFileStream(play.Song, FormatMp3)
+	if err != nil {
+		logrus.Error("Failed to create new stream: ", err.Error())
+		return
+	}
+	if p.reader != nil {
+		p.reader.Close()
+	}
+	action := play.Action
+
+	p.itemId = action.AudioId
+	p.reader = play.Song
+	p.state.State = Play
+	p.state.Song = action.Song
+	p.state.Artist = action.Artist
+	p.state.Album = action.Album
+	p.state.Year = action.Year
+	p.state.CurrentSongDuration = action.Duration
 }
 
 func (p *Player) reportStatus(event api.PlaybackEvent) {

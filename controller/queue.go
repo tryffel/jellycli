@@ -17,25 +17,43 @@
 package controller
 
 import (
+	"github.com/sirupsen/logrus"
+	"sync"
 	"tryffel.net/pkg/jellycli/models"
 )
 
 type queue struct {
+	lock     sync.RWMutex
 	items    []*models.Song
 	history  []*models.Song
 	updateCb func([]*models.Song)
 }
 
+func newQueue() *queue {
+	q := &queue{
+		items:    []*models.Song{},
+		history:  []*models.Song{},
+		updateCb: nil,
+	}
+	return q
+}
+
 func (q *queue) GetQueue() []*models.Song {
+	q.lock.RLock()
+	defer q.lock.RUnlock()
 	return q.items
 }
 
 func (q *queue) ClearQueue() {
+	q.lock.Lock()
+	defer q.lock.Unlock()
 	q.items = []*models.Song{}
 	q.notifyUpdates()
 }
 
 func (q *queue) QueueDuration() int {
+	q.lock.RLock()
+	defer q.lock.RUnlock()
 	duration := 0
 	for _, v := range q.items {
 		duration += v.Duration
@@ -44,11 +62,16 @@ func (q *queue) QueueDuration() int {
 }
 
 func (q *queue) AddSongs(songs []*models.Song) {
+	q.lock.Lock()
+	defer q.lock.Unlock()
 	q.items = append(q.items, songs...)
+	logrus.Debug("Adding songs to queue, current size: ", len(q.items))
 	q.notifyUpdates()
 }
 
 func (q *queue) Reorder(currentIndex, newIndex int) {
+	q.lock.Lock()
+	defer q.lock.Unlock()
 	//TODO: Fix ordering songs
 	if currentIndex < 0 || newIndex < 0 {
 		return
@@ -79,6 +102,8 @@ func (q *queue) Reorder(currentIndex, newIndex int) {
 }
 
 func (q *queue) GetHistory(n int) []*models.Song {
+	q.lock.RLock()
+	defer q.lock.RUnlock()
 	if n > len(q.history) {
 		return q.history
 	}
@@ -101,6 +126,9 @@ func (q *queue) notifyUpdates() {
 }
 
 func (q *queue) songComplete() {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+	logrus.Debugf("Song (%s) complete, remove from queue", q.items[0].Name)
 	if len(q.items) == 0 {
 		return
 	}
@@ -110,5 +138,21 @@ func (q *queue) songComplete() {
 		q.history = []*models.Song{song}
 	} else {
 		q.history = append([]*models.Song{song}, q.history...)
+	}
+}
+
+func (q *queue) empty() bool {
+	q.lock.RLock()
+	defer q.lock.RUnlock()
+	return len(q.items) == 0
+}
+
+func (q *queue) currentSong() *models.Song {
+	q.lock.RLock()
+	defer q.lock.RUnlock()
+	if len(q.items) > 0 {
+		return q.items[0]
+	} else {
+		return &models.Song{}
 	}
 }

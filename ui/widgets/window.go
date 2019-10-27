@@ -95,6 +95,7 @@ func NewWindow(mc controller.MediaController) Window {
 	})
 
 	w.mediaController.SetItemsCallback(w.itemsCb)
+	w.mediaController.SetStatusCallback(w.statusCb)
 
 	return w
 }
@@ -242,11 +243,18 @@ func (w *Window) closeHelp() {
 
 func (w *Window) statusCb(state player.PlayingState) {
 	w.status.UpdateState(state, nil)
+	w.app.QueueUpdateDraw(func() {})
 }
 
 func (w *Window) itemsCb(items []models.Item) {
 	w.browser.setData(items)
-	w.app.Draw()
+	w.app.QueueUpdateDraw(func() {})
+}
+
+func (w *Window) playCb(item models.Item, opts playOptions) {
+	// Append to playqueue item and what else
+	// Append to playqueue item and what else
+
 }
 
 func (w *Window) InitBrowser(items []models.Item) {

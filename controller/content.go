@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"sync"
+	"time"
 	"tryffel.net/pkg/jellycli/api"
 	"tryffel.net/pkg/jellycli/models"
 	"tryffel.net/pkg/jellycli/player"
@@ -41,10 +42,15 @@ type Content struct {
 	searchResults *api.SearchResult
 	chanComplete  chan Action
 
+	chanItemsAdded chan []*models.Song
+
 	statusChangedCb func(state player.PlayingState)
 	itemsCb         func([]models.Item)
 
-	queue *queue
+	playerState player.PlayingState
+
+	ticker *time.Ticker
+	queue  *queue
 }
 
 func (c *Content) GetChildren(parent models.Id, parentType models.ItemType) {
@@ -196,7 +202,7 @@ func (c *Content) QueueDuration() int {
 }
 
 func (c *Content) AddSongs(songs []*models.Song) {
-	c.queue.AddSongs(songs)
+	c.chanItemsAdded <- songs
 }
 
 func (c *Content) Reorder(currentIndex, newIndex int) {
@@ -279,10 +285,12 @@ func NewContent(a *api.Api, p *player.Player) (*Content, error) {
 	c := &Content{
 		api:    a,
 		player: p,
+		queue:  newQueue(),
 	}
 
 	c.SetLoop(c.loop)
 	c.chanComplete = make(chan Action)
+	c.chanItemsAdded = make(chan []*models.Song)
 	if err != nil {
 		return c, fmt.Errorf("init media player: %v", err)
 	}
@@ -314,14 +322,28 @@ func (c *Content) SearchCompleteChan() chan Action {
 }
 
 func (c *Content) loop() {
+	c.ticker = time.NewTicker(time.Second * 3)
 	for true {
 		select {
 		case <-c.StopChan():
 			break
 		case state := <-c.player.StateChannel():
+			c.playerState = state
+
+			if state.State == player.SongComplete {
+				c.queue.songComplete()
+			}
+
 			if c.statusChangedCb != nil {
 				c.statusChangedCb(state)
 			}
+		case songs := <-c.chanItemsAdded:
+			c.queue.AddSongs(songs)
+			c.ensurePlayerHasStream()
+		case <-c.ticker.C:
+			c.ticker.Stop()
+			c.ensurePlayerHasStream()
+			c.ticker = time.NewTicker(time.Second * 3)
 		}
 	}
 
@@ -340,4 +362,50 @@ func (c *Content) GetDefault() []models.Item {
 	}
 
 	return items
+}
+
+func (c *Content) ensurePlayerHasStream() {
+	// Ensure player has something to play.
+	if c.queue.empty() {
+		return
+	}
+
+	// Download new song if current song is almost finished
+	//left := c.playerState.CurrentSongDuration - c.playerState.CurrentSongPast
+	//if left < 10 {
+
+	//}
+
+	if c.playerState.State == player.Stop || c.playerState.State == player.SongComplete {
+		song := c.queue.currentSong()
+		logrus.Debugf("Giving player a new song to play: %s", song.Name)
+
+		albumId := song.GetParent()
+		album, err := c.api.GetAlbum(albumId)
+		artist := models.Artist{Name: "unknown artist"}
+		if err != nil {
+			logrus.Error("Failed to get album by id: %v", err)
+			album = models.Album{Name: "unknown album"}
+		} else {
+			a, err := c.api.GetArtist(album.GetParent())
+			if err != nil {
+				logrus.Errorf("Failed to get artist by id: %v", err)
+			} else {
+				artist = a
+			}
+		}
+
+		action := player.Action{
+			State:    player.Play,
+			Type:     player.Song,
+			Volume:   0,
+			Artist:   artist.Name,
+			Album:    album.Name,
+			Song:     song.Name,
+			Year:     album.Year,
+			AudioId:  song.Id.String(),
+			Duration: song.Duration,
+		}
+		c.player.PlaySong(action)
+	}
 }

@@ -387,7 +387,15 @@ func (b *Browser) enter(panel panelSplit, index int) {
 	index, item := b.getSelectedItem(panel)
 	logrus.Debug("Selected: ", item.GetName())
 
-	b.makeTransition(panel, tcell.KeyEnter)
+	// Play song
+	if item.GetType() == models.TypeSong {
+		song := item.(*models.Song)
+		b.controller.AddSongs([]*models.Song{song})
+
+	} else {
+		// Update browser view
+		b.makeTransition(panel, tcell.KeyEnter)
+	}
 }
 
 func (b *Browser) makeTransition(panel panelSplit, key tcell.Key) {

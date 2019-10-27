@@ -94,7 +94,6 @@ type Status struct {
 func newStatus(ctrl controller.MediaController) *Status {
 	s := &Status{frame: tview.NewBox()}
 	s.controller = ctrl
-	s.controller.SetStatusCallback(s.stateCb)
 
 	s.controlsBgColor = config.ColorBackground
 	s.controlsFgColor = config.ColorControls
@@ -215,18 +214,14 @@ func (s *Status) GetFocusable() tview.Focusable {
 func (s *Status) WriteStatus(screen tcell.Screen, x, y int) {
 	xi := x
 	w, _ := screen.Size()
-	if s.song == nil {
-		tview.Print(screen, effect("-", "b")+" - ", x, y, w, tview.AlignLeft, s.detailsMainColor)
-	} else {
-		tview.Print(screen, effect(s.song.Name, "b")+" - ", x, y, w, tview.AlignLeft, s.detailsMainColor)
-		x += len(s.song.Name) + 3
-		tview.Print(screen, effect(s.song.Artist, "b")+" ", x, y, w, tview.AlignLeft, s.detailsMainColor)
-		x += len(s.song.Artist) + 1
-		x = xi + 4
-		tview.Print(screen, s.song.Album+" ", x, y+1, w, tview.AlignLeft, s.detailsDimColor)
-		x += len(s.song.Album) + 1
-		tview.Print(screen, fmt.Sprintf("(%d)", s.song.Year), x, y+1, w, tview.AlignLeft, s.detailsDimColor)
-	}
+	tview.Print(screen, effect(s.state.Song, "b")+" - ", x, y, w, tview.AlignLeft, s.detailsMainColor)
+	x += len(s.state.Song) + 3
+	tview.Print(screen, effect(s.state.Artist, "b")+" ", x, y, w, tview.AlignLeft, s.detailsMainColor)
+	x += len(s.state.Artist) + 1
+	x = xi + 4
+	tview.Print(screen, s.state.Album+" ", x, y+1, w, tview.AlignLeft, s.detailsDimColor)
+	x += len(s.state.Album) + 1
+	tview.Print(screen, fmt.Sprintf("(%d)", s.state.Year), x, y+1, w, tview.AlignLeft, s.detailsDimColor)
 }
 
 // Return cb func that includes name
@@ -251,14 +246,18 @@ func (s *Status) buttonCb(name string) {
 }
 
 func (s *Status) UpdateState(state player.PlayingState, song *models.SongInfo) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	s.state = state
 	s.song = song
+	s.progress.SetMaximum(s.state.CurrentSongDuration)
 }
 
 func (s *Status) stateCb(state player.PlayingState) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.state = state
+	s.progress.SetMaximum(s.state.CurrentSongDuration)
 }
 
 type progressBar struct {

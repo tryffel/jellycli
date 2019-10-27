@@ -29,7 +29,7 @@ func (a *Artist) GetId() Id {
 }
 
 func (a *Artist) HasChildren() bool {
-	return a.AlbumCount > 0
+	return a.AlbumCount != 0
 }
 
 func (a *Artist) GetChildren() []Id {

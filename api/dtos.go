@@ -73,13 +73,13 @@ type album struct {
 	Artists  []nameId `json:"AlbumArtists"`
 }
 
-func (a *album) toAlbum() models.Album {
+func (a *album) toAlbum() *models.Album {
 	var artist models.Id
 	if len(a.Artists) >= 1 {
 		artist = models.Id(a.Artists[0].Id)
 	}
 
-	return models.Album{
+	return &models.Album{
 		Id:        models.Id(a.Id),
 		Name:      a.Name,
 		Year:      a.Year,
@@ -106,11 +106,11 @@ type song struct {
 	Album          string `json:"Album"`
 }
 
-func (s *song) toSong() models.Song {
+func (s *song) toSong() *models.Song {
 	if s.Type != mediaTypeSong {
 		logrus.Warningf("Converting (%s) to song", s.Type)
 	}
-	return models.Song{
+	return &models.Song{
 		Id:       models.Id(s.Id),
 		Name:     s.Name,
 		Duration: s.Duration / ticksToSecond,

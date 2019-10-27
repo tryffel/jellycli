@@ -137,6 +137,16 @@ const (
 	panelR
 )
 
+func (p panelSplit) Other() panelSplit {
+	if p == panelL {
+		return panelR
+	} else if p == panelR {
+		return panelL
+	} else {
+		return -1
+	}
+}
+
 type browserTransition int
 
 const (
@@ -269,6 +279,17 @@ func (b *Browser) setData(data []models.Item) {
 		b.listL.SetData(data)
 		b.dataL = data
 	} else {
+		var itemType string
+		if data != nil {
+			if len(data) > 0 {
+				itemType = string(data[0].GetType())
+			} else {
+				itemType = "empty slice"
+			}
+		} else {
+			itemType = "nil"
+		}
+		logrus.Error("Browser received items it wasn't waiting for, type: ", itemType)
 		return
 	}
 	b.panelAwaiting = -1
@@ -305,6 +326,8 @@ func NewBrowser(controller controller.MediaController) *Browser {
 
 	b.transition = transitionReset
 	b.state = stateArtists
+
+	//b.controller.SetItemsCallback(b.setData)
 	return b
 }
 
@@ -364,7 +387,7 @@ func (b *Browser) enter(panel panelSplit, index int) {
 	index, item := b.getSelectedItem(panel)
 	logrus.Debug("Selected: ", item.GetName())
 
-	b.makeTransition(panelSplit(panel), tcell.KeyEnter)
+	b.makeTransition(panel, tcell.KeyEnter)
 }
 
 func (b *Browser) makeTransition(panel panelSplit, key tcell.Key) {
@@ -392,25 +415,31 @@ func (b *Browser) makeTransition(panel panelSplit, key tcell.Key) {
 	}
 
 	if action == actionEnter {
+		err := b.transitionEnter(panel)
+		if err != nil {
+			logrus.Error("Error transitioning enter on browser: ", err)
+		}
+
 		//index, item := b.getSelectedItem(panel)
 
 	}
 
-	if panel == panelL {
-		if key == tcell.KeyEnter {
-			index := b.listL.list.GetCurrentItem()
-			switch b.lContent {
-			case models.TypeAlbum:
-				b.panelAwaiting = panelR
-
-				b.controller.GetChildren(b.dataL[index].GetId())
-
+	/*
+		if panel == panelL {
+			if key == tcell.KeyEnter {
+				index := b.listL.list.GetCurrentItem()
+				switch b.lContent {
+				case models.TypeAlbum:
+					b.panelAwaiting = panelR
+					b.controller.GetItem(b.dataL[index].GetParent(), b.dataL[index].GetType())
+				}
 			}
+
+		} else if panel == panelR {
+
 		}
 
-	} else if panel == panelR {
-
-	}
+	*/
 
 }
 

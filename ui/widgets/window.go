@@ -94,6 +94,8 @@ func NewWindow(mc controller.MediaController) Window {
 		Year:     2019,
 	})
 
+	w.mediaController.SetItemsCallback(w.itemsCb)
+
 	return w
 }
 
@@ -132,6 +134,7 @@ func (w *Window) keyHandlerCb(key *tcell.Key) {
 
 // Key handler, if match, return nil
 func (w *Window) keyHandler(event *tcell.EventKey) *tcell.Key {
+
 	key := event.Key()
 	/*
 		if key >= tcell.KeyF1 && key <= tcell.KeyF12 && !w.navBarFocused{
@@ -243,9 +246,10 @@ func (w *Window) statusCb(state player.PlayingState) {
 
 func (w *Window) itemsCb(items []models.Item) {
 	w.browser.setData(items)
+	w.app.Draw()
 }
 
 func (w *Window) InitBrowser(items []models.Item) {
-	w.browser.setData(items)
-
+	w.browser.SetInitialData(items)
+	w.app.Draw()
 }

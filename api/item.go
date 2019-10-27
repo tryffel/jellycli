@@ -157,7 +157,7 @@ func (a *Api) GetArtist(id models.Id) (models.Artist, error) {
 	items := make([]models.Item, len(albums))
 	for i, v := range albums {
 		ids[i] = v.Id
-		items[i] = &v
+		items[i] = v
 	}
 
 	err = a.cache.PutBatch(items, true)
@@ -172,7 +172,7 @@ func (a *Api) GetArtist(id models.Id) (models.Artist, error) {
 }
 
 //GetArtistAlbums retrieves albums for given artist.
-func (a *Api) GetArtistAlbums(id models.Id) ([]models.Album, error) {
+func (a *Api) GetArtistAlbums(id models.Id) ([]*models.Album, error) {
 	params := *a.defaultParams()
 	params["api_key"] = a.token
 	params["IncludeItemTypes"] = "MusicAlbum"
@@ -193,7 +193,7 @@ func (a *Api) GetArtistAlbums(id models.Id) ([]models.Album, error) {
 		return nil, fmt.Errorf("parse response body: %v", err)
 	}
 
-	albums := make([]models.Album, len(dto.Albums))
+	albums := make([]*models.Album, len(dto.Albums))
 	for i, v := range dto.Albums {
 		albums[i] = v.toAlbum()
 	}
@@ -231,7 +231,7 @@ func (a *Api) GetAlbum(id models.Id) (models.Album, error) {
 		return al, fmt.Errorf("parse album: %v", err)
 	}
 
-	al = dto.toAlbum()
+	al = *dto.toAlbum()
 
 	songs, err := a.GetAlbumSongs(id)
 	if err != nil {
@@ -242,7 +242,7 @@ func (a *Api) GetAlbum(id models.Id) (models.Album, error) {
 	items := make([]models.Item, len(songs))
 	for i, v := range songs {
 		ids[i] = v.Id
-		items[i] = &v
+		items[i] = v
 	}
 
 	err = a.cache.PutBatch(items, true)
@@ -257,7 +257,7 @@ func (a *Api) GetAlbum(id models.Id) (models.Album, error) {
 }
 
 //GetAlbumSongs gets songs for given album.
-func (a *Api) GetAlbumSongs(album models.Id) ([]models.Song, error) {
+func (a *Api) GetAlbumSongs(album models.Id) ([]*models.Song, error) {
 	params := *a.defaultParams()
 	params["api_key"] = a.token
 	params["Recursive"] = "true"
@@ -276,7 +276,7 @@ func (a *Api) GetAlbumSongs(album models.Id) ([]models.Song, error) {
 		return nil, fmt.Errorf("failed to parse Songs: %v", err)
 	}
 
-	songs := make([]models.Song, len(dto.Songs))
+	songs := make([]*models.Song, len(dto.Songs))
 	for i, v := range dto.Songs {
 		songs[i] = v.toSong()
 	}
@@ -302,7 +302,11 @@ func (a *Api) GetFavoriteArtists() ([]*models.Artist, error) {
 
 	artists := make([]*models.Artist, len(dto.Artists))
 
+	// FavoriteArtists doesn't return any album info
 	for i, v := range dto.Artists {
+		if v.TotalAlbums == 0 {
+			v.TotalAlbums = -1
+		}
 		artists[i] = v.toArtist()
 	}
 	return artists, nil

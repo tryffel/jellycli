@@ -17,6 +17,7 @@
 package widgets
 
 import (
+	"fmt"
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 	"tryffel.net/pkg/jellycli/config"
@@ -89,7 +90,7 @@ func (l *List) SetData(items []models.Item) {
 
 	l.itemType = items[0].GetType()
 	l.list.Clear()
-	l.list.SetTitle(string(l.itemType))
+	l.list.SetTitle(fmt.Sprintf("%ss", l.itemType))
 	for i, v := range items {
 		l.list.AddItem(v.GetName(), "", '?', l.namedCb(i, string(v.GetId())))
 	}
@@ -103,4 +104,8 @@ func (l *List) namedCb(i int, id string) func() {
 
 func (l *List) selectCb(i int, id string) {
 
+}
+
+func (l *List) Clear() {
+	l.list.Clear()
 }

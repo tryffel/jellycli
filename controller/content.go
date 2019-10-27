@@ -47,44 +47,118 @@ type Content struct {
 	queue *queue
 }
 
-func (c *Content) GetChildren(id models.Id) {
+func (c *Content) GetChildren(parent models.Id, parentType models.ItemType) {
 	if c.itemsCb == nil {
 		return
 	}
-	items, err := c.api.GetChildItems(id)
-	if err != nil {
-		logrus.Errorf("Failed to get children for %s: %v", id, err)
-	} else if items != nil {
-		c.flushItems(items...)
-	}
-}
+	var items []models.Item
 
-func (c *Content) GetParent(id models.Id) {
-	parent, err := c.api.GetParentItem(id)
-	if err != nil {
-		logrus.Errorf("Failed to get parent for %s: %v", id, err)
-	} else if parent != nil {
-		c.flushItems(parent)
-	}
-}
-
-func (c *Content) GetItem(id models.Id) {
-	if c.itemsCb == nil {
+	switch parentType {
+	case models.TypeArtist:
+		albums, err := c.api.GetArtistAlbums(parent)
+		if err != nil {
+			logrus.Errorf("failed to get artist albums: %v", err)
+			return
+		}
+		items = make([]models.Item, len(albums))
+		for i, v := range albums {
+			items[i] = v
+		}
+	case models.TypeAlbum:
+		songs, err := c.api.GetAlbumSongs(parent)
+		if err != nil {
+			logrus.Errorf("failed to get album songs: %v", err)
+		}
+		items = make([]models.Item, len(songs))
+		for i, v := range songs {
+			items[i] = v
+		}
+	case models.TypeSong:
+		logrus.Debug("Song has no child")
+		return
+	default:
+		logrus.Warningf("Invalid request for getChildren() for type %s", parentType)
 		return
 	}
-	item := c.getItem(id)
-	c.flushItems(item)
-}
 
-func (c *Content) GetItems(ids []models.Id) {
-	if c.itemsCb == nil || ids == nil {
-		return
-	}
-	items := c.getItems(ids)
 	c.flushItems(items...)
 }
 
+func (c *Content) GetParent(child models.Id, childType models.ItemType) {
+	/*
+		if c.itemsCb == nil {
+			return
+		}
+		var item models.Item
+		var err error
+
+		switch childType {
+		case models.TypeArtist:
+			logrus.Debug("Artist has no parent")
+			return
+		case models.TypeAlbum:
+			artist, err := c.api.GetArtist(child)
+			if err != nil {
+				logrus.Errorf("failed to get album songs: %v", err)
+				return
+			}
+
+			item = &artist
+		case models.TypeSong:
+			album, err := c.api.getalbu
+		default:
+			logrus.Warningf("Invalid request for getChildren() for type %s", parentType)
+			return
+		}
+
+		c.flushItems(items...)
+	*/
+}
+
+func (c *Content) GetItem(id models.Id, itemType models.ItemType) {
+	if c.itemsCb == nil {
+		logrus.Debug("No itemsCallback set, not getting item")
+		return
+	}
+	var item models.Item
+
+	switch itemType {
+	case models.TypeArtist:
+		artist, err := c.api.GetArtist(id)
+		if err != nil {
+			logrus.Errorf("failed to get artist: %v", err)
+			return
+		}
+		item = &artist
+	case models.TypeAlbum:
+		songs, err := c.api.GetAlbum(id)
+		if err != nil {
+			logrus.Errorf("failed to get album: %v", err)
+			return
+		}
+		item = &songs
+	case models.TypeSong:
+		logrus.Errorf("Cannot get item(song, %s) from api", id)
+		return
+	default:
+		logrus.Warningf("Invalid type to get item for: %s", itemType)
+		return
+	}
+
+	c.flushItems(item)
+}
+
+func (c *Content) GetItems(ids []models.Id, itemType models.ItemType) {
+	if c.itemsCb == nil {
+		logrus.Debug("No itemsCallback set, not getting items")
+		return
+	}
+	logrus.Errorf("GetItems not implemented")
+	return
+}
+
 func (c *Content) getItem(id models.Id) models.Item {
+
 	item, err := c.api.GetItem(id)
 	if err != nil {
 		logrus.Errorf("Failed to get item %s: %v", id, err)

@@ -116,6 +116,7 @@ func NewPlayer(a *api.Api) (*Player, error) {
 		return p, fmt.Errorf("audio init failed: %v", err)
 	}
 	p.SetLoop(p.loop)
+	p.Name = "AudioPlayer"
 
 	p.audio.pause(true)
 	p.state.State = Pause

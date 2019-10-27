@@ -39,6 +39,10 @@ const (
 	AudioVolumeLogBase = 2
 
 	Debug = false
+
+	CacheTimeout = time.Minute * 5
+
+	SongHistorySize = 100
 )
 
 var GridBordersShow = true

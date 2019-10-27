@@ -104,7 +104,7 @@ func (a *Api) IsLoggedIn() bool {
 func (a *Api) ConnectionOk() bool {
 	name, version, err := a.GetServerVersion()
 	if err != nil {
-		logrus.Error("No connection to server: %v", err)
+		logrus.Errorf("No connection to server: %v", err)
 		return false
 	}
 

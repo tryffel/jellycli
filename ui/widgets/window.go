@@ -70,7 +70,9 @@ func NewWindow(mc controller.MediaController) Window {
 	w.app.SetInputCapture(w.eventHandler)
 	//w.window.SetInputCapture(w.eventHandler)
 	w.search = NewSearch(w.searchCb)
+	w.search.SetDoneFunc(w.wrapCloseModal(w.search))
 	w.help = NewHelp(w.closeHelp)
+	w.help.SetDoneFunc(w.wrapCloseModal(w.help))
 
 	w.status.UpdateState(player.PlayingState{
 		State:               player.Play,
@@ -206,14 +208,14 @@ func (w *Window) navBarCtrl(key tcell.Key) bool {
 			w.browser.AddModal(w.help, 25, 50, true)
 			w.app.SetFocus(w.help)
 		}
-	case tcell.KeyEscape:
-		if w.hasModal {
-			w.hasModal = false
-			w.browser.Blur()
-			w.lastFocus.Focus(nil)
-			w.lastFocus = nil
-			return false
-		}
+	//case tcell.KeyEscape:
+	//	if w.hasModal {
+	//		w.hasModal = false
+	//		w.browser.Blur()
+	//		w.lastFocus.Focus(nil)
+	//		w.lastFocus = nil
+	//		return false
+	//	}
 	default:
 		return false
 	}
@@ -238,7 +240,20 @@ func (w *Window) searchCb(query string, doSearch bool) {
 func (w *Window) closeHelp() {
 	w.browser.RemoveModal(w.help)
 	w.app.SetFocus(w.window)
+}
 
+func (w *Window) wrapCloseModal(modal tview.Primitive) func() {
+	return func() {
+		w.closeModal(modal)
+	}
+}
+
+func (w *Window) closeModal(modal tview.Primitive) {
+	modal.Blur()
+	w.browser.RemoveModal(modal)
+	w.app.SetFocus(w.lastFocus)
+	w.lastFocus = nil
+	w.hasModal = false
 }
 
 func (w *Window) statusCb(state player.PlayingState) {

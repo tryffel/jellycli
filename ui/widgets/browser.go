@@ -92,8 +92,8 @@ type Browser struct {
 	gridAxis   []int
 	gridSize   int
 	customGrid bool
-	modal      tview.Primitive
 	focused    panelSplit
+	modal      Modal
 
 	transition browserTransition
 	state      browserState
@@ -118,7 +118,7 @@ func (b *Browser) SetRect(x, y, width, height int) {
 func (b *Browser) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 	return func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 		if b.hasModal {
-			b.modal.InputHandler()(event, setFocus)
+			b.modal.View().InputHandler()(event, setFocus)
 			return
 		}
 
@@ -232,13 +232,13 @@ func (b *Browser) SetInitialData(items []models.Item) {
 }
 
 //AddModal adds modal to center of browser
-func (b *Browser) AddModal(view tview.Primitive, height, width uint, lockSize bool) {
+func (b *Browser) AddModal(modal Modal, height, width uint, lockSize bool) {
 	if b.hasModal {
 		return
 	}
 	if !lockSize {
 		b.customGrid = false
-		b.grid.AddItem(view, 2, 2, 2, 2, 8, 30, true)
+		b.grid.AddItem(modal.View(), 2, 2, 2, 2, 8, 30, true)
 	} else {
 		b.customGrid = true
 		x := make([]int, len(b.gridAxis))
@@ -251,10 +251,10 @@ func (b *Browser) AddModal(view tview.Primitive, height, width uint, lockSize bo
 		y[3] = y[2]
 		b.grid.SetRows(y...)
 		b.grid.SetColumns(x...)
-		b.grid.AddItem(view, 2, 2, 2, 2, int(height), int(width), true)
+		b.grid.AddItem(modal.View(), 2, 2, 2, 2, int(height), int(width), true)
 	}
 	b.hasModal = true
-	b.modal = view
+	b.modal = modal
 }
 
 //RemoveModal removes modal

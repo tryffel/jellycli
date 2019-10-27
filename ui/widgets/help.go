@@ -32,6 +32,14 @@ type Help struct {
 	closeCb func()
 }
 
+func (h *Help) SetDoneFunc(doneFunc func()) {
+	h.closeCb = doneFunc
+}
+
+func (h *Help) View() tview.Primitive {
+	return h
+}
+
 func (h *Help) Draw(screen tcell.Screen) {
 	h.grid.Draw(screen)
 }

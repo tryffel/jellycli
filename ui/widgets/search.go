@@ -29,8 +29,17 @@ type Search struct {
 	input     *tview.InputField
 	a         tview.Form
 
-	searchCb func(string, bool)
-	selected int
+	searchCb  func(string, bool)
+	closeFunc func()
+	selected  int
+}
+
+func (s *Search) SetDoneFunc(doneFunc func()) {
+	s.closeFunc = doneFunc
+}
+
+func (s *Search) View() tview.Primitive {
+	return s
 }
 
 func (s *Search) Draw(screen tcell.Screen) {
@@ -154,6 +163,7 @@ func (s *Search) doneFunc(key tcell.Key) {
 	} else if key == tcell.KeyEsc {
 		s.cancel()
 	}
+	s.closeFunc()
 }
 
 func (s *Search) search() {

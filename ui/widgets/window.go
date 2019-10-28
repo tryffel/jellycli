@@ -281,12 +281,6 @@ func (w *Window) itemsCb(items []models.Item) {
 	w.app.QueueUpdateDraw(func() {})
 }
 
-func (w *Window) playCb(item models.Item, opts playOptions) {
-	// Append to playqueue item and what else
-	// Append to playqueue item and what else
-
-}
-
 func (w *Window) InitBrowser(items []models.Item) {
 	w.browser.SetInitialData(items)
 	w.app.Draw()

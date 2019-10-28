@@ -222,15 +222,10 @@ func NewBrowser(controller controller.MediaController) *Browser {
 
 	b.transition = transitionReset
 	b.state = stateArtists
+	b.panelAwaiting = panelL
 
 	//b.controller.SetItemsCallback(b.setData)
 	return b
-}
-
-func (b *Browser) SetInitialData(items []models.Item) {
-	b.listL.SetData(items)
-	b.dataL = items
-	b.lContent = items[0].GetType()
 }
 
 //AddModal adds modal to center of browser

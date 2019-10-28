@@ -282,6 +282,6 @@ func (w *Window) itemsCb(items []models.Item) {
 }
 
 func (w *Window) InitBrowser(items []models.Item) {
-	w.browser.SetInitialData(items)
+	w.browser.setData(items)
 	w.app.Draw()
 }

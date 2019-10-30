@@ -30,12 +30,12 @@ import (
 
 const (
 	btnPrevious = "|<<"
-	btnPause    = "||"
+	btnPause    = " ||"
 	btnStop     = "■"
 	btnPlay     = ">"
 	btnNext     = ">>|"
 	btnForward  = ">>"
-	btnBackward = "<<"
+	btnBackward = " <<"
 	btnQueue    = "☰"
 
 	btnLessVolume = "\xF0\x9F\x94\x89"
@@ -72,6 +72,8 @@ type Status struct {
 	buttons  []*tview.Button
 	progress ProgressBar
 	volume   ProgressBar
+
+	lastState player.State
 
 	controlsFgColor tcell.Color
 	controlsBgColor tcell.Color
@@ -143,6 +145,8 @@ func newStatus(ctrl controller.MediaController) *Status {
 		PlaylistLeft:        0,
 		Volume:              50,
 	}
+
+	s.lastState = player.Stop
 
 	s.buttons = []*tview.Button{
 		s.btnPrevious, s.btnBackward, s.btnPlay, s.btnForward, s.btnNext,
@@ -250,11 +254,18 @@ func (s *Status) UpdateState(state player.PlayingState, song *models.SongInfo) {
 	s.state = state
 	s.song = song
 	s.progress.SetMaximum(s.state.CurrentSongDuration)
+
+	if s.lastState != state.State {
+		s.DrawButtons()
+		s.lastState = state.State
+	}
+
 }
 
-func (s *Status) stateCb(state player.PlayingState) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	s.state = state
-	s.progress.SetMaximum(s.state.CurrentSongDuration)
+func (s *Status) DrawButtons() {
+	if s.state.State == player.Play {
+		s.btnPlay.SetLabel(btnPause)
+	} else if s.state.State == player.Pause {
+		s.btnPlay.SetLabel(btnPlay)
+	}
 }

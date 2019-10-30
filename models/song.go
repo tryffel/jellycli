@@ -72,3 +72,15 @@ type SongInfo struct {
 	AlbumId  Id
 	Year     int
 }
+
+func SongsToItems(songs []*Song) []Item {
+	if songs == nil {
+		return []Item{}
+	}
+	items := make([]Item, len(songs))
+
+	for i, v := range songs {
+		items[i] = v
+	}
+	return items
+}

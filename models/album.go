@@ -51,3 +51,15 @@ func (a *Album) GetName() string {
 func (a *Album) GetType() ItemType {
 	return TypeAlbum
 }
+
+func AlbumsToItems(albums []*Album) []Item {
+	if albums == nil {
+		return []Item{}
+	}
+	items := make([]Item, len(albums))
+
+	for i, v := range albums {
+		items[i] = v
+	}
+	return items
+}

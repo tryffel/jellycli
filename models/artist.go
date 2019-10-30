@@ -47,3 +47,15 @@ func (a *Artist) GetName() string {
 func (a *Artist) GetType() ItemType {
 	return TypeArtist
 }
+
+func ArtistsToItems(artists []*Artist) []Item {
+	if artists == nil {
+		return []Item{}
+	}
+	items := make([]Item, len(artists))
+
+	for i, v := range artists {
+		items[i] = v
+	}
+	return items
+}

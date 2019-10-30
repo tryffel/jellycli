@@ -434,6 +434,6 @@ func (c *Content) ensurePlayerHasStream() {
 			AudioId:  song.Id.String(),
 			Duration: song.Duration,
 		}
-		c.player.PlaySong(action)
+		c.player.ActionChannel() <- action
 	}
 }

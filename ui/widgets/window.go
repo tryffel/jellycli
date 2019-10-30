@@ -177,15 +177,21 @@ func (w *Window) mediaCtrl(event *tcell.EventKey) bool {
 	key := event.Key()
 	switch key {
 	case ctrls.PlayPause:
-		break
+		if w.status.state.State == player.Pause {
+			go w.mediaController.Continue()
+		} else if w.status.state.State == player.Play {
+			go w.mediaController.Pause()
+		}
 	case ctrls.VolumeDown:
-		break
+		volume := w.status.state.Volume - 5
+		go w.mediaController.SetVolume(volume)
 	case ctrls.VolumeUp:
-		break
+		volume := w.status.state.Volume + 5
+		go w.mediaController.SetVolume(volume)
 	default:
 		return false
 	}
-	w.status.InputHandler()(event, nil)
+	//w.status.InputHandler()(event, nil)
 	return true
 }
 

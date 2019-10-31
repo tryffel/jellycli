@@ -21,5 +21,7 @@ import "github.com/rivo/tview"
 //Modal creates a modal that overlaps other views and get's destroyed when it's ready
 type Modal interface {
 	SetDoneFunc(doneFunc func())
+	tview.Primitive
 	View() tview.Primitive
+	SetVisible(visible bool)
 }

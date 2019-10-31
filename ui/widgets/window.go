@@ -35,8 +35,10 @@ type Window struct {
 	status  *Status
 	browser *Browser
 	search  *Search
+	view    *ViewModal
 	help    *Help
 	queue   *Queue
+	history *Queue
 
 	mediaController controller.MediaController
 
@@ -74,8 +76,13 @@ func NewWindow(mc controller.MediaController) Window {
 	w.search.SetDoneFunc(w.wrapCloseModal(w.search))
 	w.help = NewHelp(w.closeHelp)
 	w.help.SetDoneFunc(w.wrapCloseModal(w.help))
-	w.queue = NewQueue()
+	w.queue = NewQueue(QueueModeQueue)
 	w.queue.SetDoneFunc(w.wrapCloseModal(w.queue))
+	w.view = NewViewModal()
+	w.view.SetDoneFunc(w.wrapCloseModal(w.view))
+
+	w.history = NewQueue(QueueModeHistory)
+	w.history.SetDoneFunc(w.wrapCloseModal(w.history))
 
 	w.status.UpdateState(player.PlayingState{
 		State:               player.Play,

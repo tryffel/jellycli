@@ -24,16 +24,32 @@ import (
 	"tryffel.net/pkg/jellycli/models"
 )
 
+type QueueMode int
+
+const (
+	QueueModeQueue QueueMode = iota
+	QueueModeHistory
+)
+
+// Queue show list of songs played or songs to be played
 type Queue struct {
 	text      *tview.TextView
+	mode      QueueMode
+	visible   bool
 	closeFunc func()
 }
 
-func NewQueue() *Queue {
+func NewQueue(mode QueueMode) *Queue {
 	q := &Queue{
 		text: tview.NewTextView(),
+		mode: mode,
 	}
-	q.text.SetTitle("Queue")
+	if mode == QueueModeQueue {
+		q.text.SetTitle("Queue")
+	} else if mode == QueueModeHistory {
+		q.text.SetTitle("History")
+	}
+
 	q.text.SetBackgroundColor(config.ColorBackground)
 	q.text.SetBorderColor(config.ColorBorder)
 	q.text.SetTextColor(config.ColorPrimary)
@@ -46,10 +62,18 @@ func NewQueue() *Queue {
 }
 
 func (q *Queue) setData(items []*models.SongInfo, duration int) {
-	q.text.Clear()
-	text := fmt.Sprintf("Total duration: %s, songs: %d\n\n", SecToString(duration), len(items))
-	for i, v := range items {
-		text += fmt.Sprintf("%d. %s - %s (%s) %s\n", i+1, v.Name, v.Album, v.Artist, SecToString(v.Duration))
+	var text string
+	if q.mode == QueueModeQueue {
+		text = fmt.Sprintf("Total duration: %s, songs: %d\n\n", SecToString(duration), len(items))
+		for i, v := range items {
+			text += fmt.Sprintf("%d. %s - %s (%s) %s\n", i+1, v.Name, v.Album, v.Artist, SecToString(v.Duration))
+		}
+	} else if q.mode == QueueModeHistory {
+		text = fmt.Sprintf("Total history: %s, songs: %d\n\n", SecToString(duration), len(items))
+		for i, _ := range items {
+			item := items[len(items)-1]
+			text += fmt.Sprintf("%d. %s - %s (%s) %s\n", i+1, item.Name, item.Album, item.Artist, SecToString(item.Duration))
+		}
 	}
 	q.text.SetText(text)
 }
@@ -59,11 +83,18 @@ func (q *Queue) SetDoneFunc(doneFunc func()) {
 }
 
 func (q *Queue) View() tview.Primitive {
-	return q
+	a := &q
+	return *a
+}
+
+func (q *Queue) SetVisible(visible bool) {
+	q.visible = visible
 }
 
 func (q *Queue) Draw(screen tcell.Screen) {
-	q.text.Draw(screen)
+	if q.visible {
+		q.text.Draw(screen)
+	}
 }
 
 func (q *Queue) GetRect() (int, int, int, int) {
@@ -77,7 +108,7 @@ func (q *Queue) SetRect(x, y, width, height int) {
 func (q *Queue) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 	return q.text.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 		key := event.Key()
-		if key == tcell.KeyEscape {
+		if q.visible && key == tcell.KeyEscape {
 			q.closeFunc()
 		}
 	})

@@ -72,6 +72,7 @@ func NewNavBar(callback func(key *tcell.Key)) *NavBar {
 
 	buttons := []string{
 		"Help",
+		"View",
 		"Search",
 		"Queue",
 		"History",
@@ -81,6 +82,7 @@ func NewNavBar(callback func(key *tcell.Key)) *NavBar {
 
 	keybindings := []tcell.Key{
 		config.KeyBinds.NavigationBar.Help,
+		config.KeyBinds.NavigationBar.View,
 		config.KeyBinds.NavigationBar.Search,
 		config.KeyBinds.NavigationBar.Queue,
 		config.KeyBinds.NavigationBar.History,

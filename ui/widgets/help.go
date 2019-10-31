@@ -29,6 +29,7 @@ type Help struct {
 	header  *tview.TextView
 	text    *tview.TextView
 	logo    *tview.TextView
+	visible bool
 	closeCb func()
 }
 
@@ -38,6 +39,11 @@ func (h *Help) SetDoneFunc(doneFunc func()) {
 
 func (h *Help) View() tview.Primitive {
 	return h
+}
+
+func (h *Help) SetVisible(visible bool) {
+	h.visible = visible
+
 }
 
 func (h *Help) Draw(screen tcell.Screen) {
@@ -54,7 +60,7 @@ func (h *Help) SetRect(x, y, width, height int) {
 
 func (h *Help) InputHandler() func(event *tcell.EventKey, setfocus func(p tview.Primitive)) {
 	return func(event *tcell.EventKey, setfocus func(p tview.Primitive)) {
-		if event.Key() == tcell.KeyEscape {
+		if h.visible && event.Key() == tcell.KeyEscape {
 			if h.closeCb != nil {
 				h.closeCb()
 			}

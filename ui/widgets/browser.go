@@ -118,7 +118,7 @@ func (b *Browser) SetRect(x, y, width, height int) {
 func (b *Browser) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 	return func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 		if b.hasModal {
-			b.modal.View().InputHandler()(event, setFocus)
+			b.modal.InputHandler()(event, setFocus)
 			return
 		}
 
@@ -233,9 +233,10 @@ func (b *Browser) AddModal(modal Modal, height, width uint, lockSize bool) {
 	if b.hasModal {
 		return
 	}
+	modal.SetVisible(true)
 	if !lockSize {
 		b.customGrid = false
-		b.grid.AddItem(modal.View(), 2, 2, 2, 2, 8, 30, true)
+		b.grid.AddItem(modal, 2, 2, 2, 2, 8, 30, true)
 	} else {
 		b.customGrid = true
 		x := make([]int, len(b.gridAxis))
@@ -248,16 +249,17 @@ func (b *Browser) AddModal(modal Modal, height, width uint, lockSize bool) {
 		y[3] = y[2]
 		b.grid.SetRows(y...)
 		b.grid.SetColumns(x...)
-		b.grid.AddItem(modal.View(), 2, 2, 2, 2, int(height), int(width), true)
+		b.grid.AddItem(modal, 2, 2, 2, 2, int(height), int(width), true)
 	}
 	b.hasModal = true
 	b.modal = modal
 }
 
 //RemoveModal removes modal
-func (b *Browser) RemoveModal(view tview.Primitive) {
+func (b *Browser) RemoveModal(modal Modal) {
 	if b.hasModal {
-		b.grid.RemoveItem(view)
+		modal.SetVisible(false)
+		b.grid.RemoveItem(modal)
 		b.hasModal = false
 		b.modal = nil
 		if b.customGrid {

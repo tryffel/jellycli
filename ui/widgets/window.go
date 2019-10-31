@@ -80,6 +80,7 @@ func NewWindow(mc controller.MediaController) Window {
 	w.queue.SetDoneFunc(w.wrapCloseModal(w.queue))
 	w.view = NewViewModal()
 	w.view.SetDoneFunc(w.wrapCloseModal(w.view))
+	w.view.SetViewFunc(w.openViewFunc)
 
 	w.history = NewQueue(QueueModeHistory)
 	w.history.SetDoneFunc(w.wrapCloseModal(w.history))
@@ -200,6 +201,12 @@ func (w *Window) mediaCtrl(event *tcell.EventKey) bool {
 	}
 	//w.status.InputHandler()(event, nil)
 	return true
+}
+
+// Open view
+func (w *Window) openViewFunc(view controller.View) {
+	go w.mediaController.GetView(view)
+	w.browser.resetWaitingPanel()
 }
 
 func (w *Window) navBarCtrl(key tcell.Key) bool {

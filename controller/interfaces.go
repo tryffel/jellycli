@@ -47,6 +47,9 @@ type ItemController interface {
 	//RemoveItemsCallback removes items callback if there's any
 	RemoveItemsCallback()
 	//GetDefaultItems()
+
+	//GetView shows one of predefined views
+	GetView(view View)
 }
 
 //QueueController controls queue and history
@@ -66,7 +69,7 @@ type QueueController interface {
 	//On successful order QueueChangedCallback gets called.
 	Reorder(currentIndex, newIndex int)
 	//GetHistory get's n past songs that has been played.
-	GetHistory(n int) []*models.Song
+	GetHistory(n int) []*models.SongInfo
 	//SetQueueChangedCallback sets function that is called every time queue changes.
 	SetQueueChangedCallback(func(content []*models.Song))
 	//RemoveQueueChangedCallback removes queue changed callback
@@ -95,3 +98,16 @@ type PlaybackController interface {
 	//SetVolume sets volume to given level in range of [0,100]
 	SetVolume(level int)
 }
+
+type View int
+
+const (
+	ViewAllArtists View = iota
+	ViewAllAlbums
+	ViewAllSongs
+	ViewFavoriteArtists
+	ViewFavoriteAlbums
+	ViewFavoriteSongs
+	ViewPlaylists
+	ViewLatestMusic
+)

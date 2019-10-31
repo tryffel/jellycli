@@ -185,14 +185,48 @@ func (c *Content) SetItemsCallback(cb func([]models.Item)) {
 	c.itemsCb = cb
 }
 
+func (c *Content) GetView(view View) {
+	var err error
+	var items []models.Item
+
+	switch view {
+	case ViewAllArtists:
+	case ViewAllAlbums:
+	case ViewAllSongs:
+	case ViewFavoriteArtists:
+	case ViewFavoriteAlbums:
+	case ViewFavoriteSongs:
+	case ViewPlaylists:
+	case ViewLatestMusic:
+		var albums []*models.Album
+		albums, err = c.api.GetLatestAlbums()
+		if err == nil {
+			items = models.AlbumsToItems(albums)
+		}
+	}
+
+	if err == nil && items != nil {
+		if len(items) > 0 {
+			c.flushItems(items...)
+		}
+	} else if err != nil {
+		logrus.Errorf("failed to get view %d: %v", view, err)
+	}
+
+}
+
 func (c *Content) RemoveItemsCallback() {
 	c.itemsCb = nil
 }
 
 func (c *Content) GetQueue() []*models.SongInfo {
+
+	return c.songsToInfos(c.queue.GetQueue())
+}
+
+func (c *Content) songsToInfos(songs []*models.Song) []*models.SongInfo {
 	now := time.Now()
 	requests := 0
-	songs := c.queue.GetQueue()
 	infos := make([]*models.SongInfo, len(songs))
 	// This shouldn't take that long since user has added each item just now and thus each item should exist
 	// in cache
@@ -237,8 +271,8 @@ func (c *Content) Reorder(currentIndex, newIndex int) {
 	c.queue.Reorder(currentIndex, newIndex)
 }
 
-func (c *Content) GetHistory(n int) []*models.Song {
-	return c.queue.GetHistory(n)
+func (c *Content) GetHistory(n int) []*models.SongInfo {
+	return c.songsToInfos(c.queue.GetHistory(n))
 }
 
 func (c *Content) SetQueueChangedCallback(cb func(content []*models.Song)) {

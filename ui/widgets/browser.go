@@ -123,15 +123,7 @@ func (b *Browser) InputHandler() func(event *tcell.EventKey, setFocus func(p tvi
 		}
 
 		if event.Key() == tcell.KeyTAB {
-			if b.focused == panelL {
-				b.focused = panelR
-				b.listR.Focus(nil)
-				b.listL.Blur()
-			} else {
-				b.focused = panelL
-				b.listL.Focus(nil)
-				b.listR.Blur()
-			}
+			b.switchPanel()
 			return
 		}
 
@@ -141,6 +133,18 @@ func (b *Browser) InputHandler() func(event *tcell.EventKey, setFocus func(p tvi
 		} else {
 			b.listR.InputHandler()(event, setFocus)
 		}
+	}
+}
+
+func (b *Browser) switchPanel() {
+	if b.focused == panelL {
+		b.focused = panelR
+		b.listR.Focus(nil)
+		b.listL.Blur()
+	} else {
+		b.focused = panelL
+		b.listL.Focus(nil)
+		b.listR.Blur()
 	}
 }
 
@@ -189,6 +193,10 @@ func (b *Browser) setData(data []models.Item) {
 		return
 	}
 	b.panelAwaiting = -1
+}
+
+func (b *Browser) resetWaitingPanel() {
+	b.panelAwaiting = panelL
 }
 
 func NewBrowser(controller controller.MediaController) *Browser {

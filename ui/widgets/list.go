@@ -97,34 +97,34 @@ func (l *List) SetData(items []models.Item) {
 	switch l.itemType {
 	case models.TypeArtist:
 		for i, v := range items {
-			text := ""
+			text := fmt.Sprintf("%d.", i+1)
 			artist, ok := v.(*models.Artist)
 			if ok {
-				text = fmt.Sprintf("%s - %s", artist.Name, SecToString(artist.TotalDuration))
+				text += fmt.Sprintf("%s - %s", artist.Name, SecToString(artist.TotalDuration))
 			} else {
-				text = v.GetName()
+				text += v.GetName()
 			}
 			l.list.AddItem(text, "", 0, l.namedCb(i, string(v.GetId())))
 		}
 	case models.TypeAlbum:
 		for i, v := range items {
-			text := ""
+			text := fmt.Sprintf("%d.", i+1)
 			album, ok := v.(*models.Album)
 			if ok {
-				text = fmt.Sprintf("%s, %d - %s", album.Name, album.Year, SecToString(album.Duration))
+				text += fmt.Sprintf("%s, %d - %s", album.Name, album.Year, SecToString(album.Duration))
 			} else {
-				text = v.GetName()
+				text += v.GetName()
 			}
 			l.list.AddItem(text, "", 0, l.namedCb(i, string(v.GetId())))
 		}
 	case models.TypeSong:
 		for i, v := range items {
-			text := ""
+			text := fmt.Sprintf("%d.", i+1)
 			song, ok := v.(*models.Song)
 			if ok {
-				text = fmt.Sprintf("%s - %s", song.Name, SecToString(song.Duration))
+				text += fmt.Sprintf("%s - %s", song.Name, SecToString(song.Duration))
 			} else {
-				text = v.GetName()
+				text += v.GetName()
 			}
 			l.list.AddItem(text, "", 0, l.namedCb(i, string(v.GetId())))
 		}

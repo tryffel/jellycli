@@ -44,6 +44,7 @@ func NewList(enterCb func(index int)) *List {
 	l.list.SetBackgroundColor(config.ColorBackground)
 	l.list.SetSelectedTextColor(config.ColorSecondary)
 	l.list.SetMainTextColor(config.ColorPrimary)
+	l.list.SetHighlightFullLine(true)
 	l.enterCb = enterCb
 	return l
 }
@@ -93,8 +94,45 @@ func (l *List) SetData(items []models.Item) {
 	l.itemType = items[0].GetType()
 	l.list.Clear()
 	l.list.SetTitle(fmt.Sprintf("%ss", l.itemType))
-	for i, v := range items {
-		l.list.AddItem(v.GetName(), "", '?', l.namedCb(i, string(v.GetId())))
+	switch l.itemType {
+	case models.TypeArtist:
+		for i, v := range items {
+			text := ""
+			artist, ok := v.(*models.Artist)
+			if ok {
+				text = fmt.Sprintf("%s - %s", artist.Name, SecToString(artist.TotalDuration))
+			} else {
+				text = v.GetName()
+			}
+			l.list.AddItem(text, "", 0, l.namedCb(i, string(v.GetId())))
+		}
+	case models.TypeAlbum:
+		for i, v := range items {
+			text := ""
+			album, ok := v.(*models.Album)
+			if ok {
+				text = fmt.Sprintf("%s, %d - %s", album.Name, album.Year, SecToString(album.Duration))
+			} else {
+				text = v.GetName()
+			}
+			l.list.AddItem(text, "", 0, l.namedCb(i, string(v.GetId())))
+		}
+	case models.TypeSong:
+		for i, v := range items {
+			text := ""
+			song, ok := v.(*models.Song)
+			if ok {
+				text = fmt.Sprintf("%s - %s", song.Name, SecToString(song.Duration))
+			} else {
+				text = v.GetName()
+			}
+			l.list.AddItem(text, "", 0, l.namedCb(i, string(v.GetId())))
+		}
+
+	default:
+		for i, v := range items {
+			l.list.AddItem(v.GetName(), "", 0, l.namedCb(i, string(v.GetId())))
+		}
 	}
 }
 

@@ -84,6 +84,7 @@ func (s *Search) InputHandler() func(event *tcell.EventKey, setFocus func(p tvie
 }
 
 func (s *Search) Focus(delegate func(p tview.Primitive)) {
+	s.grid.SetBorderColor(config.ColorBorderFocus)
 	s.grid.Focus(delegate)
 	switch s.selected {
 	case 0:
@@ -98,6 +99,7 @@ func (s *Search) Focus(delegate func(p tview.Primitive)) {
 }
 
 func (s *Search) Blur() {
+	s.grid.SetBorderColor(config.ColorBorder)
 	s.grid.Blur()
 }
 

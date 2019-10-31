@@ -69,10 +69,12 @@ func (h *Help) InputHandler() func(event *tcell.EventKey, setfocus func(p tview.
 }
 
 func (h *Help) Focus(delegate func(p tview.Primitive)) {
+	h.grid.SetBorderColor(config.ColorBorderFocus)
 	h.grid.Focus(delegate)
 }
 
 func (h *Help) Blur() {
+	h.grid.SetBorderColor(config.ColorBorder)
 	h.grid.Blur()
 }
 

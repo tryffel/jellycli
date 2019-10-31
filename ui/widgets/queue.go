@@ -115,10 +115,12 @@ func (q *Queue) InputHandler() func(event *tcell.EventKey, setFocus func(p tview
 }
 
 func (q *Queue) Focus(delegate func(p tview.Primitive)) {
+	q.text.SetBorderColor(config.ColorBorderFocus)
 	q.text.Focus(delegate)
 }
 
 func (q *Queue) Blur() {
+	q.text.SetBorderColor(config.ColorBorder)
 	q.text.Blur()
 }
 

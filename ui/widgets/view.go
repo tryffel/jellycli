@@ -58,10 +58,12 @@ func (v *ViewModal) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 }
 
 func (v *ViewModal) Focus(delegate func(p tview.Primitive)) {
+	v.list.SetBorderColor(config.ColorBorderFocus)
 	v.list.Focus(delegate)
 }
 
 func (v *ViewModal) Blur() {
+	v.list.SetBorderColor(config.ColorBorder)
 	v.list.Blur()
 }
 

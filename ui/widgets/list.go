@@ -72,10 +72,12 @@ func (l *List) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.
 }
 
 func (l *List) Focus(delegate func(p tview.Primitive)) {
+	l.list.SetBorderColor(config.ColorBorderFocus)
 	l.list.Focus(delegate)
 }
 
 func (l *List) Blur() {
+	l.list.SetBorderColor(config.ColorBorder)
 	l.list.Blur()
 }
 

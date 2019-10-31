@@ -208,42 +208,18 @@ func (w *Window) navBarCtrl(key tcell.Key) bool {
 	// Navigation bar
 	case navBar.Quit:
 		w.app.Stop()
-	case navBar.Search:
-		if !w.hasModal {
-			w.hasModal = true
-			w.lastFocus = w.app.GetFocus()
-			w.lastFocus.Blur()
-			w.browser.AddModal(w.search, 10, 50, true)
-			w.app.SetFocus(w.search)
-			w.app.QueueUpdateDraw(func() {})
-		}
 	case navBar.Help:
-		if !w.hasModal {
-			w.hasModal = true
-			w.lastFocus = w.app.GetFocus()
-			w.lastFocus.Blur()
-			w.browser.AddModal(w.help, 25, 50, true)
-			w.app.SetFocus(w.help)
-			w.app.QueueUpdateDraw(func() {})
-		}
+		w.showModal(w.help, 25, 50, true)
+	case navBar.View:
+		w.showModal(w.view, 20, 50, true)
+	case navBar.Search:
+		w.showModal(w.search, 10, 50, true)
 	case navBar.Queue:
-		if !w.hasModal {
-			w.hasModal = true
-			w.lastFocus = w.app.GetFocus()
-			w.lastFocus.Blur()
-			w.browser.AddModal(w.queue, 20, 60, true)
-			w.app.SetFocus(w.help)
-			w.queue.setData(w.mediaController.GetQueue(), w.mediaController.QueueDuration())
-			w.app.QueueUpdateDraw(func() {})
-		}
-	//case tcell.KeyEscape:
-	//	if w.hasModal {
-	//		w.hasModal = false
-	//		w.browser.Blur()
-	//		w.lastFocus.Focus(nil)
-	//		w.lastFocus = nil
-	//		return false
-	//	}
+		w.showModal(w.queue, 20, 60, true)
+		w.queue.setData(w.mediaController.GetQueue(), w.mediaController.QueueDuration())
+	case navBar.History:
+		w.showModal(w.history, 20, 60, true)
+		w.history.setData(w.mediaController.GetHistory(100), 0)
 	default:
 		return false
 	}
@@ -270,18 +246,37 @@ func (w *Window) closeHelp() {
 	w.app.SetFocus(w.window)
 }
 
-func (w *Window) wrapCloseModal(modal tview.Primitive) func() {
+func (w *Window) wrapCloseModal(modal Modal) func() {
 	return func() {
 		w.closeModal(modal)
 	}
 }
 
-func (w *Window) closeModal(modal tview.Primitive) {
-	modal.Blur()
-	w.browser.RemoveModal(modal)
-	w.app.SetFocus(w.lastFocus)
-	w.lastFocus = nil
-	w.hasModal = false
+func (w *Window) closeModal(modal Modal) {
+	if w.hasModal {
+		modal.Blur()
+		modal.SetVisible(false)
+		w.browser.RemoveModal(modal)
+		w.app.SetFocus(w.lastFocus)
+		w.lastFocus = nil
+		w.hasModal = false
+	} else {
+		logrus.Warning("Trying to close modal when there's no open modal.")
+	}
+}
+
+func (w *Window) showModal(modal Modal, height, width uint, lockSize bool) {
+	if !w.hasModal {
+		w.hasModal = true
+		w.lastFocus = w.app.GetFocus()
+		w.lastFocus.Blur()
+		w.browser.AddModal(modal, height, width, lockSize)
+		w.app.SetFocus(modal)
+		modal.SetVisible(true)
+		w.app.QueueUpdateDraw(func() {})
+	} else {
+		logrus.Warning("Trying show close modal when there's another modal open.")
+	}
 }
 
 func (w *Window) statusCb(state player.PlayingState) {

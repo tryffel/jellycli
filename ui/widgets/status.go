@@ -26,6 +26,7 @@ import (
 	"tryffel.net/pkg/jellycli/controller"
 	"tryffel.net/pkg/jellycli/models"
 	"tryffel.net/pkg/jellycli/player"
+	"unicode/utf8"
 )
 
 const (
@@ -165,16 +166,29 @@ func (s *Status) Draw(screen tcell.Screen) {
 	s.frame.Draw(screen)
 	x, y, w, _ := s.frame.GetInnerRect()
 
+	songPast := SecToString(s.state.CurrentSongPast)
+	songPast = " " + songPast + " "
+	songDuration := SecToString(s.state.CurrentSongDuration)
+	songDuration = " " + songDuration + " "
+
+	volume := " Volume " + s.volume.Draw(s.state.Volume)
+	topRowFree := w - len(songPast) - len(songDuration) - utf8.RuneCountInString(volume) - 5
+
+	s.progress.SetWidth(topRowFree * 10 / 11)
+
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	progress := fmt.Sprintf(" %s %s %s ",
-		SecToString(s.state.CurrentSongPast), s.progress.Draw(s.state.CurrentSongPast),
-		SecToString(s.state.CurrentSongDuration))
-	volume := fmt.Sprintf(" Volume %s ", s.volume.Draw(s.state.Volume))
+	progressBar := s.progress.Draw(s.state.CurrentSongPast)
 
-	tview.Print(screen, progress, x+1, y-1, w, tview.AlignLeft, config.ColorControls)
-	tview.Print(screen, volume, x+75, y-1, w, tview.AlignLeft, config.ColorControls)
+	progress := songPast + progressBar + songDuration
+	progressLen := utf8.RuneCountInString(progress)
+
+	topX := x + 1
+
+	tview.Print(screen, progress, topX, y-1, progressLen+5, tview.AlignLeft, config.ColorControls)
+	topX += progressLen + progressLen/10
+	tview.Print(screen, volume, topX, y-1, w, tview.AlignLeft, config.ColorControls)
 
 	btnY := y + 2
 	btnX := x + 1

@@ -38,6 +38,7 @@ type GlobalBindings struct {
 type NavigationBarBindings struct {
 	Quit     tcell.Key
 	Help     tcell.Key
+	View     tcell.Key
 	Search   tcell.Key
 	Queue    tcell.Key
 	History  tcell.Key
@@ -83,9 +84,10 @@ func DefaultKeyBindings() KeyBindings {
 		NavigationBar: NavigationBarBindings{
 			Quit:     tcell.KeyF12,
 			Help:     tcell.KeyF1,
-			Search:   tcell.KeyF2,
-			Queue:    tcell.KeyF3,
-			History:  tcell.KeyF4,
+			View:     tcell.KeyF2,
+			Search:   tcell.KeyF3,
+			Queue:    tcell.KeyF4,
+			History:  tcell.KeyF5,
 			Settings: tcell.KeyF5,
 		},
 		Moving: MovingBindings{

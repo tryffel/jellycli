@@ -43,6 +43,8 @@ const (
 	CacheTimeout = time.Minute * 5
 
 	SongHistorySize = 100
+
+	LatestMusicCount = "50"
 )
 
 var GridBordersShow = true

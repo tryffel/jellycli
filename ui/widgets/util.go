@@ -16,7 +16,11 @@
 
 package widgets
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/gdamore/tcell"
+	"strings"
+)
 
 // Print seconds as formatted time:
 // 50, 1:50,
@@ -32,4 +36,26 @@ func SecToString(sec int) string {
 		hours := sec / 3600
 		return fmt.Sprintf("%d:%02d:%02d", hours, minutes-60*hours, sec%3600%60)
 	}
+}
+
+//ShortCutName returns name for given key
+func KeyBindingName(key tcell.Key) string {
+	return tcell.KeyNames[key]
+}
+
+//PackKeyBindingName returns shorter for given key
+// Maxlength controls maximum length for text.
+// If 0, disable limiting
+// 'F6' -> F6
+// 'Ctrl+Space' -> 'C-sp'
+func PackKeyBindingName(key tcell.Key, maxLength int) string {
+	name := KeyBindingName(key)
+	if maxLength == 0 {
+		return name
+	}
+	if strings.Contains(name, "Ctrl") {
+		name = strings.TrimPrefix(name, "Ctrl-")
+		name = "C-" + name
+	}
+	return name
 }

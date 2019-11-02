@@ -70,9 +70,10 @@ type Status struct {
 	btnStop     *tview.Button
 	btnQueue    *tview.Button
 
-	buttons  []*tview.Button
-	progress ProgressBar
-	volume   ProgressBar
+	buttons   []*tview.Button
+	shortCuts []string
+	progress  ProgressBar
+	volume    ProgressBar
 
 	lastState player.State
 
@@ -153,6 +154,14 @@ func newStatus(ctrl controller.MediaController) *Status {
 		s.btnPrevious, s.btnBackward, s.btnPlay, s.btnForward, s.btnNext,
 	}
 
+	s.shortCuts = []string{
+		PackKeyBindingName(config.KeyBinds.Global.Previous, 5),
+		PackKeyBindingName(config.KeyBinds.Global.Backward, 5),
+		PackKeyBindingName(config.KeyBinds.Global.PlayPause, 5),
+		PackKeyBindingName(config.KeyBinds.Global.Forward, 5),
+		PackKeyBindingName(config.KeyBinds.Global.Next, 5),
+	}
+
 	for _, v := range s.buttons {
 		v.SetBackgroundColor(s.controlsFgColor)
 		v.SetLabelColor(s.controlsBgColor)
@@ -190,15 +199,22 @@ func (s *Status) Draw(screen tcell.Screen) {
 	topX += progressLen + progressLen/10
 	tview.Print(screen, volume, topX, y-1, w, tview.AlignLeft, config.ColorControls)
 
-	btnY := y + 2
+	tview.Print(screen, PackKeyBindingName(config.KeyBinds.Global.VolumeDown, 5),
+		topX+7, y, topX+16, tview.AlignLeft, config.ColorControls)
+	tview.Print(screen, PackKeyBindingName(config.KeyBinds.Global.VolumeUp, 5),
+		topX+18, y, topX+1, tview.AlignLeft, config.ColorControls)
+
+	btnY := y + 1
 	btnX := x + 1
 
-	for _, v := range s.buttons {
+	for i, v := range s.buttons {
+		tview.Print(screen, s.shortCuts[i], btnX, btnY-1, 4, tview.AlignLeft, config.ColorControls)
+
 		v.SetRect(btnX, btnY, 3, 1)
 		v.Draw(screen)
-		btnX += 4
+		btnX += 5
 	}
-	s.WriteStatus(screen, x+2, y)
+	s.WriteStatus(screen, x+25, y)
 }
 
 func (s *Status) GetRect() (int, int, int, int) {

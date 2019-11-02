@@ -76,8 +76,8 @@ func DefaultKeyBindings() KeyBindings {
 			Previous:   tcell.KeyF5,
 			Forward:    0,
 			Backward:   0,
-			VolumeUp:   tcell.KeyF9,
-			VolumeDown: tcell.KeyF10,
+			VolumeUp:   tcell.KeyF10,
+			VolumeDown: tcell.KeyF9,
 			MuteUnmute: tcell.KeyF11,
 		},
 		NavigationBar: NavigationBarBindings{

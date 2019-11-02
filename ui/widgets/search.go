@@ -27,7 +27,7 @@ type Search struct {
 	okBtn     *tview.Button
 	cancelBtn *tview.Button
 	input     *tview.InputField
-	a         tview.Form
+	visible   bool
 
 	searchCb  func(string, bool)
 	closeFunc func()
@@ -40,6 +40,10 @@ func (s *Search) SetDoneFunc(doneFunc func()) {
 
 func (s *Search) View() tview.Primitive {
 	return s
+}
+
+func (s *Search) SetVisible(visible bool) {
+	s.visible = visible
 }
 
 func (s *Search) Draw(screen tcell.Screen) {
@@ -60,6 +64,9 @@ func (s *Search) InputHandler() func(event *tcell.EventKey, setFocus func(p tvie
 		var ok = 1
 		var cancel = 2
 		key := event.Key()
+		if !s.visible {
+			return
+		}
 		if key == config.KeyBinds.Moving.Down || key == config.KeyBinds.Moving.DownAlt {
 			if s.selected == search {
 				s.selected = ok

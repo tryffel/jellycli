@@ -69,7 +69,7 @@ func Test_progressBar_Draw(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := NewProgressBar(tt.args.width, tt.args.maximumValue)
-			if got := Draw(tt.args.currentValue); got != tt.want {
+			if got := p.Draw(tt.args.currentValue); got != tt.want {
 				t.Errorf("Draw() = %v, want %v", got, tt.want)
 			}
 		})
@@ -103,7 +103,7 @@ func TestProgressBar_Draw(t *testing.T) {
 	text := ""
 	p := NewProgressBar(width, points)
 	for i := 0; i < points+1; i++ {
-		text += fmt.Sprintf("%s: %d/%d\n", Draw(i), i, points)
+		text += fmt.Sprintf("%s: %d/%d\n", p.Draw(i), i, points)
 	}
 
 	if text != want {

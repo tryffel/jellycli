@@ -118,7 +118,7 @@ func (b *Browser) SetRect(x, y, width, height int) {
 func (b *Browser) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 	return func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 		if b.hasModal {
-			b.modal.InputHandler()(event, setFocus)
+			b.modal.View().InputHandler()(event, setFocus)
 			return
 		}
 
@@ -241,7 +241,6 @@ func (b *Browser) AddModal(modal Modal, height, width uint, lockSize bool) {
 	if b.hasModal {
 		return
 	}
-	modal.SetVisible(true)
 	if !lockSize {
 		b.customGrid = false
 		b.grid.AddItem(modal, 2, 2, 2, 2, 8, 30, true)
@@ -356,10 +355,10 @@ func (b *Browser) getSelectedItem(split panelSplit) (int, models.Item) {
 	var index int
 	var item models.Item
 	if split == panelL {
-		index = b.listL.list.GetCurrentItem()
+		index = b.listL.SelectedIndex()
 		item = b.dataL[index]
 	} else if split == panelR {
-		index = b.listR.list.GetCurrentItem()
+		index = b.listR.SelectedIndex()
 		item = b.dataR[index]
 	}
 	return index, item

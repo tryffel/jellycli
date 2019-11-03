@@ -36,7 +36,7 @@ func TestPackKeyBindingName(t *testing.T) {
 		{
 			key:       tcell.KeyCtrlK,
 			maxLength: 0,
-			want:      "Ctrl-Space",
+			want:      "Ctrl-K",
 		},
 		{
 			key:       tcell.KeyCtrlK,
@@ -48,6 +48,46 @@ func TestPackKeyBindingName(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := PackKeyBindingName(tt.key, tt.maxLength); got != tt.want {
 				t.Errorf("PackKeyBindingName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSecToStringLong(t *testing.T) {
+	tests := []struct {
+		name    string
+		seconds int
+		want    string
+	}{
+		{
+			seconds: 600,
+			want:    "10 mins",
+		},
+		{
+			seconds: 150,
+			want:    "2 mins",
+		},
+		{
+			seconds: 60,
+			want:    "1 min",
+		},
+		{
+			seconds: 1260,
+			want:    "21 mins",
+		},
+		{
+			seconds: 3965,
+			want:    "1 hour 6 mins",
+		},
+		{
+			seconds: 7260,
+			want:    "2 hours 1 min",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := SecToStringApproximate(tt.seconds); got != tt.want {
+				t.Errorf("SecToStringApproximate() = %v, want %v", got, tt.want)
 			}
 		})
 	}

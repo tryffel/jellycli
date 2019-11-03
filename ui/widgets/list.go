@@ -22,10 +22,11 @@ import (
 	"github.com/rivo/tview"
 	"tryffel.net/pkg/jellycli/config"
 	"tryffel.net/pkg/jellycli/models"
+	"unicode/utf8"
 )
 
 type List struct {
-	list     *tview.List
+	table    *tview.Table
 	itemType models.ItemType
 	items    []models.Item
 	enterCb  func(index int)
@@ -33,57 +34,60 @@ type List struct {
 
 func NewList(enterCb func(index int)) *List {
 	l := &List{
-		list: tview.NewList(),
+		table: tview.NewTable(),
 	}
-	l.list.SetBorder(true)
-	l.list.SetBorderColor(config.ColorBorder)
-	l.list.SetTitleColor(config.ColorBorder)
-	l.list.SetTitleAlign(tview.AlignLeft)
-	l.list.ShowSecondaryText(false)
-	l.list.SetShortcutColor(tcell.ColorDefault)
-	l.list.SetBackgroundColor(config.ColorBackground)
-	l.list.SetSelectedTextColor(config.ColorSecondary)
-	l.list.SetMainTextColor(config.ColorPrimary)
-	l.list.SetHighlightFullLine(true)
 	l.enterCb = enterCb
+
+	l.table.SetBorder(true)
+	l.table.SetBorders(false)
+	l.table.SetBorderColor(config.ColorBorder)
+	l.table.SetTitleColor(config.ColorBorder)
+	l.table.SetTitleAlign(tview.AlignLeft)
+	l.table.SetBackgroundColor(config.ColorBackground)
+	l.table.SetSelectedStyle(config.ColorPrimary, config.ColorBorder, 0)
+	l.table.SetSelectable(true, false)
+	l.table.SetFixed(1, 10)
+
 	return l
 }
 
 func (l *List) Draw(screen tcell.Screen) {
-	l.list.Draw(screen)
+	l.table.Draw(screen)
 }
 
 func (l *List) GetRect() (int, int, int, int) {
-	return l.list.GetRect()
+	return l.table.GetRect()
 }
 
 func (l *List) SetRect(x, y, width, height int) {
-	l.list.SetRect(x, y, width, height)
+	l.table.SetRect(x, y, width, height)
 }
 
 func (l *List) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 	return func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 		key := event.Key()
 		if key == tcell.KeyEnter && l.enterCb != nil {
-			index := l.list.GetCurrentItem()
-			l.enterCb(index)
+			index, _ := l.table.GetSelection()
+			if index > 0 {
+				l.enterCb(index)
+			}
 		}
-		l.list.InputHandler()(event, setFocus)
+		l.table.InputHandler()(event, setFocus)
 	}
 }
 
 func (l *List) Focus(delegate func(p tview.Primitive)) {
-	l.list.SetBorderColor(config.ColorBorderFocus)
-	l.list.Focus(delegate)
+	l.table.SetBorderColor(config.ColorBorderFocus)
+	l.table.Focus(delegate)
 }
 
 func (l *List) Blur() {
-	l.list.SetBorderColor(config.ColorBorder)
-	l.list.Blur()
+	l.table.SetBorderColor(config.ColorBorder)
+	l.table.Blur()
 }
 
 func (l *List) GetFocusable() tview.Focusable {
-	return l.list.GetFocusable()
+	return l.table.GetFocusable()
 }
 
 func (l *List) SetData(items []models.Item) {
@@ -92,48 +96,65 @@ func (l *List) SetData(items []models.Item) {
 	}
 
 	l.itemType = items[0].GetType()
-	l.list.Clear()
-	l.list.SetTitle(fmt.Sprintf("%ss", l.itemType))
+	l.table.Clear()
+	l.table.SetCell(0, 0, tableHeaderCell("#"))
 	switch l.itemType {
 	case models.TypeArtist:
+		l.table.SetCell(0, 1, tableHeaderCell("Artist"))
+		l.table.SetCell(0, 2, tableHeaderCell("Duration"))
 		for i, v := range items {
-			text := fmt.Sprintf("%d.", i+1)
+			l.table.SetCell(i+1, 0, tableCell(fmt.Sprintf("%d.", i+1)))
 			artist, ok := v.(*models.Artist)
 			if ok {
-				text += fmt.Sprintf("%s - %s", artist.Name, SecToString(artist.TotalDuration))
+				l.table.SetCell(i+1, 1, setCellWidth(tableCell(artist.Name)))
+				l.table.SetCell(i+1, 2, tableCell(SecToStringApproximate(artist.TotalDuration)))
 			} else {
-				text += v.GetName()
+				l.table.SetCell(i+1, 1, setCellWidth(tableCell(v.GetName()+"(unknown type)")))
 			}
-			l.list.AddItem(text, "", 0, l.namedCb(i, string(v.GetId())))
 		}
 	case models.TypeAlbum:
+		l.table.SetCell(0, 1, tableHeaderCell("Album"))
+		l.table.SetCell(0, 2, tableHeaderCell("Year"))
+		l.table.SetCell(0, 3, tableHeaderCell("Duration"))
 		for i, v := range items {
-			text := fmt.Sprintf("%d.", i+1)
+			l.table.SetCell(i+1, 0, tableCell(fmt.Sprintf("%d.", i+1)))
 			album, ok := v.(*models.Album)
 			if ok {
-				text += fmt.Sprintf("%s, %d - %s", album.Name, album.Year, SecToString(album.Duration))
+				l.table.SetCell(i+1, 1, setCellWidth(tableCell(album.Name)))
+				l.table.SetCell(i+1, 2, tableCell(fmt.Sprint(album.Year)))
+				l.table.SetCell(i+1, 3, tableCell(SecToStringApproximate(album.Duration)))
 			} else {
-				text += v.GetName()
+				l.table.SetCell(i+1, 1, setCellWidth(tableCell(v.GetName()+"(unknown type)")))
 			}
-			l.list.AddItem(text, "", 0, l.namedCb(i, string(v.GetId())))
 		}
 	case models.TypeSong:
+		l.table.SetCell(0, 1, tableHeaderCell("Song"))
+		l.table.SetCell(0, 2, tableHeaderCell("Duration"))
 		for i, v := range items {
-			text := fmt.Sprintf("%d.", i+1)
+			l.table.SetCell(i+1, 0, tableCell(fmt.Sprintf("%d.", i+1)))
 			song, ok := v.(*models.Song)
 			if ok {
-				text += fmt.Sprintf("%s - %s", song.Name, SecToString(song.Duration))
+				l.table.SetCell(i+1, 1, tableCell(song.Name))
+				l.table.SetCell(i+1, 2, tableCell(SecToString(song.Duration)))
 			} else {
-				text += v.GetName()
+				l.table.SetCell(i+1, 1, setCellWidth(tableCell(v.GetName()+"(unknown type)")))
 			}
-			l.list.AddItem(text, "", 0, l.namedCb(i, string(v.GetId())))
 		}
 
 	default:
 		for i, v := range items {
-			l.list.AddItem(v.GetName(), "", 0, l.namedCb(i, string(v.GetId())))
+			l.table.SetCell(i, 1, tableCell(v.GetName()))
 		}
 	}
+
+	l.table.Select(1, 0)
+}
+
+//SelectedIndex returns currently selected index
+func (l *List) SelectedIndex() int {
+	index, _ := l.table.GetSelection()
+	return index - 1
+
 }
 
 func (l *List) namedCb(i int, id string) func() {
@@ -147,5 +168,40 @@ func (l *List) selectCb(i int, id string) {
 }
 
 func (l *List) Clear() {
-	l.list.Clear()
+	l.table.Clear()
+}
+
+func tableCell(text string) *tview.TableCell {
+	c := tview.NewTableCell(text)
+	c.SetTextColor(config.ColorPrimary)
+	c.SetAlign(tview.AlignLeft)
+	return c
+}
+
+func tableHeaderCell(text string) *tview.TableCell {
+	c := tview.NewTableCell(text)
+	c.SetTextColor(config.ColorSecondary)
+	c.SetAlign(tview.AlignLeft)
+	c.SetSelectable(false)
+	return c
+}
+
+func setCellWidth(cell *tview.TableCell) *tview.TableCell {
+	want := 25
+	cell.SetMaxWidth(want)
+	length := utf8.RuneCountInString(cell.Text)
+	need := want - length
+	ten := "          "
+	five := "     "
+
+	if need < 5 {
+		return cell
+	} else if need < 10 {
+		cell.Text += five
+	} else if need < 15 {
+		cell.Text += ten
+	} else if need < 20 {
+		cell.Text += ten + five
+	}
+	return cell
 }

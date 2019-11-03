@@ -38,6 +38,36 @@ func SecToString(sec int) string {
 	}
 }
 
+//SecToStringApproximate gives more verbal output for time duration
+// 1:50 -> 2 min
+// 10:50 -> 11 min
+// 1:11:50 -> 1.1 h
+func SecToStringApproximate(sec int) string {
+	//if sec < 600 {
+	//	return SecToString(sec)
+	//}
+	minutes := sec / 60
+	if sec < 3600 {
+		if minutes > 1 {
+			return fmt.Sprintf("%d mins", minutes)
+		} else {
+			return fmt.Sprintf("%d min", minutes)
+		}
+	} else {
+		hours := sec / 3600
+		minutes = sec/60 - hours*60
+		var hour = "hour"
+		var minute = "min"
+		if hours > 1 {
+			hour = "hours"
+		}
+		if minutes > 1 {
+			minute = "mins"
+		}
+		return fmt.Sprintf("%d %s %d %s", hours, hour, minutes, minute)
+	}
+}
+
 //ShortCutName returns name for given key
 func KeyBindingName(key tcell.Key) string {
 	return tcell.KeyNames[key]

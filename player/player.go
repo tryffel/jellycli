@@ -157,8 +157,9 @@ func (p *Player) loop() {
 	chunkStarted := time.Now()
 	for true {
 		select {
-		case tick := <-p.ticker.C:
-			if (tick.Second() - chunkStarted.Second()) >= 10 {
+		case <-p.ticker.C:
+			diff := time.Since(chunkStarted).Seconds()
+			if diff >= 10 {
 				if p.state.State == Play || p.state.State == Pause {
 					go p.reportStatus(api.EventTimeUpdate)
 				}

@@ -114,6 +114,7 @@ func (a *audio) playNewStream(streamer beep.StreamSeekCloser, play bool) error {
 	if streamer == nil {
 		return fmt.Errorf("empty streamer")
 	}
+	stream := beep.Seq(streamer, beep.Callback(a.streamCompletedCB))
 	var err error
 	a.lock.Lock()
 	speaker.Clear()
@@ -121,7 +122,7 @@ func (a *audio) playNewStream(streamer beep.StreamSeekCloser, play bool) error {
 	old := a.streamer
 	a.mixer.Clear()
 	a.streamer = streamer
-	a.mixer.Add(streamer)
+	a.mixer.Add(stream)
 	a.ctrl.Paused = !play
 	speaker.Unlock()
 	a.lock.Unlock()

@@ -111,3 +111,22 @@ func (c *Cache) GetBatch(ids []models.Id) ([]models.Item, bool) {
 	items = items[:foundTotal]
 	return items, false
 }
+
+//PutList puts a list of ids under key
+func (c *Cache) PutList(id string, data []models.Id) {
+	c.cache.Set(id, data, config.CacheTimeout)
+}
+
+//GetList gets list of Ids with given id
+func (c *Cache) GetList(id string) ([]models.Id, bool) {
+	items, found := c.cache.Get(id)
+	if !found {
+		return nil, false
+	}
+	ids, ok := items.([]models.Id)
+	if !ok {
+		c.Delete(models.Id(id))
+		return nil, false
+	}
+	return ids, true
+}

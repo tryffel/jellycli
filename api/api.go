@@ -122,6 +122,14 @@ func (a *Api) SetDefaultMusicview(id string) {
 	a.musicView = id
 }
 
+func (a *Api) ServerId() string {
+	return a.serverId
+}
+
+func (a *Api) SetServerId(id string) {
+	a.serverId = id
+}
+
 func (a *Api) loop() {
 	for true {
 		select {

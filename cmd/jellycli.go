@@ -180,7 +180,11 @@ func (a *Application) login() error {
 			if err != nil {
 				return fmt.Errorf("failed to store deviceid: %v", err)
 			}
-
+			serverId := a.api.ServerId()
+			err = a.secrets.SetKey("serverid", serverId)
+			if err != nil {
+				return fmt.Errorf("failed to store serverid: %v", err)
+			}
 		} else {
 			return fmt.Errorf("login failed")
 		}
@@ -203,10 +207,13 @@ func (a *Application) login() error {
 		}
 		a.api.DeviceId = deviceid
 
+		serverId, err := a.secrets.GetKey("serverid")
+		if err != nil {
+			return err
+		}
+		a.api.SetServerId(serverId)
 		return nil
 	}
-
-	// TODO: Store serverid
 }
 
 func (a *Application) initApiView() error {

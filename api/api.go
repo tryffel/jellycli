@@ -40,6 +40,7 @@ type Api struct {
 	SessionId string
 	client    *http.Client
 	loggedIn  bool
+	musicView string
 }
 
 func NewApi(host string) (*Api, error) {
@@ -111,6 +112,14 @@ func (a *Api) ConnectionOk() bool {
 	logrus.Infof("Connected to %s version %s", name, version)
 	return true
 
+}
+
+func (a *Api) DefaultMusicView() string {
+	return a.musicView
+}
+
+func (a *Api) SetDefaultMusicview(id string) {
+	a.musicView = id
 }
 
 func (a *Api) loop() {

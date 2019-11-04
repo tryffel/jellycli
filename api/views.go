@@ -23,15 +23,27 @@ import (
 	"tryffel.net/pkg/jellycli/models"
 )
 
-type View struct {
-	nameId
-	Type      string `json:"Type"`
-	DisplayId string `json:"DisplayPreferencesId"`
-}
+func (a *Api) GetViews() ([]*models.View, error) {
+	params := *a.defaultParams()
+	params["api_key"] = a.token
 
-func (a *Api) GetViews() ([]*View, error) {
-	return nil, nil
+	url := fmt.Sprintf("/Users/%s/Views", a.userId)
+	resp, err := a.get(url, &params)
+	if err != nil {
+		return nil, fmt.Errorf("get views: %v", err)
+	}
+	dto := views{}
+	err = json.NewDecoder(resp).Decode(&dto)
+	if err != nil {
+		return nil, fmt.Errorf("parse views: %v", err)
+	}
 
+	views := make([]*models.View, len(dto.Views))
+	for i, v := range dto.Views {
+		views[i] = v.toView()
+	}
+
+	return views, nil
 }
 
 func (a *Api) GetLatestAlbums() ([]*models.Album, error) {
@@ -39,7 +51,7 @@ func (a *Api) GetLatestAlbums() ([]*models.Album, error) {
 	params["api_key"] = a.token
 	params["IncludeItemTypes"] = "Audio"
 	params["Limit"] = config.LatestMusicCount
-	params["ParentId"] = "id"
+	params["ParentId"] = a.musicView
 
 	resp, err := a.get(fmt.Sprintf("/Users/%s/Items/Latest", a.userId), &params)
 	if err != nil {

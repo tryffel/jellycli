@@ -28,6 +28,7 @@ const (
 	mediaTypePlaylist     = "Playlist"
 	folderTypePlaylists   = "PlaylistsFolder"
 	folderTypeCollections = "CollectionFolder"
+	fodlerTypeUserView    = "UserView"
 )
 
 type nameId struct {
@@ -137,4 +138,21 @@ type playlist struct {
 	Duration int      `json:"RunTimeTicks"`
 	Type     string   `json:"Type"`
 	Songs    int      `json:"ChildCound"`
+}
+
+type view struct {
+	nameId
+	Type string `json:"Type"`
+}
+
+func (v *view) toView() *models.View {
+	return &models.View{
+		Name: v.Name,
+		Id:   models.Id(v.Id),
+		Type: v.Type,
+	}
+}
+
+type views struct {
+	Views []view `json:"Items"`
 }

@@ -21,6 +21,7 @@ import (
 	"github.com/sirupsen/logrus"
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 	"os"
+	"strconv"
 	"sync"
 	"tryffel.net/pkg/jellycli/api"
 	"tryffel.net/pkg/jellycli/config"
@@ -80,6 +81,10 @@ func NewApplication() (*Application, error) {
 		return a, err
 	}
 	err = a.login()
+	if err != nil {
+		return a, err
+	}
+	err = a.initApiView()
 	if err != nil {
 		return a, err
 	}
@@ -202,6 +207,56 @@ func (a *Application) login() error {
 	}
 
 	// TODO: Store serverid
+}
+
+func (a *Application) initApiView() error {
+	view, err := a.secrets.GetKey("music_view")
+	if err != nil {
+		return err
+	}
+	if view != "" {
+		a.api.SetDefaultMusicview(view)
+	} else {
+		views, err := a.api.GetViews()
+		if err != nil {
+			return fmt.Errorf("get user views: %v", err)
+		}
+		if len(views) == 0 {
+			return fmt.Errorf("no views to use")
+		}
+
+		fmt.Printf("Found collections: ")
+		for i, v := range views {
+			fmt.Printf("%d. %s (%s)\n", i+1, v.Name, v.Type)
+		}
+
+		// Loop for as long as user gives valid input for default view
+		for {
+			number, err := config.ReadUserInput("Default music view (number)", false)
+			if err != nil {
+				fmt.Println("Must be a valid number")
+			} else {
+				num, err := strconv.Atoi(number)
+				if err != nil {
+					fmt.Println("Must be a valid number")
+				} else {
+					id := ""
+					if num < len(views) && num > 0 {
+						id = views[num].Id.String()
+						err = a.secrets.SetKey("music_view", id)
+						a.api.SetDefaultMusicview(id)
+						if err != nil {
+							return err
+						}
+						return nil
+					} else {
+						fmt.Println("Must be a valid number")
+					}
+				}
+			}
+		}
+	}
+	return fmt.Errorf("did not get default music view")
 }
 
 func (a *Application) initApplication() error {

@@ -223,6 +223,7 @@ func (a *Application) initApiView() error {
 	}
 	if view != "" {
 		a.api.SetDefaultMusicview(view)
+		return nil
 	} else {
 		views, err := a.api.GetViews()
 		if err != nil {
@@ -232,7 +233,7 @@ func (a *Application) initApiView() error {
 			return fmt.Errorf("no views to use")
 		}
 
-		fmt.Printf("Found collections: ")
+		fmt.Println("Found collections: ")
 		for i, v := range views {
 			fmt.Printf("%d. %s (%s)\n", i+1, v.Name, v.Type)
 		}
@@ -263,7 +264,6 @@ func (a *Application) initApiView() error {
 			}
 		}
 	}
-	return fmt.Errorf("did not get default music view")
 }
 
 func (a *Application) initApplication() error {

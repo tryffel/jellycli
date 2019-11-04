@@ -29,22 +29,35 @@ const (
 type infoResponse struct {
 	ServerName string `json:"ServerName"`
 	Version    string `json:"Version"`
+	Id         string `json:"Id"`
 }
 
-// GetServerVersion returns name, version and possible error
-func (a *Api) GetServerVersion() (string, string, error) {
+// GetServerVersion returns name, version, id and possible error
+func (a *Api) GetServerVersion() (string, string, string, error) {
 	body, err := a.get("/System/Info/Public", nil)
 	if err != nil {
-		return "", "", fmt.Errorf("request failed: %v", err)
+		return "", "", "", fmt.Errorf("request failed: %v", err)
 	}
 
 	response := infoResponse{}
 	err = json.NewDecoder(body).Decode(&response)
 	if err != nil {
-		return "", "", fmt.Errorf("response read failed: %v", err)
+		return "", "", "", fmt.Errorf("response read failed: %v", err)
 	}
 
-	return response.ServerName, response.Version, nil
+	return response.ServerName, response.Version, response.Id, nil
+}
+
+func (a *Api) VerifyServerId() error {
+	_, _, id, err := a.GetServerVersion()
+	if err != nil {
+		return err
+	}
+
+	if a.serverId != id {
+		return fmt.Errorf("server id has changed: expected %s, got %s", a.serverId, id)
+	}
+	return nil
 }
 
 type playbackStarted struct {

@@ -88,6 +88,13 @@ func NewApplication() (*Application, error) {
 	if err != nil {
 		return a, err
 	}
+
+	err = a.api.VerifyServerId()
+	if err != nil {
+		logrus.Fatal("api error: %v", err)
+		os.Exit(1)
+	}
+
 	err = a.initApplication()
 	return a, err
 }

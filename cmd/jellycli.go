@@ -41,14 +41,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	startstartErr := app.Start()
-	if startstartErr != nil {
-		logrus.Error("Failed to start application: %v", startstartErr)
+	startErr := app.Start()
+	if startErr != nil {
+		logrus.Error("Failed to start application: %v", startErr)
 	}
+	<-catchSignals()
+	logrus.Info("Stopping application")
 
 	stopErr := app.Stop()
 
-	if startstartErr == nil && stopErr == nil {
+	if startErr == nil && stopErr == nil {
 		os.Exit(0)
 	}
 
@@ -100,20 +102,23 @@ func NewApplication() (*Application, error) {
 }
 
 func (a *Application) Start() error {
-	tasks := []task.Tasker{a.player, a.content, a.gui}
+	tasks := []task.Tasker{a.player, a.content}
 	var err error
+
+	go a.stopOnSignal()
+
 	for _, v := range tasks {
 		err = v.Start()
 		if err != nil {
 			return fmt.Errorf("failed to start tasks: %v", err)
 		}
 	}
-	return nil
+	return a.gui.Start()
 }
 
 func (a *Application) Stop() error {
 	logrus.Info("Stopping application")
-	tasks := []task.Tasker{a.gui, a.player, a.content}
+	tasks := []task.Tasker{a.player, a.content}
 	var err error
 	var hasError bool
 	for _, v := range tasks {
@@ -123,6 +128,8 @@ func (a *Application) Stop() error {
 			hasError = true
 		}
 	}
+	a.gui.Stop()
+
 	if a.logfile != nil {
 		ferr := a.logfile.Close()
 		logrus.Error("close log file: ", ferr)
@@ -132,6 +139,11 @@ func (a *Application) Stop() error {
 		return nil
 	}
 	return fmt.Errorf("stop application: %v", err)
+}
+
+func (a *Application) stopOnSignal() {
+	<-catchSignals()
+	a.Stop()
 }
 
 func (a *Application) initConfig() error {
@@ -313,4 +325,12 @@ func setLogging() *os.File {
 
 	logrus.SetOutput(file)
 	return file
+}
+
+func catchSignals() chan os.Signal {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c,
+		syscall.SIGINT,
+		syscall.SIGTERM)
+	return c
 }

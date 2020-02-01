@@ -214,7 +214,7 @@ func (s *Status) Draw(screen tcell.Screen) {
 		v.Draw(screen)
 		btnX += 5
 	}
-	s.WriteStatus(screen, x+25, y)
+	s.WriteStatus(screen, x+27, y)
 }
 
 func (s *Status) GetRect() (int, int, int, int) {

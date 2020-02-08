@@ -156,11 +156,11 @@ func newStatus(ctrl controller.MediaController) *Status {
 	}
 
 	s.shortCuts = []string{
-		PackKeyBindingName(config.KeyBinds.Global.Previous, 5),
-		PackKeyBindingName(config.KeyBinds.Global.Backward, 5),
-		PackKeyBindingName(config.KeyBinds.Global.PlayPause, 5),
-		PackKeyBindingName(config.KeyBinds.Global.Forward, 5),
-		PackKeyBindingName(config.KeyBinds.Global.Next, 5),
+		util.PackKeyBindingName(config.KeyBinds.Global.Previous, 5),
+		util.PackKeyBindingName(config.KeyBinds.Global.Backward, 5),
+		util.PackKeyBindingName(config.KeyBinds.Global.PlayPause, 5),
+		util.PackKeyBindingName(config.KeyBinds.Global.Forward, 5),
+		util.PackKeyBindingName(config.KeyBinds.Global.Next, 5),
 	}
 
 	for _, v := range s.buttons {
@@ -200,9 +200,9 @@ func (s *Status) Draw(screen tcell.Screen) {
 	topX += progressLen + progressLen/10
 	tview.Print(screen, volume, topX, y-1, w, tview.AlignLeft, config.ColorControls)
 
-	tview.Print(screen, PackKeyBindingName(config.KeyBinds.Global.VolumeDown, 5),
+	tview.Print(screen, util.PackKeyBindingName(config.KeyBinds.Global.VolumeDown, 5),
 		topX+7, y, topX+16, tview.AlignLeft, config.ColorControls)
-	tview.Print(screen, PackKeyBindingName(config.KeyBinds.Global.VolumeUp, 5),
+	tview.Print(screen, util.PackKeyBindingName(config.KeyBinds.Global.VolumeUp, 5),
 		topX+18, y, topX+1, tview.AlignLeft, config.ColorControls)
 
 	btnY := y + 1

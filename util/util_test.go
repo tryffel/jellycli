@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Tero Vierimaa
+ * Copyright 2020 Tero Vierimaa
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package widgets
+package util
 
 import (
 	"github.com/gdamore/tcell"
 	"testing"
-	"tryffel.net/pkg/jellycli/util"
 )
 
 func TestPackKeyBindingName(t *testing.T) {
@@ -87,7 +86,7 @@ func TestSecToStringLong(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := util.SecToStringApproximate(tt.seconds); got != tt.want {
+			if got := SecToStringApproximate(tt.seconds); got != tt.want {
 				t.Errorf("SecToStringApproximate() = %v, want %v", got, tt.want)
 			}
 		})

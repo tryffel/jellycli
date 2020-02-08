@@ -19,6 +19,7 @@ package widgets
 import (
 	"fmt"
 	"github.com/rivo/tview"
+	"github.com/rivo/uniseg"
 	"tryffel.net/go/twidgets"
 	"tryffel.net/pkg/jellycli/config"
 	"tryffel.net/pkg/jellycli/models"
@@ -97,12 +98,62 @@ func (a *albumSong) SetSelected(selected bool) {
 	}
 }
 
+func (a *albumSong) SetRect(x, y, w, h int) {
+	_, _, ch, cw := a.GetRect()
+	a.TextView.SetRect(x, y, w, h)
+	if cw != w && a.song != nil {
+		a.setText()
+	}
+	if ch != h {
+	}
+}
+
+func (a *albumSong) setText() {
+	if a.song == nil {
+		return
+	}
+	_, _, w, _ := a.GetRect()
+	duration := SecToString(a.song.Duration)
+	dL := len(duration)
+	name := fmt.Sprintf("%d. %s", a.song.Index, a.song.Name)
+	nameL := uniseg.GraphemeClusterCount(name)
+
+	// width - duration - name - padding
+	spaces := w - dL - nameL - 2
+	space := ""
+
+	if spaces <= 0 {
+		lines := tview.WordWrap(name, w-3)
+		if len(lines) >= 1 {
+			name = lines[0] + "... "
+		}
+	} else {
+		for {
+			if len(space) == spaces {
+				break
+			}
+			if len(space) < spaces-10 {
+				space += "          "
+			} else if len(space) < spaces-5 {
+				space += "     "
+			} else if len(space) < spaces-3 {
+				space += "   "
+			} else {
+				space += " "
+			}
+		}
+	}
+
+	text := name + space + duration
+	a.SetText(text)
+}
+
 func newAlbumSong(s *models.Song) *albumSong {
 	song := &albumSong{
 		TextView: tview.NewTextView(),
+		song:     s,
 	}
-	text := fmt.Sprintf("%d. %s %s\n ", s.Index, s.Name, SecToString(s.Duration))
-	song.SetText(text)
+	song.setText()
 	song.SetBorderPadding(0, 0, 1, 1)
 
 	return song

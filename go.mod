@@ -8,6 +8,8 @@ require (
 	github.com/faiface/beep v1.0.1
 	github.com/gdamore/tcell v1.3.0
 	github.com/jroimartin/gocui v0.4.0
+	github.com/mattn/go-colorable v0.1.4 // indirect
+	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/rivo/tview v0.0.0-20191018125527-685bf6da76c2
 	github.com/sirupsen/logrus v1.4.2

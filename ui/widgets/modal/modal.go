@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Tero Vierimaa
+ * Copyright 2020 Tero Vierimaa
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package widgets
+package modal
 
 import "github.com/rivo/tview"
 

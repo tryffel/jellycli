@@ -24,6 +24,7 @@ import (
 	"tryffel.net/pkg/jellycli/controller"
 	"tryffel.net/pkg/jellycli/models"
 	"tryffel.net/pkg/jellycli/player"
+	"tryffel.net/pkg/jellycli/ui/widgets/modal"
 )
 
 type Window struct {
@@ -34,11 +35,11 @@ type Window struct {
 	navBar  *NavBar
 	status  *Status
 	browser *Browser
-	search  *Search
-	view    *ViewModal
-	help    *Help
-	queue   *Queue
-	history *Queue
+	search  *modal.Search
+	view    *modal.ViewModal
+	help    *modal.Help
+	queue   *modal.Queue
+	history *modal.Queue
 
 	mediaController controller.MediaController
 
@@ -72,17 +73,17 @@ func NewWindow(mc controller.MediaController) Window {
 
 	w.app.SetInputCapture(w.eventHandler)
 	//w.window.SetInputCapture(w.eventHandler)
-	w.search = NewSearch(w.searchCb)
+	w.search = modal.NewSearch(w.searchCb)
 	w.search.SetDoneFunc(w.wrapCloseModal(w.search))
-	w.help = NewHelp(w.closeHelp)
+	w.help = modal.NewHelp(w.closeHelp)
 	w.help.SetDoneFunc(w.wrapCloseModal(w.help))
-	w.queue = NewQueue(QueueModeQueue)
+	w.queue = modal.NewQueue(modal.QueueModeQueue)
 	w.queue.SetDoneFunc(w.wrapCloseModal(w.queue))
-	w.view = NewViewModal()
+	w.view = modal.NewViewModal()
 	w.view.SetDoneFunc(w.wrapCloseModal(w.view))
 	w.view.SetViewFunc(w.openViewFunc)
 
-	w.history = NewQueue(QueueModeHistory)
+	w.history = modal.NewQueue(modal.QueueModeHistory)
 	w.history.SetDoneFunc(w.wrapCloseModal(w.history))
 
 	w.status.UpdateState(player.PlayingState{
@@ -223,10 +224,10 @@ func (w *Window) navBarCtrl(key tcell.Key) bool {
 		w.showModal(w.search, 10, 50, true)
 	case navBar.Queue:
 		w.showModal(w.queue, 20, 60, true)
-		w.queue.setData(w.mediaController.GetQueue(), w.mediaController.QueueDuration())
+		w.queue.SetData(w.mediaController.GetQueue(), w.mediaController.QueueDuration())
 	case navBar.History:
 		w.showModal(w.history, 20, 60, true)
-		w.history.setData(w.mediaController.GetHistory(100), 0)
+		w.history.SetData(w.mediaController.GetHistory(100), 0)
 	default:
 		return false
 	}
@@ -253,13 +254,13 @@ func (w *Window) closeHelp() {
 	w.app.SetFocus(w.window)
 }
 
-func (w *Window) wrapCloseModal(modal Modal) func() {
+func (w *Window) wrapCloseModal(modal modal.Modal) func() {
 	return func() {
 		w.closeModal(modal)
 	}
 }
 
-func (w *Window) closeModal(modal Modal) {
+func (w *Window) closeModal(modal modal.Modal) {
 	if w.hasModal {
 		modal.Blur()
 		modal.SetVisible(false)
@@ -272,7 +273,7 @@ func (w *Window) closeModal(modal Modal) {
 	}
 }
 
-func (w *Window) showModal(modal Modal, height, width uint, lockSize bool) {
+func (w *Window) showModal(modal modal.Modal, height, width uint, lockSize bool) {
 	if !w.hasModal {
 		w.hasModal = true
 		w.lastFocus = w.app.GetFocus()

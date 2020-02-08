@@ -19,6 +19,7 @@ package widgets
 import (
 	"github.com/gdamore/tcell"
 	"testing"
+	"tryffel.net/pkg/jellycli/util"
 )
 
 func TestPackKeyBindingName(t *testing.T) {
@@ -86,7 +87,7 @@ func TestSecToStringLong(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := SecToStringApproximate(tt.seconds); got != tt.want {
+			if got := util.SecToStringApproximate(tt.seconds); got != tt.want {
 				t.Errorf("SecToStringApproximate() = %v, want %v", got, tt.want)
 			}
 		})

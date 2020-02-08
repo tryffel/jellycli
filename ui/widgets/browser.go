@@ -24,6 +24,7 @@ import (
 	"tryffel.net/pkg/jellycli/config"
 	"tryffel.net/pkg/jellycli/controller"
 	"tryffel.net/pkg/jellycli/models"
+	modal2 "tryffel.net/pkg/jellycli/ui/widgets/modal"
 )
 
 type panelSplit int
@@ -93,7 +94,7 @@ type Browser struct {
 	gridSize   int
 	customGrid bool
 	focused    panelSplit
-	modal      Modal
+	modal      modal2.Modal
 
 	transition browserTransition
 	state      browserState
@@ -237,7 +238,7 @@ func NewBrowser(controller controller.MediaController) *Browser {
 }
 
 //AddModal adds modal to center of browser
-func (b *Browser) AddModal(modal Modal, height, width uint, lockSize bool) {
+func (b *Browser) AddModal(modal modal2.Modal, height, width uint, lockSize bool) {
 	if b.hasModal {
 		return
 	}
@@ -263,7 +264,7 @@ func (b *Browser) AddModal(modal Modal, height, width uint, lockSize bool) {
 }
 
 //RemoveModal removes modal
-func (b *Browser) RemoveModal(modal Modal) {
+func (b *Browser) RemoveModal(modal modal2.Modal) {
 	if b.hasModal {
 		modal.SetVisible(false)
 		b.grid.RemoveItem(modal)

@@ -26,6 +26,7 @@ import (
 	"tryffel.net/pkg/jellycli/controller"
 	"tryffel.net/pkg/jellycli/models"
 	"tryffel.net/pkg/jellycli/player"
+	"tryffel.net/pkg/jellycli/util"
 	"unicode/utf8"
 )
 
@@ -175,9 +176,9 @@ func (s *Status) Draw(screen tcell.Screen) {
 	s.frame.Draw(screen)
 	x, y, w, _ := s.frame.GetInnerRect()
 
-	songPast := SecToString(s.state.CurrentSongPast)
+	songPast := util.SecToString(s.state.CurrentSongPast)
 	songPast = " " + songPast + " "
-	songDuration := SecToString(s.state.CurrentSongDuration)
+	songDuration := util.SecToString(s.state.CurrentSongDuration)
 	songDuration = " " + songDuration + " "
 
 	volume := " Volume " + s.volume.Draw(s.state.Volume)

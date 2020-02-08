@@ -23,6 +23,7 @@ import (
 	"tryffel.net/go/twidgets"
 	"tryffel.net/pkg/jellycli/config"
 	"tryffel.net/pkg/jellycli/models"
+	"tryffel.net/pkg/jellycli/util"
 )
 
 type albumHeader struct {
@@ -82,7 +83,7 @@ func (a *albumHeader) SetAlbum(album *models.Album) {
 	a.album = album
 	a.name.SetText(album.Name)
 	a.description.SetText(fmt.Sprintf("%d tracks  %s  %d",
-		album.SongCount, SecToStringApproximate(album.Duration), album.Year))
+		album.SongCount, util.SecToStringApproximate(album.Duration), album.Year))
 }
 
 type albumSong struct {
@@ -113,7 +114,7 @@ func (a *albumSong) setText() {
 		return
 	}
 	_, _, w, _ := a.GetRect()
-	duration := SecToString(a.song.Duration)
+	duration := util.SecToString(a.song.Duration)
 	dL := len(duration)
 	name := fmt.Sprintf("%d. %s", a.song.Index, a.song.Name)
 	nameL := uniseg.GraphemeClusterCount(name)

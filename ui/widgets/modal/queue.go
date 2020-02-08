@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Tero Vierimaa
+ * Copyright 2020 Tero Vierimaa
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package widgets
+package modal
 
 import (
 	"fmt"
@@ -22,6 +22,7 @@ import (
 	"github.com/rivo/tview"
 	"tryffel.net/pkg/jellycli/config"
 	"tryffel.net/pkg/jellycli/models"
+	"tryffel.net/pkg/jellycli/util"
 )
 
 type QueueMode int
@@ -61,18 +62,18 @@ func NewQueue(mode QueueMode) *Queue {
 	return q
 }
 
-func (q *Queue) setData(items []*models.SongInfo, duration int) {
+func (q *Queue) SetData(items []*models.SongInfo, duration int) {
 	var text string
 	if q.mode == QueueModeQueue {
-		text = fmt.Sprintf("Total duration: %s, songs: %d\n\n", SecToString(duration), len(items))
+		text = fmt.Sprintf("Total duration: %s, songs: %d\n\n", util.SecToString(duration), len(items))
 		for i, v := range items {
-			text += fmt.Sprintf("%d. %s - %s (%s) %s\n", i+1, v.Name, v.Album, v.Artist, SecToString(v.Duration))
+			text += fmt.Sprintf("%d. %s - %s (%s) %s\n", i+1, v.Name, v.Album, v.Artist, util.SecToString(v.Duration))
 		}
 	} else if q.mode == QueueModeHistory {
-		text = fmt.Sprintf("Total history: %s, songs: %d\n\n", SecToString(duration), len(items))
+		text = fmt.Sprintf("Total history: %s, songs: %d\n\n", util.SecToString(duration), len(items))
 		for i, _ := range items {
 			item := items[len(items)-1]
-			text += fmt.Sprintf("%d. %s - %s (%s) %s\n", i+1, item.Name, item.Album, item.Artist, SecToString(item.Duration))
+			text += fmt.Sprintf("%d. %s - %s (%s) %s\n", i+1, item.Name, item.Album, item.Artist, util.SecToString(item.Duration))
 		}
 	}
 	q.text.SetText(text)

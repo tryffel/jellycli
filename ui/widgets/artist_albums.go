@@ -23,6 +23,7 @@ import (
 	"tryffel.net/go/twidgets"
 	"tryffel.net/pkg/jellycli/config"
 	"tryffel.net/pkg/jellycli/models"
+	"tryffel.net/pkg/jellycli/util"
 )
 
 const (
@@ -63,7 +64,7 @@ func NewArtistHeader(prevFunc func()) *ArtistHeader {
 	a.description.SetBorderPadding(0, 0, 1, 1)
 	a.name.SetText(a.artist.Name)
 	a.description.SetText(fmt.Sprintf("Albums: %d, Total: %s",
-		a.artist.AlbumCount, SecToStringApproximate(a.artist.TotalDuration)))
+		a.artist.AlbumCount, util.SecToStringApproximate(a.artist.TotalDuration)))
 	a.prevBtn.SetSelectedFunc(a.prevFunc)
 
 	btns := []*tview.Button{a.prevBtn, a.anotherBtn, a.similarBtn}
@@ -89,7 +90,7 @@ func (a *ArtistHeader) SetArtist(artist *models.Artist) {
 	a.artist = artist
 	a.name.SetText(a.artist.Name)
 	a.description.SetText(fmt.Sprintf("Albums: %d, Total: %s",
-		a.artist.AlbumCount, SecToStringApproximate(a.artist.TotalDuration)))
+		a.artist.AlbumCount, util.SecToStringApproximate(a.artist.TotalDuration)))
 }
 
 //AlbumCover is a simple cover for album, it shows

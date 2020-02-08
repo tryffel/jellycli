@@ -22,6 +22,7 @@ import (
 	"github.com/rivo/tview"
 	"tryffel.net/pkg/jellycli/config"
 	"tryffel.net/pkg/jellycli/models"
+	"tryffel.net/pkg/jellycli/util"
 	"unicode/utf8"
 )
 
@@ -107,7 +108,7 @@ func (l *List) SetData(items []models.Item) {
 			artist, ok := v.(*models.Artist)
 			if ok {
 				l.table.SetCell(i+1, 1, setCellWidth(tableCell(artist.Name)))
-				l.table.SetCell(i+1, 2, tableCell(SecToStringApproximate(artist.TotalDuration)))
+				l.table.SetCell(i+1, 2, tableCell(util.SecToStringApproximate(artist.TotalDuration)))
 			} else {
 				l.table.SetCell(i+1, 1, setCellWidth(tableCell(v.GetName()+"(unknown type)")))
 			}
@@ -122,7 +123,7 @@ func (l *List) SetData(items []models.Item) {
 			if ok {
 				l.table.SetCell(i+1, 1, setCellWidth(tableCell(album.Name)))
 				l.table.SetCell(i+1, 2, tableCell(fmt.Sprint(album.Year)))
-				l.table.SetCell(i+1, 3, tableCell(SecToStringApproximate(album.Duration)))
+				l.table.SetCell(i+1, 3, tableCell(util.SecToStringApproximate(album.Duration)))
 			} else {
 				l.table.SetCell(i+1, 1, setCellWidth(tableCell(v.GetName()+"(unknown type)")))
 			}
@@ -135,7 +136,7 @@ func (l *List) SetData(items []models.Item) {
 			song, ok := v.(*models.Song)
 			if ok {
 				l.table.SetCell(i+1, 1, tableCell(song.Name))
-				l.table.SetCell(i+1, 2, tableCell(SecToString(song.Duration)))
+				l.table.SetCell(i+1, 2, tableCell(util.SecToString(song.Duration)))
 			} else {
 				l.table.SetCell(i+1, 1, setCellWidth(tableCell(v.GetName()+"(unknown type)")))
 			}

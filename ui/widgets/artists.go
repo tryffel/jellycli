@@ -21,6 +21,7 @@ import (
 	"github.com/rivo/tview"
 	"github.com/sirupsen/logrus"
 	"tryffel.net/pkg/jellycli/models"
+	"tryffel.net/pkg/jellycli/util"
 )
 
 type Artist struct {
@@ -44,7 +45,7 @@ func NewArtist(selectAlbumFunc func(id models.Id)) *Artist {
 func (a *Artist) SetArtist(ar *models.Artist) {
 	a.artist = ar
 	text := ar.Name + "\n"
-	text += fmt.Sprintf("Total: %s\n", SecToString(ar.TotalDuration))
+	text += fmt.Sprintf("Total: %s\n", util.SecToString(ar.TotalDuration))
 	a.SetInfoText(text)
 }
 

@@ -57,9 +57,12 @@ func NewMediaNavigation() *MediaNavigation {
 	}
 
 	for i, v := range items {
-		m.Table.SetCellSimple(i, 0, v.name)
+		cell := tableCell(v.name)
+		m.Table.SetCell(i, 0, cell)
 		if v.count > -1 {
 			m.Table.SetCellSimple(i, 1, fmt.Sprint(v.count))
+			cell = tableCell(fmt.Sprint(v.count))
+			m.Table.SetCell(i, 1, cell)
 		}
 	}
 	return m

@@ -32,14 +32,15 @@ type Window struct {
 	window *tview.Grid
 
 	// Widgets
-	navBar  *NavBar
-	status  *Status
-	browser *Browser
-	search  *modal.Search
-	view    *modal.ViewModal
-	help    *modal.Help
-	queue   *modal.Queue
-	history *modal.Queue
+	navBar   *NavBar
+	status   *Status
+	browser  *Browser
+	mediaNav *MediaNavigation
+	search   *modal.Search
+	view     *modal.ViewModal
+	help     *modal.Help
+	queue    *modal.Queue
+	history  *modal.Queue
 
 	mediaController controller.MediaController
 
@@ -49,9 +50,10 @@ type Window struct {
 
 func NewWindow(mc controller.MediaController) Window {
 	w := Window{
-		app:    tview.NewApplication(),
-		status: newStatus(mc),
-		window: tview.NewGrid(),
+		app:      tview.NewApplication(),
+		status:   newStatus(mc),
+		window:   tview.NewGrid(),
+		mediaNav: NewMediaNavigation(),
 	}
 
 	w.navBar = NewNavBar(w.keyHandlerCb)
@@ -126,11 +128,12 @@ func (w *Window) setLayout() {
 	w.window.Clear()
 	w.window.SetBorder(true)
 	w.window.SetRows(1, -1, 4)
-	w.window.SetColumns(-1)
+	w.window.SetColumns(24, -3)
 
-	w.window.AddItem(w.navBar, 0, 0, 1, 1, 1, 30, false)
-	w.window.AddItem(w.browser, 1, 0, 1, 1, 15, 10, false)
-	w.window.AddItem(w.status, 2, 0, 1, 1, 3, 10, false)
+	w.window.AddItem(w.navBar, 0, 0, 1, 2, 1, 30, false)
+	w.window.AddItem(w.mediaNav, 1, 0, 1, 1, 5, 10, true)
+	w.window.AddItem(w.browser, 1, 1, 1, 1, 15, 10, false)
+	w.window.AddItem(w.status, 2, 0, 1, 2, 3, 10, false)
 }
 
 func (w *Window) eventHandler(event *tcell.EventKey) *tcell.EventKey {

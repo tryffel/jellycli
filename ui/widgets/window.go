@@ -41,8 +41,9 @@ type Window struct {
 	queue    *modal.Queue
 	history  *modal.Queue
 
-	artist *ArtistView
-	album  *AlbumView
+	artist     *ArtistView
+	album      *AlbumView
+	artistList *ArtistList
 
 	gridAxisX  []int
 	gridAxisY  []int
@@ -57,11 +58,12 @@ type Window struct {
 
 func NewWindow(mc controller.MediaController) Window {
 	w := Window{
-		app:    tview.NewApplication(),
-		status: newStatus(mc),
-		window: tview.NewGrid(),
-		artist: NewArtistView(),
-		album:  NewAlbumview(),
+		app:        tview.NewApplication(),
+		status:     newStatus(mc),
+		window:     tview.NewGrid(),
+		artist:     NewArtistView(),
+		artistList: NewArtistList(nil),
+		album:      NewAlbumview(),
 	}
 
 	w.mediaNav = NewMediaNavigation(w.selectMedia)
@@ -346,8 +348,8 @@ func (w *Window) selectMedia(m MediaSelect) {
 		if err != nil {
 			logrus.Errorf("get favorite artists: %v", err)
 		} else {
-			w.artist.SetArtist(artists[0])
-			w.setViewWidget(w.artist)
+			w.artistList.AddArtists(artists)
+			w.setViewWidget(w.artistList)
 		}
 	}
 }

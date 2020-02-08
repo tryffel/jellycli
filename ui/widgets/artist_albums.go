@@ -175,8 +175,9 @@ func printArtists(artists []string, maxWidth int) string {
 type ArtistView struct {
 	*tview.Grid
 	//list *AlbumList
-	list   *twidgets.ScrollList
-	header *ArtistHeader
+	list        *twidgets.ScrollList
+	header      *ArtistHeader
+	listFocused bool
 }
 
 func (a *ArtistView) AddAlbum(c *AlbumCover) {
@@ -205,7 +206,32 @@ func NewArtistView() *ArtistView {
 	a.Grid.SetColumns(-1)
 
 	a.Grid.AddItem(a.header, 0, 0, 1, 1, 6, 25, false)
-	a.Grid.AddItem(a.list, 1, 0, 1, 1, 6, 25, true)
+	a.Grid.AddItem(a.list, 1, 0, 1, 1, 6, 25, false)
+
+	a.listFocused = false
 
 	return a
+}
+
+func (a *ArtistView) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+	return func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+		key := event.Key()
+		if a.listFocused {
+			index := a.list.GetSelectedIndex()
+			if index == 0 && key == tcell.KeyUp {
+				a.listFocused = false
+				a.header.Focus(nil)
+			} else {
+				a.list.InputHandler()(event, setFocus)
+			}
+		} else {
+			r := event.Rune()
+			if r == 'j' {
+				a.listFocused = true
+				a.header.Blur()
+			} else {
+				a.header.InputHandler()(event, setFocus)
+			}
+		}
+	}
 }

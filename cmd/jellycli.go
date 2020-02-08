@@ -132,7 +132,7 @@ func (a *Application) Stop() error {
 	a.gui.Stop()
 
 	if err != nil || hasError {
-		logrus.Error("stop application: %v", err)
+		logrus.Errorf("stop application: %v", err)
 		err = nil
 	}
 

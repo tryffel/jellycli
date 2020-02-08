@@ -3,14 +3,14 @@ name: default
 
 steps:
 - name: tests
-  image: golang
+  image: tryffel/golang-alsa:13.7
   volumes:
   - name: deps
     path: /go
   commands:
   - go mod download
   - go test ./...
-  - go build
+    #- go build
 
 trigger:
   event:

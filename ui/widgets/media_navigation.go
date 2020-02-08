@@ -18,18 +18,36 @@ package widgets
 
 import (
 	"fmt"
+	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 	"tryffel.net/pkg/jellycli/config"
+)
+
+type MediaSelect int
+
+const (
+	MediaLatestMusic MediaSelect = iota
+	MediaRecent
+	MediaArtists
+	MediaAlbums
+	MediaSongs
+	MediaPlaylists
+	MediaFavoriteArtists
+	MediaFavoritAlbums
 )
 
 //MediaNavigation provides access to artists, albums, playlists
 type MediaNavigation struct {
 	*tview.Table
+	selectFunc func(MediaSelect)
 }
 
-func NewMediaNavigation() *MediaNavigation {
+//NewMediaNavigation constructs new mediaNavigation. SelectFunc is called every time user
+// wants to access given resource. SelectFunc can be nil.
+func NewMediaNavigation(selectFunc func(selection MediaSelect)) *MediaNavigation {
 	m := &MediaNavigation{
-		Table: tview.NewTable(),
+		Table:      tview.NewTable(),
+		selectFunc: selectFunc,
 	}
 
 	m.SetBorder(true)
@@ -66,4 +84,17 @@ func NewMediaNavigation() *MediaNavigation {
 		}
 	}
 	return m
+}
+
+func (m *MediaNavigation) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+	return func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+		key := event.Key()
+
+		if key == tcell.KeyEnter && m.selectFunc != nil {
+			index, _ := m.Table.GetSelection()
+			m.selectFunc(MediaSelect(index))
+		} else {
+			m.Table.InputHandler()(event, setFocus)
+		}
+	}
 }

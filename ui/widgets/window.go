@@ -41,6 +41,9 @@ type Window struct {
 	queue    *modal.Queue
 	history  *modal.Queue
 
+	artist *ArtistView
+	album  *AlbumView
+
 	gridAxisX  []int
 	gridAxisY  []int
 	customGrid bool
@@ -54,12 +57,14 @@ type Window struct {
 
 func NewWindow(mc controller.MediaController) Window {
 	w := Window{
-		app:      tview.NewApplication(),
-		status:   newStatus(mc),
-		window:   tview.NewGrid(),
-		mediaNav: NewMediaNavigation(),
+		app:    tview.NewApplication(),
+		status: newStatus(mc),
+		window: tview.NewGrid(),
+		artist: NewArtistView(),
+		album:  NewAlbumview(),
 	}
 
+	w.mediaNav = NewMediaNavigation(w.selectMedia)
 	w.navBar = NewNavBar(w.keyHandlerCb)
 	w.mediaController = mc
 
@@ -70,11 +75,6 @@ func NewWindow(mc controller.MediaController) Window {
 	w.setLayout()
 	w.app.SetRoot(w.window, true)
 	w.app.SetFocus(w.window)
-
-	//data := testData()
-	//w.browser.setData(&data, models.TypeArtist)
-
-	//w.browser.SetInitialData(mc.)
 
 	w.app.SetInputCapture(w.eventHandler)
 	//w.window.SetInputCapture(w.eventHandler)
@@ -137,12 +137,13 @@ func (w *Window) setLayout() {
 
 	w.window.AddItem(w.navBar, 0, 0, 1, 6, 1, 30, false)
 	w.window.AddItem(w.mediaNav, 1, 0, 4, 1, 5, 10, true)
-	//w.window.AddItem(w.browser, 1, 1, 4, 5, 15, 10, false)
 	w.window.AddItem(w.status, 5, 0, 1, 6, 3, 10, false)
 }
 
 func (w *Window) setViewWidget(p tview.Primitive) {
 	w.window.AddItem(p, 1, 1, 4, 5, 15, 10, false)
+	w.lastFocus = w.app.GetFocus()
+	w.app.SetFocus(p)
 }
 
 func (w *Window) eventHandler(event *tcell.EventKey) *tcell.EventKey {
@@ -336,4 +337,17 @@ func (w *Window) itemsCb(items []models.Item) {
 func (w *Window) InitBrowser(items []models.Item) {
 	//w.browser.setData(items)
 	w.app.Draw()
+}
+
+func (w *Window) selectMedia(m MediaSelect) {
+	switch m {
+	case MediaFavoriteArtists:
+		artists, err := w.mediaController.GetFavoriteArtists()
+		if err != nil {
+			logrus.Errorf("get favorite artists: %v", err)
+		} else {
+			w.artist.SetArtist(artists[0])
+			w.setViewWidget(w.artist)
+		}
+	}
 }

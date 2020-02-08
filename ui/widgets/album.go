@@ -123,9 +123,9 @@ func (a *albumSong) setText() {
 	space := ""
 
 	if spaces <= 0 {
-		lines := tview.WordWrap(name, w-3)
+		lines := tview.WordWrap(name, w-2)
 		if len(lines) >= 1 {
-			name = lines[0] + "... "
+			name = lines[0] + "… "
 		}
 	} else {
 		for {

@@ -36,7 +36,6 @@ import (
 func main() {
 
 	app, err := NewApplication()
-	//gui.AssignChannels(p.StateChannel(), p.ActionChannel())
 	if err != nil {
 		logrus.Fatal(err)
 		fmt.Println(err)
@@ -132,15 +131,20 @@ func (a *Application) Stop() error {
 	}
 	a.gui.Stop()
 
+	if err != nil || hasError {
+		logrus.Error("stop application: %v", err)
+		err = nil
+	}
+
 	if a.logfile != nil {
-		ferr := a.logfile.Close()
-		logrus.Error("close log file: ", ferr)
-		hasError = true
+		err = a.logfile.Close()
+		if err != nil {
+			err = fmt.Errorf("close log file: %v", err)
+		}
 	}
-	if err == nil && hasError == false {
-		return nil
-	}
-	return fmt.Errorf("stop application: %v", err)
+
+	logrus.SetOutput(os.Stdout)
+	return err
 }
 
 func (a *Application) stopOnSignal() {

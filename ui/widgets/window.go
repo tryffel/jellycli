@@ -34,13 +34,17 @@ type Window struct {
 	// Widgets
 	navBar   *NavBar
 	status   *Status
-	browser  *Browser
 	mediaNav *MediaNavigation
 	search   *modal.Search
 	view     *modal.ViewModal
 	help     *modal.Help
 	queue    *modal.Queue
 	history  *modal.Queue
+
+	gridAxisX  []int
+	gridAxisY  []int
+	customGrid bool
+	modal      modal.Modal
 
 	mediaController controller.MediaController
 
@@ -58,7 +62,6 @@ func NewWindow(mc controller.MediaController) Window {
 
 	w.navBar = NewNavBar(w.keyHandlerCb)
 	w.mediaController = mc
-	w.browser = NewBrowser(mc)
 
 	w.window.SetTitle(" " + config.AppName + " ")
 	w.window.SetTitleColor(config.ColorPrimary)
@@ -66,7 +69,7 @@ func NewWindow(mc controller.MediaController) Window {
 	w.window.SetBorderColor(config.ColroMainFrame)
 	w.setLayout()
 	w.app.SetRoot(w.window, true)
-	w.app.SetFocus(w.browser)
+	w.app.SetFocus(w.window)
 
 	//data := testData()
 	//w.browser.setData(&data, models.TypeArtist)
@@ -125,15 +128,21 @@ func (w *Window) Stop() {
 }
 
 func (w *Window) setLayout() {
+	w.gridAxisY = []int{1, -1, -2, -2, -1, 4}
+	w.gridAxisX = []int{24, -1, -2, -2, -1, 24}
 	w.window.Clear()
 	w.window.SetBorder(true)
-	w.window.SetRows(1, -1, 4)
-	w.window.SetColumns(24, -3)
+	w.window.SetRows(w.gridAxisY...)
+	w.window.SetColumns(w.gridAxisX...)
 
-	w.window.AddItem(w.navBar, 0, 0, 1, 2, 1, 30, false)
-	w.window.AddItem(w.mediaNav, 1, 0, 1, 1, 5, 10, true)
-	w.window.AddItem(w.browser, 1, 1, 1, 1, 15, 10, false)
-	w.window.AddItem(w.status, 2, 0, 1, 2, 3, 10, false)
+	w.window.AddItem(w.navBar, 0, 0, 1, 6, 1, 30, false)
+	w.window.AddItem(w.mediaNav, 1, 0, 4, 1, 5, 10, true)
+	//w.window.AddItem(w.browser, 1, 1, 4, 5, 15, 10, false)
+	w.window.AddItem(w.status, 5, 0, 1, 6, 3, 10, false)
+}
+
+func (w *Window) setViewWidget(p tview.Primitive) {
+	w.window.AddItem(p, 1, 1, 4, 5, 15, 10, false)
 }
 
 func (w *Window) eventHandler(event *tcell.EventKey) *tcell.EventKey {
@@ -210,7 +219,6 @@ func (w *Window) mediaCtrl(event *tcell.EventKey) bool {
 // Open view
 func (w *Window) openViewFunc(view controller.View) {
 	go w.mediaController.GetView(view)
-	w.browser.resetWaitingPanel()
 }
 
 func (w *Window) navBarCtrl(key tcell.Key) bool {
@@ -243,7 +251,6 @@ func (w *Window) moveCtrl(key tcell.Key) bool {
 
 func (w *Window) searchCb(query string, doSearch bool) {
 	logrus.Debug("In search callback")
-	w.browser.RemoveModal(w.search)
 	w.app.SetFocus(w.window)
 
 	if doSearch {
@@ -253,7 +260,6 @@ func (w *Window) searchCb(query string, doSearch bool) {
 }
 
 func (w *Window) closeHelp() {
-	w.browser.RemoveModal(w.help)
 	w.app.SetFocus(w.window)
 }
 
@@ -267,7 +273,17 @@ func (w *Window) closeModal(modal modal.Modal) {
 	if w.hasModal {
 		modal.Blur()
 		modal.SetVisible(false)
-		w.browser.RemoveModal(modal)
+
+		modal.SetVisible(false)
+		w.window.RemoveItem(modal)
+		w.hasModal = false
+		w.modal = nil
+		if w.customGrid {
+			w.window.SetRows(w.gridAxisY...)
+			w.window.SetColumns(w.gridAxisX...)
+			w.customGrid = false
+		}
+
 		w.app.SetFocus(w.lastFocus)
 		w.lastFocus = nil
 		w.hasModal = false
@@ -279,9 +295,26 @@ func (w *Window) closeModal(modal modal.Modal) {
 func (w *Window) showModal(modal modal.Modal, height, width uint, lockSize bool) {
 	if !w.hasModal {
 		w.hasModal = true
+		w.modal = modal
 		w.lastFocus = w.app.GetFocus()
 		w.lastFocus.Blur()
-		w.browser.AddModal(modal, height, width, lockSize)
+		if !lockSize {
+			w.customGrid = false
+			w.window.AddItem(modal, 2, 2, 2, 2, 8, 30, true)
+		} else {
+			w.customGrid = true
+			x := make([]int, len(w.gridAxisX))
+			y := make([]int, len(w.gridAxisY))
+			copy(x, w.gridAxisX)
+			copy(y, w.gridAxisY)
+			x[2] = int(width / 2)
+			x[3] = x[2]
+			y[2] = int(height / 2)
+			y[3] = y[2]
+			w.window.SetRows(y...)
+			w.window.SetColumns(x...)
+			w.window.AddItem(modal, 2, 2, 2, 2, int(height), int(width), true)
+		}
 		w.app.SetFocus(modal)
 		modal.SetVisible(true)
 		w.app.QueueUpdateDraw(func() {})
@@ -296,11 +329,11 @@ func (w *Window) statusCb(state player.PlayingState) {
 }
 
 func (w *Window) itemsCb(items []models.Item) {
-	w.browser.setData(items)
+	//w.browser.setData(items)
 	w.app.QueueUpdateDraw(func() {})
 }
 
 func (w *Window) InitBrowser(items []models.Item) {
-	w.browser.setData(items)
+	//w.browser.setData(items)
 	w.app.Draw()
 }

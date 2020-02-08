@@ -269,7 +269,7 @@ func (p *Player) RefreshState() {
 func (p *Player) PlaySong(action Action) bool {
 	reader, err := p.Api.GetSongDirect(action.AudioId, "mp3")
 	if err != nil {
-		logrus.Error("failed to request file over http: %v", err)
+		logrus.Error("failed to request file over http: ", err.Error())
 		return false
 	} else {
 		err = p.audio.newFileStream(reader, FormatMp3)
@@ -330,6 +330,6 @@ func (p *Player) reportStatus(event api.PlaybackEvent) {
 
 	err := p.Api.ReportProgress(state)
 	if err != nil {
-		logrus.Error("Failed to report status: %v", err)
+		logrus.Error("Failed to report status: ", err.Error())
 	}
 }

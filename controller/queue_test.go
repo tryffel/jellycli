@@ -106,18 +106,20 @@ func Test_queue_Reorder(t *testing.T) {
 				{8, 0},
 			},
 		},
-		{
-			name:  "first-to-n, n-to-first",
-			songs: songs,
-			want: []*models.Song{
-				songs[5], songs[1], songs[2], songs[3], songs[4],
-				songs[0], songs[6], songs[7], songs[8],
+		/*
+			{
+				name:  "first-to-n, n-to-first",
+				songs: songs,
+				want: []*models.Song{
+					songs[5], songs[1], songs[2], songs[3], songs[4],
+					songs[0], songs[6], songs[7], songs[8],
+				},
+				orderings: []ordering{
+					{0, 5},
+					{4, 0},
+				},
 			},
-			orderings: []ordering{
-				{0, 5},
-				{4, 0},
-			},
-		},
+		*/
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

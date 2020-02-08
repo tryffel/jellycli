@@ -98,7 +98,7 @@ func (a *audio) streamCompletedCB() {
 		}
 		err = a.streamer.Close()
 		if err != nil {
-			logrus.Error("failed to close stream: %v", err)
+			logrus.Error("failed to close stream: ", err.Error())
 		}
 	}
 	a.lock.Unlock()

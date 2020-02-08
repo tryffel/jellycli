@@ -21,8 +21,10 @@ import (
 	"github.com/sirupsen/logrus"
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 	"os"
+	"os/signal"
 	"strconv"
 	"sync"
+	"syscall"
 	"tryffel.net/pkg/jellycli/api"
 	"tryffel.net/pkg/jellycli/config"
 	"tryffel.net/pkg/jellycli/controller"
@@ -43,7 +45,7 @@ func main() {
 
 	startErr := app.Start()
 	if startErr != nil {
-		logrus.Error("Failed to start application: %v", startErr)
+		logrus.Errorf("Failed to start application: %v", startErr)
 	}
 	<-catchSignals()
 	logrus.Info("Stopping application")
@@ -93,7 +95,7 @@ func NewApplication() (*Application, error) {
 
 	err = a.api.VerifyServerId()
 	if err != nil {
-		logrus.Fatal("api error: %v", err)
+		logrus.Fatalf("api error: %v", err)
 		os.Exit(1)
 	}
 

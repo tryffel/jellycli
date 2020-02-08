@@ -39,7 +39,7 @@ func Test_progressBar_Draw(t *testing.T) {
 				currentValue: 0,
 				width:        10,
 			},
-			want: "",
+			want: "┫╍╍╍╍╍╍╍╍╍╍┣",
 		},
 		{
 			args: args{
@@ -47,7 +47,7 @@ func Test_progressBar_Draw(t *testing.T) {
 				currentValue: 25,
 				width:        10,
 			},
-			want: "██▌",
+			want: "┫██▌╍╍╍╍╍╍╍┣",
 		},
 		{
 			args: args{
@@ -55,7 +55,7 @@ func Test_progressBar_Draw(t *testing.T) {
 				currentValue: 16,
 				width:        12,
 			},
-			want: "██████▌",
+			want: "┫██████▎╍╍╍╍╍┣",
 		},
 		{
 			args: args{
@@ -63,7 +63,7 @@ func Test_progressBar_Draw(t *testing.T) {
 				currentValue: 49,
 				width:        10,
 			},
-			want: "████▊",
+			want: "┫████▊╍╍╍╍╍┣",
 		},
 	}
 	for _, tt := range tests {
@@ -99,7 +99,8 @@ func TestProgressBar_Draw(t *testing.T) {
 ┫█████████████████╍╍╍┣: 17/20
 ┫██████████████████╍╍┣: 18/20
 ┫███████████████████╍┣: 19/20
-┫████████████████████┣: 20/20`
+┫████████████████████┣: 20/20
+`
 	text := ""
 	p := NewProgressBar(width, points)
 	for i := 0; i < points+1; i++ {

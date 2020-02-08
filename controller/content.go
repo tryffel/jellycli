@@ -446,7 +446,7 @@ func (c *Content) ensurePlayerHasStream() {
 		album, err := c.api.GetAlbum(albumId)
 		artist := models.Artist{Name: "unknown artist"}
 		if err != nil {
-			logrus.Error("Failed to get album by id: %v", err)
+			logrus.Error("Failed to get album by id: ", err.Error())
 			album = models.Album{Name: "unknown album"}
 		} else {
 			a, err := c.api.GetArtist(album.GetParent())

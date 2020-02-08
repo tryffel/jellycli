@@ -26,6 +26,7 @@ type MediaController interface {
 	ItemController
 	QueueController
 	PlaybackController
+	MediaManager
 }
 
 //ItemController retrieves children and returns them with ItemsCallback
@@ -97,6 +98,19 @@ type PlaybackController interface {
 	SetStatusCallback(func(state player.PlayingState))
 	//SetVolume sets volume to given level in range of [0,100]
 	SetVolume(level int)
+}
+
+//MediaManager
+type MediaManager interface {
+	SearchArtists(search string) ([]*models.Artist, error)
+	SearchAlbums(search string) ([]*models.Album, error)
+	GetArtists() ([]*models.Artist, error)
+	GetAlbums() ([]*models.Album, error)
+
+	GetAlbumSongs(album models.Id) ([]*models.Song, error)
+	GetPlaylists() ([]*models.Album, error)
+	GetFavoriteArtists() ([]*models.Artist, error)
+	GetFavoriteAlbums() ([]*models.Album, error)
 }
 
 type View int

@@ -53,6 +53,38 @@ type Content struct {
 	queue  *queue
 }
 
+func (c *Content) SearchArtists(search string) ([]*models.Artist, error) {
+	panic("implement me")
+}
+
+func (c *Content) SearchAlbums(search string) ([]*models.Album, error) {
+	panic("implement me")
+}
+
+func (c *Content) GetArtists() ([]*models.Artist, error) {
+	panic("implement me")
+}
+
+func (c *Content) GetAlbums() ([]*models.Album, error) {
+	panic("implement me")
+}
+
+func (c *Content) GetAlbumSongs(album models.Id) ([]*models.Song, error) {
+	return c.api.GetAlbumSongs(album)
+}
+
+func (c *Content) GetPlaylists() ([]*models.Album, error) {
+	panic("implement me")
+}
+
+func (c *Content) GetFavoriteArtists() ([]*models.Artist, error) {
+	return c.api.GetFavoriteArtists()
+}
+
+func (c *Content) GetFavoriteAlbums() ([]*models.Album, error) {
+	panic("implement me")
+}
+
 func (c *Content) GetChildren(parent models.Id, parentType models.ItemType) {
 	if c.itemsCb == nil {
 		return

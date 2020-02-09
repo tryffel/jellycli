@@ -227,9 +227,9 @@ func (p *Player) handleAction(action Action) (bool, api.PlaybackEvent) {
 		return false, defaultEvent
 	case Play:
 		if p.state.State == Stop || p.state.State == Pause || p.state.State == Play {
-			//if p.PlaySong(action) {
-			//	return true, api.EventPlaylistItemAdd
-			//}
+			if p.PlaySong(action) {
+				return true, api.EventPlaylistItemAdd
+			}
 			return false, defaultEvent
 		}
 	case Stop:

@@ -18,7 +18,6 @@ package widgets
 
 import (
 	"fmt"
-	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 	"tryffel.net/go/twidgets"
 	"tryffel.net/pkg/jellycli/config"
@@ -91,10 +90,11 @@ func newArtistCover(artist *models.Artist) *ArtistCover {
 
 func (a *ArtistCover) SetSelected(s bool) {
 	if s {
-		a.SetBorderColor(tcell.ColorBlue)
-		a.SetBorderAttributes(tcell.AttrBold)
+		a.SetTextColor(config.ColorSelection)
+		a.SetBackgroundColor(config.ColorSelectionBackground)
 	} else {
-		a.SetBorderColor(tcell.ColorGray)
-		a.SetBorderAttributes(tcell.AttrNone)
+		a.SetTextColor(config.ColorPrimary)
+		a.SetBackgroundColor(config.ColorBackground)
+
 	}
 }

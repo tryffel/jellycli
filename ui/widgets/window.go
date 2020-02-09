@@ -60,14 +60,14 @@ type Window struct {
 
 func NewWindow(mc controller.MediaController) Window {
 	w := Window{
-		app:        tview.NewApplication(),
-		status:     newStatus(mc),
-		window:     tview.NewGrid(),
-		artist:     NewArtistView(),
-		artistList: NewArtistList(nil),
-		album:      NewAlbumview(),
+		app:    tview.NewApplication(),
+		status: newStatus(mc),
+		window: tview.NewGrid(),
+		artist: NewArtistView(),
+		album:  NewAlbumview(),
 	}
 
+	w.artistList = NewArtistList(w.selectArtist)
 	w.mediaNav = NewMediaNavigation(w.selectMedia)
 	w.navBar = NewNavBar(w.keyHandlerCb)
 	w.mediaController = mc
@@ -358,12 +358,31 @@ func (w *Window) InitBrowser(items []models.Item) {
 func (w *Window) selectMedia(m MediaSelect) {
 	switch m {
 	case MediaFavoriteArtists:
+		if w.mediaView == w.artistList {
+			w.app.SetFocus(w.mediaView)
+			return
+		}
+
 		artists, err := w.mediaController.GetFavoriteArtists()
 		if err != nil {
 			logrus.Errorf("get favorite artists: %v", err)
 		} else {
+
+			w.mediaNav.SetCount(MediaFavoriteArtists, len(artists))
 			w.artistList.AddArtists(artists)
 			w.setViewWidget(w.artistList)
 		}
+	}
+}
+
+func (w *Window) selectArtist(artist *models.Artist) {
+	albums, err := w.mediaController.GetArtistAlbums(artist.Id)
+	if err != nil {
+		logrus.Errorf("get artist albums: %v", err)
+	} else {
+		artist.AlbumCount = len(albums)
+		w.artist.SetArtist(artist)
+		w.artist.SetAlbums(albums)
+		w.setViewWidget(w.artist)
 	}
 }

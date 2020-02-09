@@ -66,12 +66,12 @@ func NewMediaNavigation(selectFunc func(selection MediaSelect)) *MediaNavigation
 	items := []keyValue{
 		{"Latest Music", -1},
 		{"Recently played", -1},
-		{"Artists", 10},
-		{"Albums", 20},
-		{"Songs", 62},
-		{"Playlists", 3},
-		{"Favorite Artists", 4},
-		{"Favorite Albums", 6},
+		{"Artists", -1},
+		{"Albums", -1},
+		{"Songs", -1},
+		{"Playlists", -1},
+		{"Favorite Artists", -1},
+		{"Favorite Albums", -1},
 	}
 
 	for i, v := range items {
@@ -97,4 +97,8 @@ func (m *MediaNavigation) InputHandler() func(event *tcell.EventKey, setFocus fu
 			m.Table.InputHandler()(event, setFocus)
 		}
 	}
+}
+
+func (m *MediaNavigation) SetCount(id MediaSelect, count int) {
+	m.Table.SetCellSimple(int(id), 1, fmt.Sprint(count))
 }

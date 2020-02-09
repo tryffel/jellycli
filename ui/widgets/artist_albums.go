@@ -37,9 +37,7 @@ type ArtistHeader struct {
 	*tview.Grid
 
 	artist *models.Artist
-
-	name        *tview.TextView
-	description *tview.TextView
+	name   *tview.TextView
 
 	prevBtn    *tview.Button
 	infoBtn    *tview.Button
@@ -50,21 +48,19 @@ type ArtistHeader struct {
 
 func NewArtistHeader(prevFunc func()) *ArtistHeader {
 	a := &ArtistHeader{
-		Grid:        tview.NewGrid(),
-		artist:      &models.Artist{},
-		name:        tview.NewTextView(),
-		description: tview.NewTextView(),
-		prevBtn:     tview.NewButton("Back"),
-		prevFunc:    prevFunc,
-		anotherBtn:  tview.NewButton("Play all"),
-		similarBtn:  tview.NewButton("Similar"),
+		Grid:       tview.NewGrid(),
+		artist:     &models.Artist{},
+		name:       tview.NewTextView(),
+		prevBtn:    tview.NewButton("Back"),
+		prevFunc:   prevFunc,
+		anotherBtn: tview.NewButton("Play all"),
+		similarBtn: tview.NewButton("Similar"),
 	}
 
 	a.name.SetBorderPadding(0, 0, 1, 1)
-	a.description.SetBorderPadding(0, 0, 1, 1)
 	a.name.SetText(a.artist.Name)
-	a.description.SetText(fmt.Sprintf("Albums: %d, Total: %s",
-		a.artist.AlbumCount, util.SecToStringApproximate(a.artist.TotalDuration)))
+	a.name.SetText(fmt.Sprintf("%s\nAlbums: %d, Total: %s",
+		a.artist.Name, a.artist.AlbumCount, util.SecToStringApproximate(a.artist.TotalDuration)))
 	a.prevBtn.SetSelectedFunc(a.prevFunc)
 
 	btns := []*tview.Button{a.prevBtn, a.anotherBtn, a.similarBtn}
@@ -77,43 +73,46 @@ func NewArtistHeader(prevFunc func()) *ArtistHeader {
 	a.Grid.SetColumns(1, 6, 2, 10, -1, 10, -1, 10, -3)
 	a.Grid.SetMinSize(1, 6)
 	a.Grid.SetBackgroundColor(config.ColorBackground)
+	a.name.SetBackgroundColor(config.ColorBackground)
+	a.name.SetBackgroundColor(config.ColorBackground)
 
-	a.Grid.AddItem(a.prevBtn, 1, 1, 1, 1, 1, 5, true)
-	a.Grid.AddItem(a.name, 1, 3, 1, 5, 1, 10, false)
-	a.Grid.AddItem(a.description, 2, 3, 1, 5, 1, 10, false)
-	a.Grid.AddItem(a.anotherBtn, 4, 3, 1, 1, 1, 10, false)
+	a.Grid.AddItem(a.prevBtn, 1, 1, 1, 1, 1, 5, false)
+	a.Grid.AddItem(a.name, 1, 3, 2, 5, 1, 10, false)
+	a.Grid.AddItem(a.anotherBtn, 4, 3, 1, 1, 1, 10, true)
 	a.Grid.AddItem(a.similarBtn, 4, 5, 1, 1, 1, 10, false)
 	return a
 }
 
 func (a *ArtistHeader) SetArtist(artist *models.Artist) {
 	a.artist = artist
-	a.name.SetText(a.artist.Name)
-	a.description.SetText(fmt.Sprintf("Albums: %d, Total: %s",
-		a.artist.AlbumCount, util.SecToStringApproximate(a.artist.TotalDuration)))
+	a.name.SetText(fmt.Sprintf("%s\nAlbums: %d, Total: %s",
+		a.artist.Name, a.artist.AlbumCount, util.SecToStringApproximate(a.artist.TotalDuration)))
 }
 
 //AlbumCover is a simple cover for album, it shows
 // album name, year and possible artists
 type AlbumCover struct {
 	*tview.TextView
+	album   *models.Album
+	index   int
 	name    string
 	year    int
 	artists []string
 }
 
-func NewAlbumCover(name string, year int, additionalArtists []string) *AlbumCover {
+func NewAlbumCover(index int, album *models.Album) *AlbumCover {
 	a := &AlbumCover{
 		TextView: tview.NewTextView(),
-		name:     name,
-		year:     year,
-		artists:  additionalArtists,
+		album:    album,
+		index:    index,
 	}
 
 	a.SetBorder(true)
+	a.SetBackgroundColor(config.ColorBackground)
 	a.SetBorderPadding(0, 0, 1, 1)
+	a.SetTextColor(config.ColorPrimary)
 	ar := printArtists(a.artists, 40)
-	text := fmt.Sprintf("%s\n%d", name, year)
+	text := fmt.Sprintf("%d. %s\n%d", index, album.Name, album.Year)
 	if ar != "" {
 		text += "\n" + ar
 	}
@@ -174,7 +173,6 @@ func printArtists(artists []string, maxWidth int) string {
 //ArtisView as a view that contains
 type ArtistView struct {
 	*tview.Grid
-	//list *AlbumList
 	list        *twidgets.ScrollList
 	header      *ArtistHeader
 	listFocused bool
@@ -193,6 +191,15 @@ func (a *ArtistView) SetArtist(artist *models.Artist) {
 	a.header.SetArtist(artist)
 }
 
+func (a *ArtistView) SetAlbums(albums []*models.Album) {
+	a.list.Clear()
+
+	for i, v := range albums {
+		cover := NewAlbumCover(i, v)
+		a.list.AddItems(cover)
+	}
+}
+
 //NewArtistView constructs new artist view
 func NewArtistView() *ArtistView {
 	a := &ArtistView{
@@ -201,6 +208,13 @@ func NewArtistView() *ArtistView {
 		header: NewArtistHeader(nil),
 	}
 	a.list.ItemHeight = 5
+
+	a.SetBorder(true)
+	a.SetBorderColor(config.ColorBorder)
+	a.SetBackgroundColor(config.ColorBackground)
+	a.list.SetBackgroundColor(config.ColorBackground)
+	a.SetBorder(true)
+	a.SetBorderColor(config.ColorBorder)
 
 	a.Grid.SetRows(5, -1)
 	a.Grid.SetColumns(-1)

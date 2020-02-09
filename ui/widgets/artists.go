@@ -27,16 +27,16 @@ import (
 
 type ArtistList struct {
 	*twidgets.ScrollList
-	selectFunc func(int)
+	selectFunc func(artist *models.Artist)
 	artists    []*ArtistCover
 }
 
-func NewArtistList(selectFunc func(index int)) *ArtistList {
+func NewArtistList(selectFunc func(artist *models.Artist)) *ArtistList {
 	a := &ArtistList{
-		ScrollList: twidgets.NewScrollList(selectFunc),
 		selectFunc: selectFunc,
 		artists:    make([]*ArtistCover, 0),
 	}
+	a.ScrollList = twidgets.NewScrollList(a.selectArtist)
 
 	a.Padding = 1
 	a.ItemHeight = 2
@@ -67,6 +67,13 @@ func (a *ArtistList) AddArtists(artists []*models.Artist) {
 			cover.SetText(fmt.Sprintf("%d. %s\n %s",
 				i+1, v.Name, util.SecToString(v.TotalDuration)))
 		}
+	}
+}
+
+func (a *ArtistList) selectArtist(index int) {
+	if a.selectFunc != nil {
+		artist := a.artists[index]
+		a.selectFunc(artist.artist)
 	}
 }
 

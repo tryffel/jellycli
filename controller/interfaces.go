@@ -107,6 +107,8 @@ type MediaManager interface {
 	GetArtists() ([]*models.Artist, error)
 	GetAlbums() ([]*models.Album, error)
 
+	GetArtistAlbums(artist models.Id) ([]*models.Album, error)
+
 	GetAlbumSongs(album models.Id) ([]*models.Song, error)
 	GetPlaylists() ([]*models.Album, error)
 	GetFavoriteArtists() ([]*models.Artist, error)

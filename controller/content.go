@@ -85,6 +85,10 @@ func (c *Content) GetFavoriteAlbums() ([]*models.Album, error) {
 	panic("implement me")
 }
 
+func (c *Content) GetArtistAlbums(artist models.Id) ([]*models.Album, error) {
+	return c.api.GetArtistAlbums(artist)
+}
+
 func (c *Content) GetChildren(parent models.Id, parentType models.ItemType) {
 	if c.itemsCb == nil {
 		return

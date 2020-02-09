@@ -5,7 +5,7 @@ Terminal client for Jellyfin, mostly for music at the moment. This is very much 
 ## Building:
 Assuming go installed:
 ```
-go get -u tryffel.net/pkg/jellycli/cmd
+go get -u tryffel.net/go/jellycli/cmd
 # go to /cmd
 go run .
 ```

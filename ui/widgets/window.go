@@ -20,6 +20,7 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 	"github.com/sirupsen/logrus"
+	"tryffel.net/go/twidgets"
 	"tryffel.net/pkg/jellycli/config"
 	"tryffel.net/pkg/jellycli/controller"
 	"tryffel.net/pkg/jellycli/models"
@@ -29,7 +30,7 @@ import (
 
 type Window struct {
 	app    *tview.Application
-	window *tview.Grid
+	layout *twidgets.ModalLayout
 
 	// Widgets
 	navBar   *NavBar
@@ -62,7 +63,7 @@ func NewWindow(mc controller.MediaController) Window {
 	w := Window{
 		app:    tview.NewApplication(),
 		status: newStatus(mc),
-		window: tview.NewGrid(),
+		layout: twidgets.NewModalLayout(),
 	}
 
 	w.artistList = NewArtistList(w.selectArtist)
@@ -72,13 +73,9 @@ func NewWindow(mc controller.MediaController) Window {
 	w.navBar = NewNavBar(w.keyHandlerCb)
 	w.mediaController = mc
 
-	w.window.SetTitle(" " + config.AppName + " ")
-	w.window.SetTitleColor(config.ColorPrimary)
-	w.window.SetBackgroundColor(config.ColorBackground)
-	w.window.SetBorderColor(config.ColroMainFrame)
 	w.setLayout()
-	w.app.SetRoot(w.window, true)
-	w.app.SetFocus(w.window)
+	w.app.SetRoot(w.layout, true)
+	w.app.SetFocus(w.layout)
 
 	w.app.SetInputCapture(w.eventHandler)
 	//w.window.SetInputCapture(w.eventHandler)
@@ -134,20 +131,21 @@ func (w *Window) Stop() {
 func (w *Window) setLayout() {
 	w.gridAxisY = []int{1, -1, -2, -2, -1, 4}
 	w.gridAxisX = []int{24, -1, -2, -2, -1, 24}
-	w.window.Clear()
-	w.window.SetBorder(true)
-	w.window.SetRows(w.gridAxisY...)
-	w.window.SetColumns(w.gridAxisX...)
 
-	w.window.AddItem(w.navBar, 0, 0, 1, 6, 1, 30, false)
-	w.window.AddItem(w.mediaNav, 1, 0, 4, 1, 5, 10, true)
-	w.window.AddItem(w.status, 5, 0, 1, 6, 3, 10, false)
+	w.layout.SetGridXSize([]int{10, -1, -1, -1, -1, -1, -1, -1, -1, 10})
+	w.layout.SetGridYSize([]int{1, -1, -1, -1, -1, -1, -1, -1, -1, 5})
+
+	w.layout.Grid().AddItem(w.navBar, 0, 0, 1, 10, 1, 30, false)
+	w.layout.Grid().AddItem(w.mediaNav, 1, 0, 8, 2, 5, 10, false)
+	w.layout.Grid().AddItem(w.status, 9, 0, 1, 10, 3, 10, false)
+
+	//w.setViewWidget(w.artistList)
 }
 
 func (w *Window) setViewWidget(p tview.Primitive) {
 	w.lastFocus = w.app.GetFocus()
-	w.window.RemoveItem(w.mediaView)
-	w.window.AddItem(p, 1, 1, 4, 5, 15, 10, false)
+	w.layout.Grid().RemoveItem(w.mediaView)
+	w.layout.Grid().AddItem(p, 1, 2, 8, 8, 15, 10, false)
 	w.app.SetFocus(p)
 	w.mediaView = p
 }
@@ -269,7 +267,7 @@ func (w *Window) moveCtrl(key tcell.Key) bool {
 
 func (w *Window) searchCb(query string, doSearch bool) {
 	logrus.Debug("In search callback")
-	w.app.SetFocus(w.window)
+	w.app.SetFocus(w.layout)
 
 	if doSearch {
 		//w.mediaController.Search(query)
@@ -278,7 +276,7 @@ func (w *Window) searchCb(query string, doSearch bool) {
 }
 
 func (w *Window) closeHelp() {
-	w.app.SetFocus(w.window)
+	w.app.SetFocus(w.layout)
 }
 
 func (w *Window) wrapCloseModal(modal modal.Modal) func() {
@@ -291,17 +289,10 @@ func (w *Window) closeModal(modal modal.Modal) {
 	if w.hasModal {
 		modal.Blur()
 		modal.SetVisible(false)
+		w.layout.RemoveModal(modal)
 
-		modal.SetVisible(false)
-		w.window.RemoveItem(modal)
 		w.hasModal = false
 		w.modal = nil
-		if w.customGrid {
-			w.window.SetRows(w.gridAxisY...)
-			w.window.SetColumns(w.gridAxisX...)
-			w.customGrid = false
-		}
-
 		w.app.SetFocus(w.lastFocus)
 		w.lastFocus = nil
 		w.hasModal = false
@@ -317,21 +308,9 @@ func (w *Window) showModal(modal modal.Modal, height, width uint, lockSize bool)
 		w.lastFocus = w.app.GetFocus()
 		w.lastFocus.Blur()
 		if !lockSize {
-			w.customGrid = false
-			w.window.AddItem(modal, 2, 2, 2, 2, 8, 30, true)
+			w.layout.AddFixedModal(modal, height, width, twidgets.ModalSizeMedium)
 		} else {
-			w.customGrid = true
-			x := make([]int, len(w.gridAxisX))
-			y := make([]int, len(w.gridAxisY))
-			copy(x, w.gridAxisX)
-			copy(y, w.gridAxisY)
-			x[2] = int(width / 2)
-			x[3] = x[2]
-			y[2] = int(height / 2)
-			y[3] = y[2]
-			w.window.SetRows(y...)
-			w.window.SetColumns(x...)
-			w.window.AddItem(modal, 2, 2, 2, 2, int(height), int(width), true)
+			w.layout.AddDynamicModal(modal, twidgets.ModalSizeLarge)
 		}
 		w.app.SetFocus(modal)
 		modal.SetVisible(true)

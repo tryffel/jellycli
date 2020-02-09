@@ -22,15 +22,17 @@ import (
 	"github.com/rivo/tview"
 	"strings"
 	"tryffel.net/pkg/jellycli/config"
+	"tryffel.net/pkg/jellycli/models"
 )
 
 type Help struct {
-	grid    *tview.Grid
-	header  *tview.TextView
-	text    *tview.TextView
-	logo    *tview.TextView
+	*tview.TextView
 	visible bool
 	closeCb func()
+
+	page       int
+	totalPages int
+	stats      models.Stats
 }
 
 func (h *Help) SetDoneFunc(doneFunc func()) {
@@ -46,80 +48,134 @@ func (h *Help) SetVisible(visible bool) {
 
 }
 
-func (h *Help) Draw(screen tcell.Screen) {
-	h.grid.Draw(screen)
-}
-
-func (h *Help) GetRect() (int, int, int, int) {
-	return h.grid.GetRect()
-}
-
-func (h *Help) SetRect(x, y, width, height int) {
-	h.grid.SetRect(x, y, width, height)
-}
-
-func (h *Help) InputHandler() func(event *tcell.EventKey, setfocus func(p tview.Primitive)) {
-	return func(event *tcell.EventKey, setfocus func(p tview.Primitive)) {
-		if h.visible && event.Key() == tcell.KeyEscape {
-			if h.closeCb != nil {
-				h.closeCb()
+func (h *Help) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+	return func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+		key := event.Key()
+		if key == tcell.KeyEscape {
+			h.closeCb()
+		} else if key == tcell.KeyLeft {
+			if h.page > 0 {
+				h.page -= 1
+				h.setContent()
 			}
+		} else if key == tcell.KeyRight {
+			if h.page < h.totalPages-1 {
+				h.page += 1
+				h.setContent()
+			}
+		} else {
+			h.TextView.InputHandler()(event, setFocus)
 		}
 	}
 }
 
 func (h *Help) Focus(delegate func(p tview.Primitive)) {
-	h.grid.SetBorderColor(config.ColorBorderFocus)
-	h.grid.Focus(delegate)
+	h.TextView.SetBorderColor(config.ColorBorderFocus)
+	h.TextView.Focus(delegate)
 }
 
 func (h *Help) Blur() {
-	h.grid.SetBorderColor(config.ColorBorder)
-	h.grid.Blur()
+	h.TextView.SetBorderColor(config.ColorBorder)
+	h.TextView.Blur()
 }
 
 func (h *Help) GetFocusable() tview.Focusable {
-	return h.grid.GetFocusable()
+	return h.TextView.GetFocusable()
 }
 
 func NewHelp(doneCb func()) *Help {
-	h := &Help{text: tview.NewTextView()}
+	h := &Help{TextView: tview.NewTextView()}
 	h.closeCb = doneCb
 
-	h.grid = tview.NewGrid()
-	h.grid.SetRows(7, 0)
-	h.grid.SetColumns(-1)
-	h.grid.SetBackgroundColor(config.ColorBackground)
-	h.grid.SetBorder(true)
-	h.grid.SetTitle("Help")
-	h.grid.SetBorderColor(config.ColorBorder)
-	h.grid.SetTitleColor(config.ColorPrimary)
-	h.grid.SetBorderPadding(0, 1, 2, 2)
-	h.grid.SetMinSize(6, 6)
-	//h.grid.SetGap(3,3)
-	config.DebugGridBorders(h.grid)
+	h.SetBackgroundColor(config.ColorBackground)
+	h.SetBorder(true)
+	h.SetTitle("Help")
+	h.SetBorderColor(config.ColorBorder)
+	h.SetTitleColor(config.ColorPrimary)
+	h.SetDynamicColors(true)
+	h.SetBorderPadding(0, 1, 2, 2)
 
-	h.logo = tview.NewTextView()
-	h.logo.SetBorder(false)
-	h.logo.SetBackgroundColor(config.ColorBackground)
-	h.logo.SetTextColor(config.ColorPrimary)
-	h.logo.SetTextAlign(tview.AlignCenter)
-	h.logo.SetWrap(false)
-	h.logo.SetWordWrap(false)
-
-	h.text.SetBorder(false)
-	h.text.SetBackgroundColor(config.ColorBackground)
-	h.text.SetTextColor(config.ColorPrimary)
-	h.text.SetWordWrap(true)
-	h.text.SetTextAlign(tview.AlignLeft)
-
-	_, _ = h.logo.Write([]byte(logo()))
-	_, _ = h.logo.Write([]byte(fmt.Sprintf("\n v%s", config.Version)))
-	_, _ = h.text.Write([]byte(helpText()))
-
-	h.grid.AddItem(h.logo, 0, 0, 1, 3, 6, 40, false)
-	h.grid.AddItem(h.text, 1, 0, 1, 3, 6, 30, false)
+	h.totalPages = 3
+	h.setContent()
 	return h
+}
+
+func (h *Help) setContent() {
+	title := ""
+	got := ""
+	switch h.page {
+	case 0:
+		got = h.mainPage()
+		title = "About"
+	case 1:
+		got = h.shortcutsPage()
+		title = "Usage"
+	case 2:
+		got = h.statsPage()
+		title = "Info"
+	default:
+	}
+
+	if title != "" {
+		title = "[yellow::b]" + title + "[-::-]"
+	}
+
+	if got != "" {
+		h.Clear()
+		text := fmt.Sprintf("< %d / %d > %s \n\n", h.page+1, h.totalPages, title)
+		text += got
+		h.SetText(text)
+		h.ScrollToBeginning()
+	}
+}
+
+func (h *Help) SetStats(stats models.Stats) {
+	h.stats = stats
+}
+
+func (h *Help) mainPage() string {
+	text := fmt.Sprintf("%s\n[yellow]v%s[-]\n\n", logo(), config.Version)
+	text += "License: Apache-2.0, http://www.apache.org/licenses/LICENSE-2.0"
+	return text
+}
+
+func (h *Help) shortcutsPage() string {
+	return `[yellow]Movement[-]:
+* Up/Down: Key up / down
+* VIM-like keys: 
+	* Up / Down: J / K 
+	* Top / Bottom: g / G 
+	* Page Up / Down: Ctrl+F / Ctrl+B
+* Switch panels: Tab
+
+[yellow]Forms[-]:
+* Tab / Shift-Tab moves between form fields
+
+`
+}
+
+func formatBytes(bytes uint64) string {
+	if bytes < 1024 {
+		return fmt.Sprint(bytes)
+	}
+	if bytes < 1024*1024 {
+		return fmt.Sprintf("%d KiB", bytes/1024)
+	}
+	if bytes < 1024*1024*1024 {
+		return fmt.Sprintf("%d MiB", bytes/1024/1024)
+	}
+	if bytes < 1024*1024*1024 {
+		return fmt.Sprintf("%d GiB", bytes/1024/1024/1024)
+	}
+	return ""
+}
+
+func (h *Help) statsPage() string {
+	text := "[yellow]Statistics[-]\n"
+
+	text += fmt.Sprintf("Server Name: %s\nServer Version: %s\nCache items: %d\nMemory allocated: %s",
+		h.stats.ServerName, h.stats.ServerVersion, h.stats.CacheObjects, h.stats.HeapString())
+	return text
 }
 
 func logo() string {
@@ -129,7 +185,8 @@ func logo() string {
     \ \ / _ \| || || | | | / __|| || |
  /\_/ /|  __/| || || |_| || (__ | || |
  \___/  \___||_||_| \__, | \___||_||_|
-                    |___/`
+                    |___/             
+`
 	return strings.TrimLeft(text, "\n")
 }
 

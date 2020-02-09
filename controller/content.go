@@ -19,6 +19,7 @@ package controller
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"runtime"
 	"sync"
 	"time"
 	"tryffel.net/pkg/jellycli/api"
@@ -87,6 +88,22 @@ func (c *Content) GetFavoriteAlbums() ([]*models.Album, error) {
 
 func (c *Content) GetArtistAlbums(artist models.Id) ([]*models.Album, error) {
 	return c.api.GetArtistAlbums(artist)
+}
+
+func (c *Content) GetStatistics() models.Stats {
+	cache := c.api.GetCacheItems()
+	name, version, _, _ := c.api.GetServerVersion()
+	runStats := runtime.MemStats{}
+	runtime.ReadMemStats(&runStats)
+
+	stats := models.Stats{
+		Heap:          int(runStats.Alloc),
+		CacheObjects:  cache,
+		ServerName:    name,
+		ServerVersion: version,
+	}
+
+	return stats
 }
 
 func (c *Content) GetChildren(parent models.Id, parentType models.ItemType) {

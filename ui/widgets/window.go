@@ -233,6 +233,8 @@ func (w *Window) navBarCtrl(key tcell.Key) bool {
 	case navBar.Quit:
 		w.app.Stop()
 	case navBar.Help:
+		stats := w.mediaController.GetStatistics()
+		w.help.SetStats(stats)
 		w.showModal(w.help, 25, 50, true)
 	case navBar.View:
 		w.showModal(w.view, 20, 50, true)

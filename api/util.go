@@ -167,3 +167,7 @@ func (a *Api) ReportProgress(state *PlaybackState) error {
 		return fmt.Errorf("failed to post progress: %v", err)
 	}
 }
+
+func (a *Api) GetCacheItems() int {
+	return a.cache.Count()
+}

@@ -89,6 +89,8 @@ func NewWindow(mc controller.MediaController) Window {
 	w.view.SetDoneFunc(w.wrapCloseModal(w.view))
 	w.view.SetViewFunc(w.openViewFunc)
 
+	w.layout.Grid().SetBackgroundColor(config.ColorBackground)
+
 	w.history = modal.NewQueue(modal.QueueModeHistory)
 	w.history.SetDoneFunc(w.wrapCloseModal(w.history))
 

@@ -116,8 +116,8 @@ type Player struct {
 func NewPlayer(a *api.Api) (*Player, error) {
 	p := &Player{
 		Api:                a,
-		chanAction:         make(chan Action),
-		chanState:          make(chan PlayingState),
+		chanAction:         make(chan Action, 3),
+		chanState:          make(chan PlayingState, 3),
 		chanStreamComplete: make(chan bool),
 		chanAddSong:        make(chan PlaySong),
 		ticker:             nil,

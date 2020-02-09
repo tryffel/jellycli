@@ -31,7 +31,6 @@ type albumHeader struct {
 	*tview.Grid
 	artist      *models.Artist
 	album       *models.Album
-	name        *tview.TextView
 	description *tview.TextView
 
 	prevBtn  *tview.Button
@@ -45,7 +44,6 @@ func newAlbumHeader(prevFunc func()) *albumHeader {
 		Grid:        tview.NewGrid(),
 		artist:      nil,
 		album:       nil,
-		name:        tview.NewTextView(),
 		description: tview.NewTextView(),
 		prevBtn:     tview.NewButton("Back"),
 		infobtn:     tview.NewButton("Info"),
@@ -53,7 +51,6 @@ func newAlbumHeader(prevFunc func()) *albumHeader {
 		prevFunc:    prevFunc,
 	}
 
-	a.name.SetBorderPadding(0, 0, 1, 1)
 	a.description.SetBorderPadding(0, 0, 1, 1)
 
 	btns := []*tview.Button{a.prevBtn, a.infobtn, a.playBtn}
@@ -69,8 +66,7 @@ func newAlbumHeader(prevFunc func()) *albumHeader {
 	a.Grid.SetBackgroundColor(config.ColorBackground)
 
 	a.Grid.AddItem(a.prevBtn, 1, 1, 1, 1, 1, 5, false)
-	a.Grid.AddItem(a.name, 1, 3, 1, 5, 1, 10, false)
-	a.Grid.AddItem(a.description, 2, 3, 1, 5, 1, 10, false)
+	a.Grid.AddItem(a.description, 1, 3, 2, 5, 1, 10, false)
 	a.Grid.AddItem(a.infobtn, 4, 5, 1, 1, 1, 10, false)
 	a.Grid.AddItem(a.playBtn, 4, 3, 1, 1, 1, 10, true)
 
@@ -83,8 +79,8 @@ func (a *albumHeader) SetArtist(artist *models.Artist) {
 
 func (a *albumHeader) SetAlbum(album *models.Album) {
 	a.album = album
-	a.name.SetText(album.Name)
-	a.description.SetText(fmt.Sprintf("%d tracks  %s  %d",
+	a.description.SetText(fmt.Sprintf("%s\n%d tracks  %s  %d",
+		album.Name,
 		album.SongCount, util.SecToStringApproximate(album.Duration), album.Year))
 }
 
@@ -185,7 +181,7 @@ func NewAlbumview(playSong func(song *models.Song), playSongs func(songs []*mode
 	}
 
 	a.list.ItemHeight = 2
-	a.list.Padding = 0
+	a.list.Padding = 1
 
 	a.SetBorder(true)
 	a.SetBorderColor(config.ColorBorder)
@@ -206,6 +202,8 @@ func (a *AlbumView) SetAlbum(album *models.Album, songs []*models.Song) {
 	a.list.Clear()
 	a.songs = make([]*albumSong, len(songs))
 	items := make([]twidgets.ListItem, len(songs))
+
+	album.SongCount = len(a.songs)
 	a.header.SetAlbum(album)
 	for i, v := range songs {
 		a.songs[i] = newAlbumSong(v)

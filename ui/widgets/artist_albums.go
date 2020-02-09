@@ -176,15 +176,19 @@ type ArtistView struct {
 	list        *twidgets.ScrollList
 	header      *ArtistHeader
 	listFocused bool
+	selectFunc  func(album *models.Album)
+	albumCovers []*AlbumCover
 }
 
 func (a *ArtistView) AddAlbum(c *AlbumCover) {
 	a.list.AddItem(c)
+	a.albumCovers = append(a.albumCovers, c)
 }
 
 func (a *ArtistView) Clear() {
 	a.list.Clear()
 	a.header.SetArtist(nil)
+	a.albumCovers = make([]*AlbumCover, 0)
 }
 
 func (a *ArtistView) SetArtist(artist *models.Artist) {
@@ -193,22 +197,25 @@ func (a *ArtistView) SetArtist(artist *models.Artist) {
 
 func (a *ArtistView) SetAlbums(albums []*models.Album) {
 	a.list.Clear()
+	a.albumCovers = make([]*AlbumCover, len(albums))
 
 	items := make([]twidgets.ListItem, len(albums))
 	for i, v := range albums {
 		cover := NewAlbumCover(i, v)
 		items[i] = cover
+		a.albumCovers[i] = cover
 	}
 	a.list.AddItems(items...)
 }
 
 //NewArtistView constructs new artist view
-func NewArtistView() *ArtistView {
+func NewArtistView(selectAlbum func(album *models.Album)) *ArtistView {
 	a := &ArtistView{
-		Grid:   tview.NewGrid(),
-		list:   twidgets.NewScrollList(nil),
-		header: NewArtistHeader(nil),
+		Grid:       tview.NewGrid(),
+		header:     NewArtistHeader(nil),
+		selectFunc: selectAlbum,
 	}
+	a.list = twidgets.NewScrollList(a.selectAlbum)
 	a.list.ItemHeight = 3
 
 	a.SetBorder(true)
@@ -235,18 +242,28 @@ func (a *ArtistView) InputHandler() func(event *tcell.EventKey, setFocus func(p 
 			index := a.list.GetSelectedIndex()
 			if index == 0 && key == tcell.KeyUp {
 				a.listFocused = false
-				a.header.Focus(nil)
+				a.header.Focus(func(p tview.Primitive) {})
+				a.list.Blur()
 			} else {
 				a.list.InputHandler()(event, setFocus)
 			}
 		} else {
 			r := event.Rune()
-			if r == 'j' {
+			if r == 'j' || key == tcell.KeyDown {
 				a.listFocused = true
 				a.header.Blur()
+				a.list.Focus(func(p tview.Primitive) {})
 			} else {
 				a.header.InputHandler()(event, setFocus)
 			}
 		}
+	}
+}
+
+func (a *ArtistView) selectAlbum(index int) {
+	if a.selectFunc != nil {
+		index := a.list.GetSelectedIndex()
+		album := a.albumCovers[index]
+		a.selectFunc(album.album)
 	}
 }

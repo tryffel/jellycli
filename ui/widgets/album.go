@@ -18,6 +18,7 @@ package widgets
 
 import (
 	"fmt"
+	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 	"github.com/rivo/uniseg"
 	"tryffel.net/go/twidgets"
@@ -59,6 +60,7 @@ func newAlbumHeader(prevFunc func()) *albumHeader {
 	for _, v := range btns {
 		v.SetBackgroundColor(config.ColorNavBarBtn)
 		v.SetLabelColor(config.ColorPrimary)
+		v.SetBackgroundColorActivated(config.ColorBorderFocus)
 	}
 
 	a.Grid.SetRows(1, 1, 1, 1, 1, 1)
@@ -66,11 +68,11 @@ func newAlbumHeader(prevFunc func()) *albumHeader {
 	a.Grid.SetMinSize(1, 6)
 	a.Grid.SetBackgroundColor(config.ColorBackground)
 
-	a.Grid.AddItem(a.prevBtn, 1, 1, 1, 1, 1, 5, true)
+	a.Grid.AddItem(a.prevBtn, 1, 1, 1, 1, 1, 5, false)
 	a.Grid.AddItem(a.name, 1, 3, 1, 5, 1, 10, false)
 	a.Grid.AddItem(a.description, 2, 3, 1, 5, 1, 10, false)
 	a.Grid.AddItem(a.infobtn, 4, 5, 1, 1, 1, 10, false)
-	a.Grid.AddItem(a.playBtn, 4, 3, 1, 1, 1, 10, false)
+	a.Grid.AddItem(a.playBtn, 4, 3, 1, 1, 1, 10, true)
 
 	return a
 }
@@ -154,6 +156,8 @@ func newAlbumSong(s *models.Song) *albumSong {
 		TextView: tview.NewTextView(),
 		song:     s,
 	}
+	song.SetBackgroundColor(config.ColorBackground)
+	song.SetTextColor(config.ColorPrimary)
 	song.setText()
 	song.SetBorderPadding(0, 0, 1, 1)
 
@@ -162,36 +166,95 @@ func newAlbumSong(s *models.Song) *albumSong {
 
 type AlbumView struct {
 	*tview.Grid
-	list   *twidgets.ScrollList
-	songs  []*albumSong
-	header *albumHeader
+	list        *twidgets.ScrollList
+	songs       []*albumSong
+	header      *albumHeader
+	listFocused bool
+
+	playSongFunc  func(song *models.Song)
+	playSongsFunc func(songs []*models.Song)
 }
 
-func NewAlbumview() *AlbumView {
+func NewAlbumview(playSong func(song *models.Song), playSongs func(songs []*models.Song)) *AlbumView {
 	a := &AlbumView{
-		Grid:   tview.NewGrid(),
-		list:   twidgets.NewScrollList(nil),
-		header: newAlbumHeader(nil),
+		Grid:          tview.NewGrid(),
+		list:          twidgets.NewScrollList(nil),
+		header:        newAlbumHeader(nil),
+		playSongFunc:  playSong,
+		playSongsFunc: playSongs,
 	}
 
 	a.list.ItemHeight = 2
 	a.list.Padding = 0
 
+	a.SetBorder(true)
+	a.SetBorderColor(config.ColorBorder)
+	a.list.SetBackgroundColor(config.ColorBackground)
+	a.Grid.SetBackgroundColor(config.ColorBackground)
 	a.Grid.SetRows(5, -1)
 	a.Grid.SetColumns(-1)
 
-	a.Grid.AddItem(a.header, 0, 0, 1, 1, 6, 25, false)
-	a.Grid.AddItem(a.list, 1, 0, 1, 1, 6, 25, true)
+	a.Grid.AddItem(a.header, 0, 0, 1, 1, 5, 25, false)
+	a.Grid.AddItem(a.list, 1, 0, 1, 1, 5, 25, false)
+	a.listFocused = false
 
+	a.header.playBtn.SetSelectedFunc(a.playAlbum)
 	return a
 }
 
 func (a *AlbumView) SetAlbum(album *models.Album, songs []*models.Song) {
 	a.list.Clear()
 	a.songs = make([]*albumSong, len(songs))
+	items := make([]twidgets.ListItem, len(songs))
 	a.header.SetAlbum(album)
 	for i, v := range songs {
 		a.songs[i] = newAlbumSong(v)
-		a.list.AddItem(a.songs[i])
+		items[i] = a.songs[i]
+	}
+
+	a.list.AddItems(items...)
+}
+
+func (a *AlbumView) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+	return func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+		key := event.Key()
+		if a.listFocused {
+			index := a.list.GetSelectedIndex()
+			if index == 0 && key == tcell.KeyUp {
+				a.listFocused = false
+				a.header.Focus(func(p tview.Primitive) {})
+				a.list.Blur()
+			} else if key == tcell.KeyEnter {
+				a.playSong(index)
+			} else {
+				a.list.InputHandler()(event, setFocus)
+			}
+		} else {
+			r := event.Rune()
+			if r == 'j' || key == tcell.KeyDown {
+				a.listFocused = true
+				a.header.Blur()
+				a.list.Focus(func(p tview.Primitive) {})
+			} else {
+				a.header.InputHandler()(event, setFocus)
+			}
+		}
+	}
+}
+
+func (a *AlbumView) playSong(index int) {
+	if a.playSongFunc != nil {
+		song := a.songs[index].song
+		a.playSongFunc(song)
+	}
+}
+
+func (a *AlbumView) playAlbum() {
+	if a.playSongsFunc != nil {
+		songs := make([]*models.Song, len(a.songs))
+		for i, v := range a.songs {
+			songs[i] = v.song
+		}
+		a.playSongsFunc(songs)
 	}
 }

@@ -63,11 +63,11 @@ func NewWindow(mc controller.MediaController) Window {
 		app:    tview.NewApplication(),
 		status: newStatus(mc),
 		window: tview.NewGrid(),
-		artist: NewArtistView(),
-		album:  NewAlbumview(),
 	}
 
 	w.artistList = NewArtistList(w.selectArtist)
+	w.artist = NewArtistView(w.selectAlbum)
+	w.album = NewAlbumview(w.playSong, w.playSongs)
 	w.mediaNav = NewMediaNavigation(w.selectMedia)
 	w.navBar = NewNavBar(w.keyHandlerCb)
 	w.mediaController = mc
@@ -145,8 +145,9 @@ func (w *Window) setLayout() {
 }
 
 func (w *Window) setViewWidget(p tview.Primitive) {
-	w.window.AddItem(p, 1, 1, 4, 5, 15, 10, false)
 	w.lastFocus = w.app.GetFocus()
+	w.window.RemoveItem(w.mediaView)
+	w.window.AddItem(p, 1, 1, 4, 5, 15, 10, false)
 	w.app.SetFocus(p)
 	w.mediaView = p
 }
@@ -385,4 +386,22 @@ func (w *Window) selectArtist(artist *models.Artist) {
 		w.artist.SetAlbums(albums)
 		w.setViewWidget(w.artist)
 	}
+}
+
+func (w *Window) selectAlbum(album *models.Album) {
+	songs, err := w.mediaController.GetAlbumSongs(album.Id)
+	if err != nil {
+		logrus.Errorf("get album songs: %v", err)
+	} else {
+		w.album.SetAlbum(album, songs)
+		w.setViewWidget(w.album)
+	}
+}
+
+func (w *Window) playSong(song *models.Song) {
+	w.playSongs([]*models.Song{song})
+}
+
+func (w *Window) playSongs(songs []*models.Song) {
+	w.mediaController.AddSongs(songs)
 }

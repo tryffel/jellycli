@@ -62,12 +62,12 @@ func (p *progressBar) Draw(currentValue int) string {
 	text := startChar
 
 	// Progress as percent
-	progress := int(float32(currentValue) / float32(p.maximumValue) * 100)
+	progress := int(float32(currentValue) / float32(p.maximumValue) * 1000)
 	var splits int
 	if progress == 0 {
 		splits = 0
 	} else {
-		splits = p.splits * progress / 100
+		splits = p.splits * progress / 1000
 	}
 
 	filled := 0

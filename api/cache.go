@@ -21,8 +21,8 @@ import (
 	"github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
 	"time"
-	"tryffel.net/pkg/jellycli/config"
-	"tryffel.net/pkg/jellycli/models"
+	"tryffel.net/go/jellycli/config"
+	"tryffel.net/go/jellycli/models"
 )
 
 type Cache struct {

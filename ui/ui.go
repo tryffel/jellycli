@@ -17,10 +17,10 @@
 package ui
 
 import (
-	"tryffel.net/pkg/jellycli/controller"
-	"tryffel.net/pkg/jellycli/player"
-	"tryffel.net/pkg/jellycli/task"
-	"tryffel.net/pkg/jellycli/ui/widgets"
+	"tryffel.net/go/jellycli/controller"
+	"tryffel.net/go/jellycli/player"
+	"tryffel.net/go/jellycli/task"
+	"tryffel.net/go/jellycli/ui/widgets"
 )
 
 type Gui struct {

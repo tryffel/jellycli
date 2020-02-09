@@ -1,4 +1,4 @@
-module tryffel.net/pkg/jellycli
+module tryffel.net/go/jellycli
 
 go 1.13
 

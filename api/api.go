@@ -25,8 +25,8 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"tryffel.net/pkg/jellycli/config"
-	"tryffel.net/pkg/jellycli/task"
+	"tryffel.net/go/jellycli/config"
+	"tryffel.net/go/jellycli/task"
 )
 
 type Api struct {

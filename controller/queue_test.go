@@ -19,7 +19,7 @@ package controller
 import (
 	"reflect"
 	"testing"
-	"tryffel.net/pkg/jellycli/models"
+	"tryffel.net/go/jellycli/models"
 )
 
 func testSongs() []*models.Song {

@@ -22,11 +22,11 @@ import (
 	"github.com/rivo/tview"
 	"github.com/sirupsen/logrus"
 	"sync"
-	"tryffel.net/pkg/jellycli/config"
-	"tryffel.net/pkg/jellycli/controller"
-	"tryffel.net/pkg/jellycli/models"
-	"tryffel.net/pkg/jellycli/player"
-	"tryffel.net/pkg/jellycli/util"
+	"tryffel.net/go/jellycli/config"
+	"tryffel.net/go/jellycli/controller"
+	"tryffel.net/go/jellycli/models"
+	"tryffel.net/go/jellycli/player"
+	"tryffel.net/go/jellycli/util"
 	"unicode/utf8"
 )
 

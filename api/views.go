@@ -19,8 +19,8 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"tryffel.net/pkg/jellycli/config"
-	"tryffel.net/pkg/jellycli/models"
+	"tryffel.net/go/jellycli/config"
+	"tryffel.net/go/jellycli/models"
 )
 
 func (a *Api) GetViews() ([]*models.View, error) {

@@ -20,12 +20,12 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 	"github.com/sirupsen/logrus"
+	"tryffel.net/go/jellycli/config"
+	"tryffel.net/go/jellycli/controller"
+	"tryffel.net/go/jellycli/models"
+	"tryffel.net/go/jellycli/player"
+	"tryffel.net/go/jellycli/ui/widgets/modal"
 	"tryffel.net/go/twidgets"
-	"tryffel.net/pkg/jellycli/config"
-	"tryffel.net/pkg/jellycli/controller"
-	"tryffel.net/pkg/jellycli/models"
-	"tryffel.net/pkg/jellycli/player"
-	"tryffel.net/pkg/jellycli/ui/widgets/modal"
 )
 
 type Window struct {

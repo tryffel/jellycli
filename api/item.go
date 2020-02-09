@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"tryffel.net/pkg/jellycli/models"
+	"tryffel.net/go/jellycli/models"
 )
 
 const (

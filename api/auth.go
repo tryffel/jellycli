@@ -23,7 +23,7 @@ import (
 	"github.com/denisbrodbeck/machineid"
 	"io/ioutil"
 	"net/http"
-	"tryffel.net/pkg/jellycli/config"
+	"tryffel.net/go/jellycli/config"
 )
 
 type loginResponse struct {

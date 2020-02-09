@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
-	"tryffel.net/pkg/jellycli/config"
+	"tryffel.net/go/jellycli/config"
 )
 
 type NavBar struct {

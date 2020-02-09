@@ -19,7 +19,7 @@ package api
 import (
 	"fmt"
 	"io"
-	"tryffel.net/pkg/jellycli/config"
+	"tryffel.net/go/jellycli/config"
 )
 
 func (a *Api) GetSongDirect(id string, codec string) (io.ReadCloser, error) {

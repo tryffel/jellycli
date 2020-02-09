@@ -17,8 +17,8 @@
 package controller
 
 import (
-	"tryffel.net/pkg/jellycli/models"
-	"tryffel.net/pkg/jellycli/player"
+	"tryffel.net/go/jellycli/models"
+	"tryffel.net/go/jellycli/player"
 )
 
 //MusicController gathers all necessary interfaces that can control media and queue plus query item metadata

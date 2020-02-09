@@ -20,10 +20,10 @@ import (
 	"fmt"
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
+	"tryffel.net/go/jellycli/config"
+	"tryffel.net/go/jellycli/models"
+	"tryffel.net/go/jellycli/util"
 	"tryffel.net/go/twidgets"
-	"tryffel.net/pkg/jellycli/config"
-	"tryffel.net/pkg/jellycli/models"
-	"tryffel.net/pkg/jellycli/util"
 )
 
 const (

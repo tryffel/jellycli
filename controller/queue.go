@@ -19,7 +19,7 @@ package controller
 import (
 	"github.com/sirupsen/logrus"
 	"sync"
-	"tryffel.net/pkg/jellycli/models"
+	"tryffel.net/go/jellycli/models"
 )
 
 type queue struct {

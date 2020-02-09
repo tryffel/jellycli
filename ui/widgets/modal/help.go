@@ -21,8 +21,8 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 	"strings"
-	"tryffel.net/pkg/jellycli/config"
-	"tryffel.net/pkg/jellycli/models"
+	"tryffel.net/go/jellycli/config"
+	"tryffel.net/go/jellycli/models"
 )
 
 type Help struct {

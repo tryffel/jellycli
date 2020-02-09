@@ -5,9 +5,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"time"
-	"tryffel.net/pkg/jellycli/api"
-	"tryffel.net/pkg/jellycli/config"
-	"tryffel.net/pkg/jellycli/task"
+	"tryffel.net/go/jellycli/api"
+	"tryffel.net/go/jellycli/config"
+	"tryffel.net/go/jellycli/task"
 )
 
 type State int

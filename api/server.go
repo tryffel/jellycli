@@ -18,7 +18,7 @@ package api
 
 import (
 	"io"
-	"tryffel.net/pkg/jellycli/models"
+	"tryffel.net/go/jellycli/models"
 )
 
 //MediaServer uses Jellyfin servers resources and exposes them

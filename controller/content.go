@@ -22,10 +22,10 @@ import (
 	"runtime"
 	"sync"
 	"time"
-	"tryffel.net/pkg/jellycli/api"
-	"tryffel.net/pkg/jellycli/models"
-	"tryffel.net/pkg/jellycli/player"
-	"tryffel.net/pkg/jellycli/task"
+	"tryffel.net/go/jellycli/api"
+	"tryffel.net/go/jellycli/models"
+	"tryffel.net/go/jellycli/player"
+	"tryffel.net/go/jellycli/task"
 )
 
 type Action int

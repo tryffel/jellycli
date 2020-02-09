@@ -25,12 +25,12 @@ import (
 	"strconv"
 	"sync"
 	"syscall"
-	"tryffel.net/pkg/jellycli/api"
-	"tryffel.net/pkg/jellycli/config"
-	"tryffel.net/pkg/jellycli/controller"
-	"tryffel.net/pkg/jellycli/player"
-	"tryffel.net/pkg/jellycli/task"
-	"tryffel.net/pkg/jellycli/ui"
+	"tryffel.net/go/jellycli/api"
+	"tryffel.net/go/jellycli/config"
+	"tryffel.net/go/jellycli/controller"
+	"tryffel.net/go/jellycli/player"
+	"tryffel.net/go/jellycli/task"
+	"tryffel.net/go/jellycli/ui"
 )
 
 func main() {

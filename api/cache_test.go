@@ -19,7 +19,7 @@ package api
 import (
 	"reflect"
 	"testing"
-	"tryffel.net/pkg/jellycli/models"
+	"tryffel.net/go/jellycli/models"
 )
 
 func cacheTestData() []models.Item {

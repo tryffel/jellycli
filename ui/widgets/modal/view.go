@@ -19,8 +19,8 @@ package modal
 import (
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
-	"tryffel.net/pkg/jellycli/config"
-	"tryffel.net/pkg/jellycli/controller"
+	"tryffel.net/go/jellycli/config"
+	"tryffel.net/go/jellycli/controller"
 )
 
 type ViewModal struct {

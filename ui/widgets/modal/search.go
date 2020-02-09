@@ -19,7 +19,7 @@ package modal
 import (
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
-	"tryffel.net/pkg/jellycli/config"
+	"tryffel.net/go/jellycli/config"
 )
 
 type Search struct {

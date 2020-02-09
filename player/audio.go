@@ -28,7 +28,7 @@ import (
 	"io"
 	"sync"
 	"time"
-	"tryffel.net/pkg/jellycli/config"
+	"tryffel.net/go/jellycli/config"
 )
 
 type Format int

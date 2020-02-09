@@ -50,7 +50,9 @@ type Window struct {
 	customGrid bool
 	modal      modal.Modal
 
-	mediaController controller.MediaController
+	mediaController   controller.MediaController
+	mediaView         tview.Primitive
+	mediaViewSelected bool
 
 	hasModal  bool
 	lastFocus tview.Primitive
@@ -146,6 +148,7 @@ func (w *Window) setViewWidget(p tview.Primitive) {
 	w.window.AddItem(p, 1, 1, 4, 5, 15, 10, false)
 	w.lastFocus = w.app.GetFocus()
 	w.app.SetFocus(p)
+	w.mediaView = p
 }
 
 func (w *Window) eventHandler(event *tcell.EventKey) *tcell.EventKey {
@@ -249,6 +252,17 @@ func (w *Window) navBarCtrl(key tcell.Key) bool {
 }
 
 func (w *Window) moveCtrl(key tcell.Key) bool {
+	if key == tcell.KeyTAB {
+		if w.mediaViewSelected {
+			w.lastFocus = w.mediaView
+			w.app.SetFocus(w.mediaNav)
+			w.mediaViewSelected = false
+		} else {
+			w.app.SetFocus(w.mediaView)
+			w.mediaViewSelected = true
+		}
+		return true
+	}
 	return false
 }
 

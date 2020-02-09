@@ -138,3 +138,5 @@ gopkg.in/yaml.v2 v2.2.4 h1:/eiJrUcujPVeJ3xlSWaiNi3uSVmDGBK1pDHUHAnao1I=
 gopkg.in/yaml.v2 v2.2.4/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 tryffel.net/go/twidgets v0.0.0-20200208212031-4c27b3c41115 h1:KEh3EcZCAN+J7qazjas6ZjBftDjdab/B0hgLD1hLTfc=
 tryffel.net/go/twidgets v0.0.0-20200208212031-4c27b3c41115/go.mod h1:oZ7QitiJRuMF8bwgUXqozQo8aIVPGyoe3/cK8/gt6go=
+tryffel.net/go/twidgets v0.0.0-20200209083641-a4965f00a003 h1:CsJgkkmivxdxawHeFKjkfWc63dzLKkMngEYNtHFv1kM=
+tryffel.net/go/twidgets v0.0.0-20200209083641-a4965f00a003/go.mod h1:oZ7QitiJRuMF8bwgUXqozQo8aIVPGyoe3/cK8/gt6go=

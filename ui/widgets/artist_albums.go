@@ -107,7 +107,7 @@ func NewAlbumCover(index int, album *models.Album) *AlbumCover {
 		index:    index,
 	}
 
-	a.SetBorder(true)
+	a.SetBorder(false)
 	a.SetBackgroundColor(config.ColorBackground)
 	a.SetBorderPadding(0, 0, 1, 1)
 	a.SetTextColor(config.ColorPrimary)
@@ -133,11 +133,11 @@ func (a *AlbumCover) SetRect(x, y, w, h int) {
 
 func (a *AlbumCover) SetSelected(selected bool) {
 	if selected {
-		a.SetBorderColor(tcell.ColorBlue)
-		a.SetBorderAttributes(tcell.AttrBold)
+		a.SetTextColor(config.ColorSelection)
+		a.SetBackgroundColor(config.ColorSelectionBackground)
 	} else {
-		a.SetBorderColor(tcell.ColorGray)
-		a.SetBorderAttributes(tcell.AttrNone)
+		a.SetTextColor(config.ColorPrimary)
+		a.SetBackgroundColor(config.ColorBackground)
 	}
 }
 
@@ -194,10 +194,12 @@ func (a *ArtistView) SetArtist(artist *models.Artist) {
 func (a *ArtistView) SetAlbums(albums []*models.Album) {
 	a.list.Clear()
 
+	items := make([]twidgets.ListItem, len(albums))
 	for i, v := range albums {
 		cover := NewAlbumCover(i, v)
-		a.list.AddItems(cover)
+		items[i] = cover
 	}
+	a.list.AddItems(items...)
 }
 
 //NewArtistView constructs new artist view
@@ -207,7 +209,7 @@ func NewArtistView() *ArtistView {
 		list:   twidgets.NewScrollList(nil),
 		header: NewArtistHeader(nil),
 	}
-	a.list.ItemHeight = 5
+	a.list.ItemHeight = 3
 
 	a.SetBorder(true)
 	a.SetBorderColor(config.ColorBorder)
@@ -223,7 +225,6 @@ func NewArtistView() *ArtistView {
 	a.Grid.AddItem(a.list, 1, 0, 1, 1, 6, 25, false)
 
 	a.listFocused = false
-
 	return a
 }
 

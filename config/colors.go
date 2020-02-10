@@ -19,19 +19,23 @@ package config
 import "github.com/gdamore/tcell"
 
 var (
-	ColorBackground          = tcell.Color234 //Dark gray
-	ColorPrimary             = tcell.Color51  // Cyan
-	ColorPrimaryDim          = tcell.Color44  // Ligh cyan
-	ColorSecondary           = tcell.Color141 //
-	ColorSecondaryDim        = tcell.Color134
-	ColorBorder              = tcell.Color246 // Gray
-	ColorBorderFocus         = tcell.Color253
-	ColroMainFrame           = tcell.Color246 // Lighter gray
-	ColorControls            = tcell.Color202 // Orange
-	ColorProgress            = tcell.Color202 // Orange
-	ColorNavBar              = tcell.Color24
-	ColorNavBarBtn           = tcell.Color31
-	ColorLightext            = tcell.Color250
-	ColorSelection           = tcell.Color253
-	ColorSelectionBackground = tcell.Color23
+	ColorBackground            = tcell.Color234 //Dark gray
+	ColorPrimary               = tcell.Color51  // Cyan
+	ColorPrimaryDim            = tcell.Color44  // Ligh cyan
+	ColorSecondary             = tcell.Color141 //
+	ColorSecondaryDim          = tcell.Color134
+	ColorBorder                = tcell.Color246 // Gray
+	ColorBorderFocus           = tcell.Color253
+	ColroMainFrame             = tcell.Color246 // Lighter gray
+	ColorControls              = tcell.Color202 // Orange
+	ColorProgress              = tcell.Color202 // Orange
+	ColorNavBar                = tcell.Color24
+	ColorNavBarBtn             = tcell.Color31
+	ColorLightext              = tcell.Color250
+	ColorSelection             = tcell.Color253
+	ColorSelectionBackground   = tcell.Color23
+	ColorBtnBackgroundSelected = tcell.Color23
+	ColorBtnBackground         = tcell.Color241
+	ColorBtnLabelSelected      = tcell.Color253
+	ColorBtnLabel              = tcell.Color254
 )

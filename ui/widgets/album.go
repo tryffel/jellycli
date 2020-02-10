@@ -55,20 +55,27 @@ func newAlbumHeader(prevFunc func()) *albumHeader {
 
 	btns := []*tview.Button{a.prevBtn, a.infobtn, a.playBtn}
 	for _, v := range btns {
-		v.SetBackgroundColor(config.ColorNavBarBtn)
-		v.SetLabelColor(config.ColorPrimary)
-		v.SetBackgroundColorActivated(config.ColorBorderFocus)
+		v.SetBackgroundColor(config.ColorBtnBackground)
+		v.SetLabelColor(config.ColorBtnLabel)
+		v.SetBackgroundColorActivated(config.ColorBtnBackgroundSelected)
+		v.SetLabelColorActivated(config.ColorBtnLabelSelected)
 	}
 
-	a.Grid.SetRows(1, 1, 1, 1, 1, 1)
-	a.Grid.SetColumns(1, 6, 2, 10, -1, 10, -1, 10, -3)
+	a.SetBorder(true)
+	a.SetBorderColor(config.ColorBorder)
+
+	a.Grid.SetRows(1, 1, 1, 1)
+	a.Grid.SetColumns(6, 2, 10, -1, 10, -1, 10, -3)
 	a.Grid.SetMinSize(1, 6)
 	a.Grid.SetBackgroundColor(config.ColorBackground)
 
-	a.Grid.AddItem(a.prevBtn, 1, 1, 1, 1, 1, 5, false)
-	a.Grid.AddItem(a.description, 1, 3, 2, 5, 1, 10, false)
-	a.Grid.AddItem(a.infobtn, 4, 5, 1, 1, 1, 10, false)
-	a.Grid.AddItem(a.playBtn, 4, 3, 1, 1, 1, 10, true)
+	a.Grid.AddItem(a.prevBtn, 0, 0, 1, 1, 1, 5, false)
+	a.Grid.AddItem(a.description, 0, 2, 2, 5, 1, 10, false)
+	a.Grid.AddItem(a.infobtn, 3, 4, 1, 1, 1, 10, false)
+	a.Grid.AddItem(a.playBtn, 3, 2, 1, 1, 1, 10, true)
+
+	a.description.SetBackgroundColor(config.ColorBackground)
+	a.description.SetTextColor(config.ColorPrimary)
 
 	return a
 }
@@ -187,7 +194,7 @@ func NewAlbumview(playSong func(song *models.Song), playSongs func(songs []*mode
 	a.SetBorderColor(config.ColorBorder)
 	a.list.SetBackgroundColor(config.ColorBackground)
 	a.Grid.SetBackgroundColor(config.ColorBackground)
-	a.Grid.SetRows(5, -1)
+	a.Grid.SetRows(6, -1)
 	a.Grid.SetColumns(-1)
 
 	a.Grid.AddItem(a.header, 0, 0, 1, 1, 5, 25, false)

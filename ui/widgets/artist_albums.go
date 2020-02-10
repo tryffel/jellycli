@@ -41,7 +41,7 @@ type ArtistHeader struct {
 
 	prevBtn    *tview.Button
 	infoBtn    *tview.Button
-	anotherBtn *tview.Button
+	playBtn    *tview.Button
 	similarBtn *tview.Button
 	prevFunc   func()
 }
@@ -53,33 +53,37 @@ func NewArtistHeader(prevFunc func()) *ArtistHeader {
 		name:       tview.NewTextView(),
 		prevBtn:    tview.NewButton("Back"),
 		prevFunc:   prevFunc,
-		anotherBtn: tview.NewButton("Play all"),
+		playBtn:    tview.NewButton("Play all"),
 		similarBtn: tview.NewButton("Similar"),
 	}
 
 	a.name.SetBorderPadding(0, 0, 1, 1)
+	a.SetBorder(true)
+	a.SetBorderColor(config.ColorBorder)
 	a.name.SetText(a.artist.Name)
 	a.name.SetText(fmt.Sprintf("%s\nAlbums: %d, Total: %s",
 		a.artist.Name, a.artist.AlbumCount, util.SecToStringApproximate(a.artist.TotalDuration)))
 	a.prevBtn.SetSelectedFunc(a.prevFunc)
 
-	btns := []*tview.Button{a.prevBtn, a.anotherBtn, a.similarBtn}
+	btns := []*tview.Button{a.prevBtn, a.playBtn, a.similarBtn}
 	for _, v := range btns {
-		v.SetBackgroundColor(config.ColorNavBarBtn)
-		v.SetLabelColor(config.ColorPrimary)
+		v.SetBackgroundColor(config.ColorBtnBackground)
+		v.SetLabelColor(config.ColorBtnLabel)
+		v.SetBackgroundColorActivated(config.ColorBtnBackgroundSelected)
+		v.SetLabelColorActivated(config.ColorBtnLabelSelected)
 	}
 
-	a.Grid.SetRows(1, 1, 1, 1, 1, 1)
-	a.Grid.SetColumns(1, 6, 2, 10, -1, 10, -1, 10, -3)
+	a.Grid.SetRows(1, 1, 1, 1)
+	a.Grid.SetColumns(6, 2, 10, -1, 10, -1, 10, -3)
 	a.Grid.SetMinSize(1, 6)
 	a.Grid.SetBackgroundColor(config.ColorBackground)
 	a.name.SetBackgroundColor(config.ColorBackground)
-	a.name.SetBackgroundColor(config.ColorBackground)
+	a.name.SetTextColor(config.ColorPrimary)
 
-	a.Grid.AddItem(a.prevBtn, 1, 1, 1, 1, 1, 5, false)
-	a.Grid.AddItem(a.name, 1, 3, 2, 5, 1, 10, false)
-	a.Grid.AddItem(a.anotherBtn, 4, 3, 1, 1, 1, 10, true)
-	a.Grid.AddItem(a.similarBtn, 4, 5, 1, 1, 1, 10, false)
+	a.Grid.AddItem(a.prevBtn, 0, 0, 1, 1, 1, 5, false)
+	a.Grid.AddItem(a.name, 0, 2, 2, 5, 1, 10, false)
+	a.Grid.AddItem(a.playBtn, 3, 2, 1, 1, 1, 10, true)
+	a.Grid.AddItem(a.similarBtn, 3, 4, 1, 1, 1, 10, false)
 	return a
 }
 
@@ -222,10 +226,8 @@ func NewArtistView(selectAlbum func(album *models.Album)) *ArtistView {
 	a.SetBorderColor(config.ColorBorder)
 	a.SetBackgroundColor(config.ColorBackground)
 	a.list.SetBackgroundColor(config.ColorBackground)
-	a.SetBorder(true)
-	a.SetBorderColor(config.ColorBorder)
 
-	a.Grid.SetRows(5, -1)
+	a.Grid.SetRows(6, -1)
 	a.Grid.SetColumns(-1)
 
 	a.Grid.AddItem(a.header, 0, 0, 1, 1, 6, 25, false)

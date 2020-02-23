@@ -65,7 +65,6 @@ func NewController(controller controller.Content) (c *MediaController, err error
 		return nil, err
 	}
 
-	//mp2 := &MediaPlayer2{MediaController: c}
 	c.dbus.Export(c, basePath, baseObject)
 
 	player := &Player{MediaController: c}

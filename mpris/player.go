@@ -23,6 +23,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"math"
 	"time"
+	"tryffel.net/go/jellycli/controller"
 	"tryffel.net/go/jellycli/player"
 )
 
@@ -32,7 +33,7 @@ import (
 // https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html
 type Player struct {
 	*MediaController
-	lastState player.PlayingState
+	lastState controller.Status
 }
 
 // TrackID is the Unique track identifier.
@@ -78,7 +79,7 @@ const (
 )
 
 //UpdateStatus updates status to dbus
-func (p *Player) UpdateStatus(state player.PlayingState) {
+func (p *Player) UpdateStatus(state controller.Status) {
 	p.lastState = state
 	var playStatus PlaybackStatus
 	switch state.State {
@@ -90,9 +91,8 @@ func (p *Player) UpdateStatus(state player.PlayingState) {
 		playStatus = PlaybackStatusStopped
 	}
 	object := objectName("Player")
-	song := state.CurrentSong
-	if song != nil {
-		data := MapFromSong(song)
+	if state.Song != nil {
+		data := mapFromStatus(state)
 		data["Position"] = int64(state.CurrentSongPast * 1000 * 1000)
 		if err := p.props.Set(object, "Metadata", dbus.MakeVariant(data)); err != nil {
 			logrus.Error(err)
@@ -145,7 +145,7 @@ func (p *Player) properties() map[string]*prop.Prop {
 		"LoopStatus":     newProp(LoopStatusTrack, true, true, p.OnLoopStatus),
 		"Rate":           newProp(1.0, true, true, notImplemented),
 		"Shuffle":        newProp(false, true, true, p.OnShuffle),
-		"Metadata":       newProp(MapFromSong(p.lastState.CurrentSong), true, true, nil),
+		"Metadata":       newProp(mapFromStatus(p.lastState), true, true, nil),
 		"Volume":         newProp(math.Max(0, float64(80)/100.0), true, true, p.OnVolume),
 		"Position": &prop.Prop{
 			Value:    UsFromDuration(0),
@@ -163,8 +163,6 @@ func (p *Player) properties() map[string]*prop.Prop {
 		"CanControl":    newProp(true, false, true, nil),
 	}
 }
-
-// ============================================================================
 
 // Next skips to the next track in the tracklist.
 // https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html#Method:Next

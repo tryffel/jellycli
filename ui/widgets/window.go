@@ -94,28 +94,6 @@ func NewWindow(mc controller.MediaController) Window {
 	w.history = modal.NewQueue(modal.QueueModeHistory)
 	w.history.SetDoneFunc(w.wrapCloseModal(w.history))
 
-	w.status.UpdateState(player.PlayingState{
-		State:               player.Play,
-		PlayingType:         player.Song,
-		Song:                "Song",
-		Artist:              "Artist",
-		Album:               "Album",
-		CurrentSongDuration: 185,
-		CurrentSongPast:     92,
-		PlaylistDuration:    0,
-		PlaylistLeft:        0,
-		Volume:              50,
-	}, &models.SongInfo{
-		Id:       "song1",
-		Name:     "Song",
-		Duration: 185,
-		Artist:   "Artist A",
-		ArtistId: "a1",
-		Album:    "Album B",
-		AlbumId:  "ab2",
-		Year:     2019,
-	})
-
 	w.mediaController.SetItemsCallback(w.itemsCb)
 	w.mediaController.AddStatusCallback(w.statusCb)
 
@@ -324,7 +302,7 @@ func (w *Window) showModal(modal modal.Modal, height, width uint, lockSize bool)
 	}
 }
 
-func (w *Window) statusCb(state player.PlayingState) {
+func (w *Window) statusCb(state controller.Status) {
 	w.status.UpdateState(state, nil)
 	w.app.QueueUpdateDraw(func() {})
 }

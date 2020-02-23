@@ -7,7 +7,6 @@ import (
 	"time"
 	"tryffel.net/go/jellycli/api"
 	"tryffel.net/go/jellycli/config"
-	"tryffel.net/go/jellycli/models"
 	"tryffel.net/go/jellycli/task"
 )
 
@@ -47,8 +46,6 @@ type PlayingState struct {
 	PlaylistLeft        int
 	// Volume [0,100]
 	Volume int
-
-	CurrentSong *models.Song
 }
 
 type PlaySong struct {

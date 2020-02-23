@@ -18,7 +18,7 @@ package mpris
 
 import (
 	"fmt"
-	"tryffel.net/go/jellycli/models"
+	"tryffel.net/go/jellycli/controller"
 
 	"github.com/godbus/dbus"
 )
@@ -60,9 +60,9 @@ func (m *MetadataMap) nonEmptySlice(field string, values []string) {
 	}
 }
 
-// MapFromSong returns a MetadataMap from the Song struct in mpd.
-func MapFromSong(s *models.Song) MetadataMap {
-	if s == nil {
+// mapFromStatus returns a MetadataMap from the Song struct in mpd.
+func mapFromStatus(s controller.Status) MetadataMap {
+	if s.Song == nil {
 		// No song
 		return MetadataMap{
 			"mpris:trackid": dbus.ObjectPath(basePath + "/TrackList/NoTrack"),
@@ -70,15 +70,21 @@ func MapFromSong(s *models.Song) MetadataMap {
 	}
 
 	m := &MetadataMap{
-		"mpris:trackid": dbus.ObjectPath(fmt.Sprintf(TrackIDFormat, s.Id)),
-		"mpris:length":  s.Duration * 1000 * 1000,
+		"mpris:trackid": dbus.ObjectPath(fmt.Sprintf(TrackIDFormat, s.Song.Id)),
+		"mpris:length":  s.Song.Duration * 1000 * 1000,
 	}
 
-	m.nonEmptyString("xesam:album", string(s.Album))
-	m.nonEmptyString("xesam:title", s.Name)
+	if s.Album != nil {
+		m.nonEmptyString("xesam:album", s.Album.Name)
+	}
+	if s.Artist != nil {
+		m.nonEmptyString("xesam:artist", s.Artist.Name)
+	}
+
+	m.nonEmptyString("xesam:title", s.Song.Name)
 
 	// mpris:artUrl, xesam:artist, xesam:url
-	(*m)["xesam:trackNumber"] = s.Index
+	(*m)["xesam:trackNumber"] = s.Song.Index
 
 	return *m
 }

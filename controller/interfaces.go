@@ -95,7 +95,7 @@ type PlaybackController interface {
 	SeekBackwards(seconds int)
 	//AddStatusCallback adds callback that get's called every time status has changed,
 	//including playback progress
-	AddStatusCallback(func(state player.PlayingState))
+	AddStatusCallback(func(staus Status))
 	//SetVolume sets volume to given level in range of [0,100]
 	SetVolume(level int)
 }
@@ -131,3 +131,10 @@ const (
 	ViewPlaylists
 	ViewLatestMusic
 )
+
+type Status struct {
+	player.PlayingState
+	Song   *models.Song
+	Album  *models.Album
+	Artist *models.Artist
+}

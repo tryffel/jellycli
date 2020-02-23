@@ -45,7 +45,7 @@ type Content struct {
 
 	chanItemsAdded chan []*models.Song
 
-	statusChangedCb []func(state player.PlayingState)
+	statusChangedCb []func(state Status)
 	itemsCb         func([]models.Item)
 
 	playerState player.PlayingState
@@ -382,7 +382,7 @@ func (c *Content) Seek(seconds int) {
 func (c *Content) SeekBackwards(seconds int) {
 }
 
-func (c *Content) AddStatusCallback(cb func(state player.PlayingState)) {
+func (c *Content) AddStatusCallback(cb func(status Status)) {
 	c.statusChangedCb = append(c.statusChangedCb, cb)
 }
 
@@ -405,7 +405,7 @@ func NewContent(a *api.Api, p *player.Player) (*Content, error) {
 		api:             a,
 		player:          p,
 		queue:           newQueue(),
-		statusChangedCb: []func(state player.PlayingState){},
+		statusChangedCb: []func(tate Status){},
 	}
 
 	c.SetLoop(c.loop)
@@ -451,15 +451,13 @@ func (c *Content) loop() {
 			c.playerState = state
 
 			if state.State == player.Play || state.State == player.Pause {
-				song := c.queue.GetQueue()[0]
-				c.playerState.CurrentSong = song
-				state.CurrentSong = song
+				err := c.pushState(state)
+				if err != nil {
+					logrus.Errorf("push status: %v", err)
+				}
 			}
 			if state.State == player.SongComplete {
 				c.queue.songComplete()
-			}
-			for _, v := range c.statusChangedCb {
-				v(state)
 			}
 		case songs := <-c.chanItemsAdded:
 			c.queue.AddSongs(songs)
@@ -471,6 +469,35 @@ func (c *Content) loop() {
 		}
 	}
 
+}
+
+func (c *Content) pushState(state player.PlayingState) error {
+	status := Status{
+		PlayingState: state,
+	}
+
+	if len(c.queue.GetQueue()) > 0 {
+		status.Song = c.queue.GetQueue()[0]
+		item := c.getItem(status.Song.Album)
+		if item != nil {
+			album, ok := item.(*models.Album)
+			if ok {
+				status.Album = album
+				item = c.getItem(album.Artist)
+				if item != nil {
+					artist, ok := item.(*models.Artist)
+					if ok {
+						status.Artist = artist
+					}
+				}
+			}
+		}
+	}
+
+	for _, v := range c.statusChangedCb {
+		v(status)
+	}
+	return nil
 }
 
 func (c *Content) GetDefault() []models.Item {

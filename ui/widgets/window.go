@@ -117,7 +117,7 @@ func NewWindow(mc controller.MediaController) Window {
 	})
 
 	w.mediaController.SetItemsCallback(w.itemsCb)
-	w.mediaController.SetStatusCallback(w.statusCb)
+	w.mediaController.AddStatusCallback(w.statusCb)
 
 	return w
 }

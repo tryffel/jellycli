@@ -93,9 +93,9 @@ type PlaybackController interface {
 	Seek(seconds int)
 	//SeekBackwards seeks backwards given seconds
 	SeekBackwards(seconds int)
-	//SetStatusCallback sets callback that get's called every time status has changed,
+	//AddStatusCallback adds callback that get's called every time status has changed,
 	//including playback progress
-	SetStatusCallback(func(state player.PlayingState))
+	AddStatusCallback(func(state player.PlayingState))
 	//SetVolume sets volume to given level in range of [0,100]
 	SetVolume(level int)
 }

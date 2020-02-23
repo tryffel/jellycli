@@ -45,7 +45,7 @@ type Content struct {
 
 	chanItemsAdded chan []*models.Song
 
-	statusChangedCb func(state player.PlayingState)
+	statusChangedCb []func(state player.PlayingState)
 	itemsCb         func([]models.Item)
 
 	playerState player.PlayingState
@@ -382,8 +382,8 @@ func (c *Content) Seek(seconds int) {
 func (c *Content) SeekBackwards(seconds int) {
 }
 
-func (c *Content) SetStatusCallback(cb func(state player.PlayingState)) {
-	c.statusChangedCb = cb
+func (c *Content) AddStatusCallback(cb func(state player.PlayingState)) {
+	c.statusChangedCb = append(c.statusChangedCb, cb)
 }
 
 func (c *Content) flushStatus(status player.Action) {
@@ -402,9 +402,10 @@ func (c *Content) flushItems(items ...models.Item) {
 func NewContent(a *api.Api, p *player.Player) (*Content, error) {
 	var err error
 	c := &Content{
-		api:    a,
-		player: p,
-		queue:  newQueue(),
+		api:             a,
+		player:          p,
+		queue:           newQueue(),
+		statusChangedCb: []func(state player.PlayingState){},
 	}
 
 	c.SetLoop(c.loop)
@@ -452,9 +453,8 @@ func (c *Content) loop() {
 			if state.State == player.SongComplete {
 				c.queue.songComplete()
 			}
-
-			if c.statusChangedCb != nil {
-				c.statusChangedCb(state)
+			for _, v := range c.statusChangedCb {
+				v(state)
 			}
 		case songs := <-c.chanItemsAdded:
 			c.queue.AddSongs(songs)

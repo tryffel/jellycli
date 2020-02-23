@@ -89,8 +89,12 @@ func NewArtistHeader(prevFunc func()) *ArtistHeader {
 
 func (a *ArtistHeader) SetArtist(artist *models.Artist) {
 	a.artist = artist
-	a.name.SetText(fmt.Sprintf("%s\nAlbums: %d, Total: %s",
-		a.artist.Name, a.artist.AlbumCount, util.SecToStringApproximate(a.artist.TotalDuration)))
+	if artist != nil {
+		a.name.SetText(fmt.Sprintf("%s\nAlbums: %d, Total: %s",
+			a.artist.Name, a.artist.AlbumCount, util.SecToStringApproximate(a.artist.TotalDuration)))
+	} else {
+		a.name.SetText("")
+	}
 }
 
 //AlbumCover is a simple cover for album, it shows

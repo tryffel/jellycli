@@ -19,7 +19,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/models"
 )
 
@@ -49,9 +48,7 @@ func (a *Api) GetViews() ([]*models.View, error) {
 func (a *Api) GetLatestAlbums() ([]*models.Album, error) {
 	params := *a.defaultParams()
 	params["api_key"] = a.token
-	params["IncludeItemTypes"] = "Audio"
-	params["Limit"] = config.LatestMusicCount
-	params["ParentId"] = a.musicView
+	params["UserId"] = a.userId
 
 	resp, err := a.get(fmt.Sprintf("/Users/%s/Items/Latest", a.userId), &params)
 	if err != nil {

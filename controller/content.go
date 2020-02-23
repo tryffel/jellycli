@@ -66,6 +66,10 @@ func (c *Content) GetArtists() ([]*models.Artist, error) {
 	panic("implement me")
 }
 
+func (c *Content) GetLatestAlbums() ([]*models.Album, error) {
+	return c.api.GetLatestAlbums()
+}
+
 func (c *Content) GetAlbums() ([]*models.Album, error) {
 	panic("implement me")
 }

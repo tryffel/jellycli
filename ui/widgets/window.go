@@ -341,6 +341,30 @@ func (w *Window) InitBrowser(items []models.Item) {
 
 func (w *Window) selectMedia(m MediaSelect) {
 	switch m {
+	case MediaLatestMusic:
+		albums, err := w.mediaController.GetLatestAlbums()
+		if err != nil {
+			logrus.Errorf("get favorite artists: %v", err)
+		} else {
+			duration := 0
+			for _, v := range albums {
+				duration += v.Duration
+			}
+			// set pseudo artist
+			artist := &models.Artist{
+				Id:            "",
+				Name:          "Latest albums",
+				Albums:        nil,
+				TotalDuration: duration,
+				AlbumCount:    len(albums),
+			}
+
+			w.mediaNav.SetCount(MediaLatestMusic, len(albums))
+			w.artist.Clear()
+			w.artist.SetArtist(artist)
+			w.artist.SetAlbums(albums)
+			w.setViewWidget(w.artist)
+		}
 	case MediaFavoriteArtists:
 		if w.mediaView == w.artistList {
 			w.app.SetFocus(w.mediaView)

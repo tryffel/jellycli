@@ -114,6 +114,8 @@ type MediaManager interface {
 	GetFavoriteArtists() ([]*models.Artist, error)
 	GetFavoriteAlbums() ([]*models.Album, error)
 
+	GetLatestAlbums() ([]*models.Album, error)
+
 	GetStatistics() models.Stats
 }
 

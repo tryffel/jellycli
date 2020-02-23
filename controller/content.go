@@ -450,6 +450,11 @@ func (c *Content) loop() {
 		case state := <-c.player.StateChannel():
 			c.playerState = state
 
+			if state.State == player.Play || state.State == player.Pause {
+				song := c.queue.GetQueue()[0]
+				c.playerState.CurrentSong = song
+				state.CurrentSong = song
+			}
 			if state.State == player.SongComplete {
 				c.queue.songComplete()
 			}

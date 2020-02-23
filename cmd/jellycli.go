@@ -28,6 +28,7 @@ import (
 	"tryffel.net/go/jellycli/api"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/controller"
+	mpris2 "tryffel.net/go/jellycli/mpris"
 	"tryffel.net/go/jellycli/player"
 	"tryffel.net/go/jellycli/task"
 	"tryffel.net/go/jellycli/ui"
@@ -60,12 +61,14 @@ func main() {
 
 // Application is the root struct for interactive player
 type Application struct {
-	secrets config.Secret
-	api     *api.Api
-	gui     *ui.Gui
-	player  *player.Player
-	content *controller.Content
-	logfile *os.File
+	secrets     config.Secret
+	api         *api.Api
+	gui         *ui.Gui
+	player      *player.Player
+	content     *controller.Content
+	mpris       *mpris2.MediaController
+	mprisPlayer *mpris2.Player
+	logfile     *os.File
 }
 
 //NewApplication instantiates new player
@@ -303,6 +306,18 @@ func (a *Application) initApplication() error {
 	}
 
 	a.gui = ui.NewUi(a.content)
+
+	a.mpris, err = mpris2.NewController(*a.content)
+	if err != nil {
+		return fmt.Errorf("initialize dbus connection: %v", err)
+	}
+
+	a.mprisPlayer = &mpris2.Player{
+		MediaController: a.mpris,
+	}
+
+	a.content.AddStatusCallback(a.mprisPlayer.UpdateStatus)
+
 	return nil
 }
 

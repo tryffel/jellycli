@@ -7,6 +7,8 @@ require (
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/faiface/beep v1.0.1
 	github.com/gdamore/tcell v1.3.0
+	github.com/godbus/dbus v4.1.0+incompatible
+	github.com/godbus/dbus/v5 v5.0.3
 	github.com/mattn/go-colorable v0.1.4 // indirect
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
 	github.com/onsi/ginkgo v1.12.0 // indirect

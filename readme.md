@@ -2,6 +2,11 @@
 
 Terminal client for Jellyfin, mostly for music at the moment. This is very much work-in-progress.
 
+## Features
+* Play songs
+* Add songs to queue
+* Control (and view) play state through Dbus integration
+
 ## Building:
 Assuming go installed:
 ```
@@ -15,3 +20,6 @@ It stores all this information in OS wallet (tested only with KDE KWallet). Afte
 browse your music and play it. 
 
 
+
+## Acknowledgements
+Thanks [natsukagami](https://github.com/natsukagami/mpd-mpris) for implementing Mpris-interface.

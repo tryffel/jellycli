@@ -33,8 +33,19 @@ const (
 	MediaSongs
 	MediaPlaylists
 	MediaFavoriteArtists
-	MediaFavoritAlbums
+	MediaFavoriteAlbums
 )
+
+var mediaSelections = map[MediaSelect]string{
+	MediaLatestMusic:     "Latest Music",
+	MediaRecent:          "Recently played",
+	MediaArtists:         "Artists",
+	MediaAlbums:          "Albums",
+	MediaSongs:           "Songs",
+	MediaPlaylists:       "Playlists",
+	MediaFavoriteArtists: "Favorite Artists",
+	MediaFavoriteAlbums:  "Favorite Albums",
+}
 
 //MediaNavigation provides access to artists, albums, playlists
 type MediaNavigation struct {
@@ -58,32 +69,30 @@ func NewMediaNavigation(selectFunc func(selection MediaSelect)) *MediaNavigation
 	m.SetSelectable(true, false)
 	m.SetSelectedStyle(config.ColorPrimary, config.ColorBorder, 0)
 
-	type keyValue struct {
-		name  string
-		count int
+	for i, v := range mediaSelections {
+		cell := tableCell(v)
+		m.Table.SetCell(int(i), 0, cell)
 	}
 
-	items := []keyValue{
-		{"Latest Music", -1},
-		{"Recently played", -1},
-		{"Artists", -1},
-		{"Albums", -1},
-		{"Songs", -1},
-		{"Playlists", -1},
-		{"Favorite Artists", -1},
-		{"Favorite Albums", -1},
-	}
-
-	for i, v := range items {
-		cell := tableCell(v.name)
-		m.Table.SetCell(i, 0, cell)
-		if v.count > -1 {
-			m.Table.SetCellSimple(i, 1, fmt.Sprint(v.count))
-			cell = tableCell(fmt.Sprint(v.count))
-			m.Table.SetCell(i, 1, cell)
-		}
-	}
+	m.markDisabledMethods()
 	return m
+}
+
+func (m *MediaNavigation) markDisabledMethods() {
+	// colorize methods that are not implemented
+	notImplemented := []MediaSelect{
+		MediaRecent,
+		MediaArtists,
+		MediaAlbums,
+		MediaSongs,
+		MediaPlaylists,
+		MediaFavoriteAlbums,
+	}
+
+	for _, v := range notImplemented {
+		cell := m.Table.GetCell(int(v), 0)
+		cell.SetTextColor(config.ColorSecondaryDim)
+	}
 }
 
 func (m *MediaNavigation) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {

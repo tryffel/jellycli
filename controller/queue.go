@@ -47,8 +47,8 @@ func (q *queue) GetQueue() []*models.Song {
 func (q *queue) ClearQueue() {
 	q.lock.Lock()
 	defer q.lock.Unlock()
+	defer q.notifyUpdates()
 	q.items = []*models.Song{}
-	q.notifyUpdates()
 }
 
 func (q *queue) QueueDuration() int {
@@ -64,14 +64,15 @@ func (q *queue) QueueDuration() int {
 func (q *queue) AddSongs(songs []*models.Song) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
+	defer q.notifyUpdates()
 	q.items = append(q.items, songs...)
 	logrus.Debug("Adding songs to queue, current size: ", len(q.items))
-	q.notifyUpdates()
 }
 
 func (q *queue) Reorder(currentIndex, newIndex int) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
+	defer q.notifyUpdates()
 	//TODO: Fix ordering songs
 	if currentIndex < 0 || newIndex < 0 {
 		return
@@ -96,9 +97,7 @@ func (q *queue) Reorder(currentIndex, newIndex int) {
 		}
 		temp = append(temp, q.items[newIndex:currentIndex]...)
 	}
-
 	q.items = temp
-	q.notifyUpdates()
 }
 
 func (q *queue) GetHistory(n int) []*models.Song {

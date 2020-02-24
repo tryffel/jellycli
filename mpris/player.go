@@ -92,9 +92,14 @@ func (p *Player) UpdateStatus(state controller.Status) {
 	}
 	object := objectName("Player")
 	if state.Song != nil {
+		pos := int64(state.CurrentSongPast * 1000 * 1000)
 		data := mapFromStatus(state)
-		data["Position"] = int64(state.CurrentSongPast * 1000 * 1000)
+		data["Position"] = pos
 		if err := p.props.Set(object, "Metadata", dbus.MakeVariant(data)); err != nil {
+			logrus.Error(err)
+			return
+		}
+		if err := p.props.Set(object, "Position", dbus.MakeVariant(pos)); err != nil {
 			logrus.Error(err)
 			return
 		}
@@ -149,7 +154,7 @@ func (p *Player) properties() map[string]*prop.Prop {
 		"Volume":         newProp(math.Max(0, float64(80)/100.0), true, true, p.OnVolume),
 		"Position": &prop.Prop{
 			Value:    UsFromDuration(0),
-			Writable: false,
+			Writable: true,
 			Emit:     prop.EmitTrue,
 			Callback: nil,
 		},

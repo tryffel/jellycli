@@ -177,3 +177,34 @@ func (a *Api) GetCacheItems() int {
 func (a *Api) ImageUrl(item, imageTag string) string {
 	return fmt.Sprintf("%s/Items/%s/Images/Primary?maxHeight=500&tag=%s&quality=90", a.host, item, imageTag)
 }
+
+func (a *Api) ReportCapabilities() error {
+	data := map[string]interface{}{}
+	data["PlayableMediaTypes"] = []string{"Audio"}
+	data["SupportedCommands"] = []string{
+		"VolumeUp",
+		"VolumeDown",
+		"Mute",
+		"Unmute",
+		"ToggleMute",
+		"SetVolume",
+	}
+	data["SupportsMediaControl"] = true
+	data["SupportsPersistentIdentifier"] = false
+
+	params := *a.defaultParams()
+	params["api_key"] = a.token
+
+	body, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("json: %v", err)
+	}
+
+	url := "/Sessions/Capabilities/Full"
+	resp, err := a.post(url, &body, &params)
+	if err != nil {
+		return err
+	}
+	resp.Close()
+	return nil
+}

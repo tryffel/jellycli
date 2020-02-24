@@ -62,6 +62,12 @@ func NewApi(host string) (*Api, error) {
 	if err != nil {
 		return a, fmt.Errorf("create cache: %v", err)
 	}
+
+	err = a.ReportCapabilities()
+	if err != nil {
+		logrus.Warningf("report capabilities: %v", err)
+	}
+
 	return a, nil
 }
 

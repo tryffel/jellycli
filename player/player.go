@@ -131,8 +131,8 @@ func NewPlayer(a *api.Api) (*Player, error) {
 		Api:                a,
 		chanAction:         make(chan Action, 3),
 		chanState:          make(chan PlayingState, 3),
-		chanStreamComplete: make(chan bool),
-		chanAddSong:        make(chan PlaySong),
+		chanStreamComplete: make(chan bool, 3),
+		chanAddSong:        make(chan PlaySong, 3),
 		ticker:             nil,
 		audio:              nil,
 	}

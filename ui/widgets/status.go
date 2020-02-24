@@ -253,16 +253,18 @@ func (s *Status) GetFocusable() tview.Focusable {
 }
 
 func (s *Status) WriteStatus(screen tcell.Screen, x, y int) {
-	xi := x
-	w, _ := screen.Size()
-	tview.Print(screen, effect(s.state.PlayingState.Song, "b")+" - ", x, y, w, tview.AlignLeft, s.detailsMainColor)
-	x += len(s.state.PlayingState.Song) + 3
-	tview.Print(screen, effect(s.state.PlayingState.Artist, "b")+" ", x, y, w, tview.AlignLeft, s.detailsMainColor)
-	x += len(s.state.PlayingState.Artist) + 1
-	x = xi + 4
-	tview.Print(screen, s.state.PlayingState.Album+" ", x, y+1, w, tview.AlignLeft, s.detailsDimColor)
-	x += len(s.state.PlayingState.Album) + 1
-	tview.Print(screen, fmt.Sprintf("(%d)", s.state.Year), x, y+1, w, tview.AlignLeft, s.detailsDimColor)
+	if s.state.PlayingState.State != player.Stop {
+		xi := x
+		w, _ := screen.Size()
+		tview.Print(screen, effect(s.state.PlayingState.Song, "b")+" - ", x, y, w, tview.AlignLeft, s.detailsMainColor)
+		x += len(s.state.PlayingState.Song) + 3
+		tview.Print(screen, effect(s.state.PlayingState.Artist, "b")+" ", x, y, w, tview.AlignLeft, s.detailsMainColor)
+		x += len(s.state.PlayingState.Artist) + 1
+		x = xi + 4
+		tview.Print(screen, s.state.PlayingState.Album+" ", x, y+1, w, tview.AlignLeft, s.detailsDimColor)
+		x += len(s.state.PlayingState.Album) + 1
+		tview.Print(screen, fmt.Sprintf("(%d)", s.state.Year), x, y+1, w, tview.AlignLeft, s.detailsDimColor)
+	}
 }
 
 // Return cb func that includes name

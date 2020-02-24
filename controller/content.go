@@ -450,11 +450,9 @@ func (c *Content) loop() {
 		case state := <-c.player.StateChannel():
 			c.playerState = state
 
-			if state.State == player.Play || state.State == player.Pause {
-				err := c.pushState(state)
-				if err != nil {
-					logrus.Errorf("push status: %v", err)
-				}
+			err := c.pushState(state)
+			if err != nil {
+				logrus.Errorf("push status: %v", err)
 			}
 			if state.State == player.SongComplete {
 				c.queue.songComplete()
@@ -476,7 +474,7 @@ func (c *Content) pushState(state player.PlayingState) error {
 		PlayingState: state,
 	}
 
-	if len(c.queue.GetQueue()) > 0 {
+	if !c.queue.empty() {
 		status.Song = c.queue.GetQueue()[0]
 		item := c.getItem(status.Song.Album)
 		if item != nil {

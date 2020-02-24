@@ -48,6 +48,16 @@ type PlayingState struct {
 	Volume int
 }
 
+//remove song info from state
+func (p *PlayingState) clear() {
+	p.Song = ""
+	p.Artist = ""
+	p.Album = ""
+	p.Year = 0
+	p.CurrentSongDuration = 0
+	p.CurrentSongPast = 0
+}
+
 type PlaySong struct {
 	Action Action
 	Song   io.ReadCloser
@@ -189,6 +199,7 @@ func (p *Player) loop() {
 			}
 			p.stop()
 			p.state.State = SongComplete
+			p.state.clear()
 			p.RefreshState()
 			p.state.State = Stop
 		case <-p.StopChan():

@@ -91,18 +91,22 @@ func (p *Player) UpdateStatus(state controller.Status) {
 		playStatus = PlaybackStatusStopped
 	}
 	object := objectName("Player")
+
+	var pos int64 = 0
+	var data = MetadataMap{}
+
 	if state.Song != nil {
-		pos := int64(state.CurrentSongPast * 1000 * 1000)
-		data := mapFromStatus(state)
-		data["Position"] = pos
-		if err := p.props.Set(object, "Metadata", dbus.MakeVariant(data)); err != nil {
-			logrus.Error(err)
-			return
-		}
-		if err := p.props.Set(object, "Position", dbus.MakeVariant(pos)); err != nil {
-			logrus.Error(err)
-			return
-		}
+		pos = int64(state.CurrentSongPast * 1000 * 1000)
+		data = mapFromStatus(state)
+
+	}
+	if err := p.props.Set(object, "Metadata", dbus.MakeVariant(data)); err != nil {
+		logrus.Error(err)
+		return
+	}
+	if err := p.props.Set(object, "Position", dbus.MakeVariant(pos)); err != nil {
+		logrus.Error(err)
+		return
 	}
 
 	if err := p.props.Set(object, "PlaybackStatus", dbus.MakeVariant(playStatus)); err != nil {

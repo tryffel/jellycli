@@ -26,6 +26,8 @@ type Album struct {
 	//SongCount, how many songs are there in album.
 	// 0 means album is empty, where -1 means songs need to be gathered separately.
 	SongCount int
+	// ImageId is optional id for image album
+	ImageId string
 }
 
 func (a *Album) GetId() Id {

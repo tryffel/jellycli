@@ -76,6 +76,7 @@ func mapFromStatus(s controller.Status) MetadataMap {
 
 	if s.Album != nil {
 		m.nonEmptyString("xesam:album", s.Album.Name)
+		m.nonEmptyString("mpris:artUrl", s.AlbumImageUrl)
 	}
 	if s.Artist != nil {
 		m.nonEmptyString("xesam:artist", s.Artist.Name)

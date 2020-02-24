@@ -171,3 +171,8 @@ func (a *Api) ReportProgress(state *PlaybackState) error {
 func (a *Api) GetCacheItems() int {
 	return a.cache.Count()
 }
+
+//ImageUrl returns primary image url for item, if there is one. Otherwise return empty
+func (a *Api) ImageUrl(item, imageTag string) string {
+	return fmt.Sprintf("%s/Items/%s/Images/Primary?maxHeight=500&tag=%s&quality=90", a.host, item, imageTag)
+}

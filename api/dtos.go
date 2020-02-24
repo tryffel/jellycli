@@ -66,12 +66,15 @@ type albums struct {
 }
 
 type album struct {
-	Name     string   `json:"Name"`
-	Id       string   `json:"Id"`
-	Duration int      `json:"RunTimeTicks"`
-	Year     int      `json:"ProductionYear"`
-	Type     string   `json:"Type"`
-	Artists  []nameId `json:"AlbumArtists"`
+	Name      string   `json:"Name"`
+	Id        string   `json:"Id"`
+	Duration  int      `json:"RunTimeTicks"`
+	Year      int      `json:"ProductionYear"`
+	Type      string   `json:"Type"`
+	Artists   []nameId `json:"AlbumArtists"`
+	Overview  string   `json:"Overview"`
+	Genres    []string `json:"Genres"`
+	ImageTags images   `json:"ImageTags"`
 }
 
 func (a *album) toAlbum() *models.Album {
@@ -88,6 +91,7 @@ func (a *album) toAlbum() *models.Album {
 		Artist:    artist,
 		Songs:     nil,
 		SongCount: -1,
+		ImageId:   a.ImageTags.Primary,
 	}
 }
 
@@ -155,4 +159,8 @@ func (v *view) toView() *models.View {
 
 type views struct {
 	Views []view `json:"Items"`
+}
+
+type images struct {
+	Primary string `json:"Primary`
 }

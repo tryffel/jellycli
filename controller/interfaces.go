@@ -134,7 +134,8 @@ const (
 
 type Status struct {
 	player.PlayingState
-	Song   *models.Song
-	Album  *models.Album
-	Artist *models.Artist
+	Song          *models.Song
+	Album         *models.Album
+	Artist        *models.Artist
+	AlbumImageUrl string
 }

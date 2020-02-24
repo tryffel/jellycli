@@ -483,6 +483,7 @@ func (c *Content) pushState(state player.PlayingState) error {
 			album, ok := item.(*models.Album)
 			if ok {
 				status.Album = album
+				status.AlbumImageUrl = c.api.ImageUrl(string(album.Id), album.ImageId)
 				item = c.getItem(album.Artist)
 				if item != nil {
 					artist, ok := item.(*models.Artist)

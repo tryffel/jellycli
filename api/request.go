@@ -46,8 +46,8 @@ func (a *Api) get(url string, params *map[string]string) (io.ReadCloser, error) 
 	return a.makeRequest("GET", url, nil, params)
 }
 
-func (a *Api) post(url string, body []byte, params *map[string]string) (io.ReadCloser, error) {
-	return a.makeRequest("POST", url, nil, params)
+func (a *Api) post(url string, body *[]byte, params *map[string]string) (io.ReadCloser, error) {
+	return a.makeRequest("POST", url, body, params)
 }
 
 //Construct request

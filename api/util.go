@@ -160,7 +160,8 @@ func (a *Api) ReportProgress(state *PlaybackState) error {
 		return fmt.Errorf("json marshaling failed: %v", err)
 	}
 
-	_, err = a.post(url, body, &params)
+	resp, err := a.post(url, &body, &params)
+	resp.Close()
 	if err == nil {
 		return nil
 	} else {

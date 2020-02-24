@@ -285,6 +285,8 @@ func (s *Status) buttonCb(name string) {
 		s.actionCb(player.Play, -1)
 	case btnPause:
 		s.actionCb(player.Pause, -1)
+	case btnNext:
+		s.actionCb(player.EndSong, -1)
 	}
 }
 

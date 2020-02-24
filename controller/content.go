@@ -371,6 +371,13 @@ func (c *Content) StopMedia() {
 }
 
 func (c *Content) Next() {
+	if len(c.queue.GetQueue()) > 1 {
+		// don't skip track if there's no more tracks available
+		status := player.Action{
+			State: player.EndSong,
+		}
+		c.flushStatus(status)
+	}
 }
 
 func (c *Content) Previous() {
@@ -457,6 +464,7 @@ func (c *Content) loop() {
 			}
 			if state.State == player.SongComplete {
 				c.queue.songComplete()
+				c.ensurePlayerHasStream()
 			}
 		case songs := <-c.chanItemsAdded:
 			c.queue.AddSongs(songs)

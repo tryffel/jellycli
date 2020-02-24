@@ -77,6 +77,9 @@ const (
 	// StopMedia playing
 	Stop
 
+	//EndSong is a transition state to end current song
+	EndSong
+
 	//SongComplete, only transition mode to notify song has changed
 	SongComplete
 
@@ -189,19 +192,7 @@ func (p *Player) loop() {
 				logrus.Error("Invalid action, probably incorrect transition")
 			}
 		case <-p.chanStreamComplete:
-			logrus.Debug("Stream complete")
-			if p.reader != nil {
-				err := p.reader.Close()
-				if err != nil {
-					logrus.Errorf("Failed to close reader: %v", err)
-				}
-				p.reader = nil
-			}
-			p.stop()
-			p.state.State = SongComplete
-			p.state.clear()
-			p.RefreshState()
-			p.state.State = Stop
+			p.endStream()
 		case <-p.StopChan():
 			// Program is stopping
 			p.stop()
@@ -256,6 +247,11 @@ func (p *Player) handleAction(action Action) (bool, api.PlaybackEvent) {
 			return true, api.EventUnpause
 		}
 		return false, defaultEvent
+	case EndSong:
+		if p.state.State == Pause || p.state.State == Play {
+			p.endStream()
+			return true, api.EventStop
+		}
 	default:
 		logrus.Error("Got invalid action: ", action.State)
 		return false, defaultEvent
@@ -343,4 +339,20 @@ func (p *Player) reportStatus(event api.PlaybackEvent) {
 	if err != nil {
 		logrus.Error("Failed to report status: ", err.Error())
 	}
+}
+
+func (p *Player) endStream() {
+	logrus.Debug("Stream complete")
+	if p.reader != nil {
+		err := p.reader.Close()
+		if err != nil {
+			logrus.Errorf("Failed to close reader: %v", err)
+		}
+		p.reader = nil
+	}
+	p.stop()
+	p.state.State = SongComplete
+	p.state.clear()
+	p.RefreshState()
+	p.state.State = Stop
 }

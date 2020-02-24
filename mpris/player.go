@@ -176,6 +176,7 @@ func (p *Player) properties() map[string]*prop.Prop {
 // Next skips to the next track in the tracklist.
 // https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html#Method:Next
 func (p *Player) Next() *dbus.Error {
+	p.controller.Next()
 	return nil
 }
 

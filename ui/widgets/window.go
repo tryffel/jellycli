@@ -194,6 +194,8 @@ func (w *Window) mediaCtrl(event *tcell.EventKey) bool {
 	case ctrls.VolumeUp:
 		volume := w.status.state.Volume + 5
 		go w.mediaController.SetVolume(volume)
+	case ctrls.Next:
+		w.mediaController.Next()
 	default:
 		return false
 	}

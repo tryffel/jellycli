@@ -56,6 +56,7 @@ func NewApi(host string) (*Api, error) {
 	}
 	a.DeviceId = id
 	a.SessionId = randomKey(15)
+	a.Name = "api"
 
 	a.cache, err = NewCache()
 	if err != nil {

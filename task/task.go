@@ -18,6 +18,7 @@ package task
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"sync"
 )
 
@@ -92,6 +93,7 @@ func (t *Task) Stop() error {
 		return fmt.Errorf("task '%s' goroutine not running", t.Name)
 	}
 
+	logrus.Tracef("Stopping task: %s", t.Name)
 	t.chanStop <- true
 	return nil
 }
@@ -105,4 +107,5 @@ func (t *Task) run() {
 	t.lock.Lock()
 	t.running = false
 	t.lock.Unlock()
+	logrus.Tracef("Task %s stopped", t.Name)
 }

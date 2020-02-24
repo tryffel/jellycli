@@ -411,6 +411,7 @@ func NewContent(a *api.Api, p *player.Player) (*Content, error) {
 	c.SetLoop(c.loop)
 	c.chanComplete = make(chan Action)
 	c.chanItemsAdded = make(chan []*models.Song)
+	c.Name = "Content"
 	if err != nil {
 		return c, fmt.Errorf("init media player: %v", err)
 	}

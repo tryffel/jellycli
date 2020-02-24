@@ -54,9 +54,6 @@ func (c *Cache) Put(id models.Id, item models.Item, expire bool) {
 
 //Get gets single item fro cache. Returns item and flag whether item is found
 func (c *Cache) Get(id models.Id) (models.Item, bool) {
-	count := c.Count()
-	logrus.Debugf("Cache has %d items", count)
-
 	data, found := c.cache.Get(string(id))
 	if !found {
 		return nil, false

@@ -47,11 +47,7 @@ func main() {
 	if startErr != nil {
 		logrus.Errorf("Failed to start application: %v", startErr)
 	}
-	<-catchSignals()
-	logrus.Info("Stopping application")
-
 	stopErr := app.Stop()
-
 	if startErr == nil && stopErr == nil {
 		os.Exit(0)
 	}

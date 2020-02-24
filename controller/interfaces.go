@@ -85,9 +85,9 @@ type PlaybackController interface {
 	Continue()
 	//StopMedia stops playing media.
 	StopMedia()
-	//Next plays currently next item in queue, if any.
+	//Next plays currently next item in queue. If there's no next song available, this method does nothing.
 	Next()
-	//Previous plays last played song (first in history)
+	//Previous plays last played song (first in history) if there is one.
 	Previous()
 	//Seek seeks forward given seconds
 	Seek(seconds int)

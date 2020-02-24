@@ -102,8 +102,12 @@ func NewApplication() (*Application, error) {
 }
 
 func (a *Application) Start() error {
-	tasks := []task.Tasker{a.player, a.content}
 	var err error
+	err = a.api.Connect()
+	if err != nil {
+		return fmt.Errorf("connect to server: %v", err)
+	}
+	tasks := []task.Tasker{a.player, a.content}
 
 	go a.stopOnSignal()
 

@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/denisbrodbeck/machineid"
+	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
@@ -41,13 +42,17 @@ type Api struct {
 	client    *http.Client
 	loggedIn  bool
 	musicView string
+
+	socket     *websocket.Conn
+	socketChan chan interface{}
 }
 
 func NewApi(host string) (*Api, error) {
 	a := &Api{
-		host:   host,
-		token:  "",
-		client: &http.Client{},
+		host:       host,
+		token:      "",
+		client:     &http.Client{},
+		socketChan: make(chan interface{}),
 	}
 
 	id, err := machineid.ProtectedID(config.AppName)
@@ -61,11 +66,6 @@ func NewApi(host string) (*Api, error) {
 	a.cache, err = NewCache()
 	if err != nil {
 		return a, fmt.Errorf("create cache: %v", err)
-	}
-
-	err = a.ReportCapabilities()
-	if err != nil {
-		logrus.Warningf("report capabilities: %v", err)
 	}
 
 	return a, nil
@@ -136,15 +136,40 @@ func (a *Api) SetServerId(id string) {
 	a.serverId = id
 }
 
+// Connect opens a connection to server. If websockets are supported, use that. Report capabilities to server.
+// This should be called before streaming any media
+func (a *Api) Connect() error {
+
+	var err error
+	err = a.ReportCapabilities()
+	if err != nil {
+		logrus.Warningf("report capabilities: %v", err)
+	}
+
+	err = a.connectSocket()
+	if err != nil {
+		logrus.Info("No websocket connection: %v", err)
+	}
+
+	return nil
+}
+
 func (a *Api) loop() {
 	for true {
 		select {
 		case <-a.StopChan():
 			break
-
+		case msg := <-a.socketChan:
+			err := a.handleSocketInbound(msg)
+			if err != nil {
+				logrus.Errorf("Handle incoming socket message: %v", err)
+			}
 		}
 	}
 
+	if a.socket != nil {
+		a.socket.Close()
+	}
 }
 
 func getBodyMsg(body io.ReadCloser) string {

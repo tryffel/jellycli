@@ -127,7 +127,6 @@ func (q *queue) notifyUpdates() {
 func (q *queue) songComplete() {
 	q.lock.Lock()
 	defer q.lock.Unlock()
-	logrus.Debugf("Song (%s) complete, remove from queue", q.items[0].Name)
 	if len(q.items) == 0 {
 		return
 	}

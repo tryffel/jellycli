@@ -88,8 +88,9 @@ func newAudio(streamDoneChan chan bool) *audio {
 // Notify upstream channel that stream has completed
 func (a *audio) streamCompletedCB() {
 	logrus.Info("stream completed")
-	speaker.Lock()
-	defer speaker.Unlock()
+	//todo: handle synchronization
+	//speaker.Lock()
+	//defer speaker.Unlock()
 	if a.streamer != nil {
 		err := a.streamer.Err()
 		if err != nil {

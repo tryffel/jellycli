@@ -26,7 +26,6 @@ import (
 	"github.com/faiface/beep/speaker"
 	"github.com/sirupsen/logrus"
 	"io"
-	"sync"
 	"time"
 	"tryffel.net/go/jellycli/config"
 )
@@ -58,7 +57,6 @@ func initAudio() error {
 }
 
 type audio struct {
-	lock            sync.RWMutex
 	streamer        beep.StreamSeekCloser
 	ctrl            *beep.Ctrl
 	volume          *effects.Volume
@@ -90,7 +88,8 @@ func newAudio(streamDoneChan chan bool) *audio {
 // Notify upstream channel that stream has completed
 func (a *audio) streamCompletedCB() {
 	logrus.Info("stream completed")
-	a.lock.Lock()
+	speaker.Lock()
+	defer speaker.Unlock()
 	if a.streamer != nil {
 		err := a.streamer.Err()
 		if err != nil {
@@ -101,8 +100,6 @@ func (a *audio) streamCompletedCB() {
 			logrus.Error("failed to close stream: ", err.Error())
 		}
 	}
-	a.lock.Unlock()
-
 	if a.streamCompleted == nil {
 		return
 	}
@@ -116,7 +113,6 @@ func (a *audio) playNewStream(streamer beep.StreamSeekCloser, play bool) error {
 	}
 	stream := beep.Seq(streamer, beep.Callback(a.streamCompletedCB))
 	var err error
-	a.lock.Lock()
 	speaker.Clear()
 	speaker.Lock()
 	old := a.streamer
@@ -125,7 +121,6 @@ func (a *audio) playNewStream(streamer beep.StreamSeekCloser, play bool) error {
 	a.mixer.Add(stream)
 	a.ctrl.Paused = !play
 	speaker.Unlock()
-	a.lock.Unlock()
 	if old != nil {
 		err := old.Close()
 		if err != nil {
@@ -158,21 +153,18 @@ func (a *audio) newFileStream(reader io.ReadCloser, format Format) error {
 }
 
 func (a *audio) timePast() time.Duration {
-	a.lock.RLock()
-	defer a.lock.RUnlock()
+	speaker.Lock()
+	defer speaker.Unlock()
 	if a.streamer == nil {
 		return 0
 	}
-	speaker.Lock()
-	defer speaker.Unlock()
 	left := a.streamer.Position() / config.AudioSamplingRate
-
 	return time.Second * time.Duration(left)
 }
 
 func (a *audio) pause(state bool) {
-	a.lock.Lock()
-	defer a.lock.Unlock()
+	speaker.Lock()
+	defer speaker.Unlock()
 	if a.ctrl == nil {
 		return
 	}
@@ -181,16 +173,12 @@ func (a *audio) pause(state bool) {
 	} else {
 		logrus.Info("Continue")
 	}
-	speaker.Lock()
 	a.ctrl.Paused = state
-	speaker.Unlock()
 }
 
 func (a *audio) setVolume(percent int) {
 	decibels := float64(volumeToDb(percent))
 	logrus.Debugf("Set volume to %d %s -> %.2f Db", percent, "%", decibels)
-	a.lock.Lock()
-	defer a.lock.Unlock()
 	speaker.Lock()
 	defer speaker.Unlock()
 	if decibels <= config.AudioMinVolumeDb {
@@ -207,13 +195,13 @@ func (a *audio) setVolume(percent int) {
 
 func (a *audio) stop() {
 	a.pause(true)
-	a.lock.Lock()
+	speaker.Lock()
+	defer speaker.Unlock()
 	a.mixer.Clear()
-	a.lock.Unlock()
 }
 
 func (a *audio) hasStreamer() bool {
-	a.lock.RLock()
-	defer a.lock.RUnlock()
+	speaker.Lock()
+	defer speaker.Unlock()
 	return a.streamer != nil
 }

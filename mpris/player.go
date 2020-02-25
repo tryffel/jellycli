@@ -23,8 +23,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"math"
 	"time"
-	"tryffel.net/go/jellycli/controller"
-	"tryffel.net/go/jellycli/player"
+	"tryffel.net/go/jellycli/interfaces"
 )
 
 // This file implements a struct that satisfies the `org.mpris.MediaPlayer2.Player` interface.
@@ -33,7 +32,7 @@ import (
 // https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html
 type Player struct {
 	*MediaController
-	lastState controller.Status
+	lastState interfaces.ExtendedStatus
 }
 
 // TrackID is the Unique track identifier.
@@ -79,15 +78,15 @@ const (
 )
 
 //UpdateStatus updates status to dbus
-func (p *Player) UpdateStatus(state controller.Status) {
+func (p *Player) UpdateStatus(state interfaces.ExtendedStatus) {
 	p.lastState = state
 	var playStatus PlaybackStatus
 	switch state.State {
-	case player.Play:
+	case interfaces.Play:
 		playStatus = PlaybackStatusPlaying
-	case player.Pause:
+	case interfaces.Pause:
 		playStatus = PlaybackStatusPaused
-	case player.Stop:
+	case interfaces.Stop:
 		playStatus = PlaybackStatusStopped
 	}
 	object := objectName("Player")
@@ -212,9 +211,9 @@ func (p *Player) Stop() *dbus.Error {
 // If playback is stopped, starts playback.
 // https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html#Method:PlayPause
 func (p *Player) PlayPause() *dbus.Error {
-	if p.lastState.State == player.Play {
+	if p.lastState.State == interfaces.Play {
 		p.controller.Pause()
-	} else if p.lastState.State == player.Pause {
+	} else if p.lastState.State == interfaces.Pause {
 		p.controller.Continue()
 	}
 	return nil

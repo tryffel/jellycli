@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"tryffel.net/go/jellycli/interfaces"
 )
 
 const (
@@ -76,47 +77,12 @@ type playbackStarted struct {
 	PlaylistIndex       int
 }
 
-type PlaybackEvent string
-
-const (
-	// Internal events
-	EventStart PlaybackEvent = "start"
-	EventStop  PlaybackEvent = "stop"
-
-	// Outgoing events
-	EventTimeUpdate          PlaybackEvent = "TimeUpdate"
-	EventPause               PlaybackEvent = "Pause"
-	EventUnpause             PlaybackEvent = "Unnpause"
-	EventVolumeChange        PlaybackEvent = "VolumeChange"
-	EventRepeatModeChange    PlaybackEvent = "RepeatModeChange"
-	EventAudioTrackChange    PlaybackEvent = "AudioTrackChange"
-	EventSubtitleTrackChange PlaybackEvent = "SubtitleTrackChange"
-	EventPlaylistItemMove    PlaybackEvent = "PlaylistItemMove"
-	EventPlaylistItemRemove  PlaybackEvent = "PlaylistItemRemove"
-	EventPlaylistItemAdd     PlaybackEvent = "PlaylistItemAdd"
-	EventQualityChange       PlaybackEvent = "QualityChange"
-)
-
 type playbackProgress struct {
 	playbackStarted
-	Event PlaybackEvent
+	Event interfaces.PlaybackEvent
 }
 
-//Playbackstate reports playback back to server
-type PlaybackState struct {
-	Event    PlaybackEvent
-	ItemId   string
-	IsPaused bool
-	IsMuted  bool
-	// Total length of current playlist in seconds
-	PlaylistLength int
-	// Position in seconds
-	Position int
-	// Volume in 0-100
-	Volume int
-}
-
-func (a *Api) ReportProgress(state *PlaybackState) error {
+func (a *Api) ReportProgress(state *interfaces.PlaybackState) error {
 	params := *a.defaultParams()
 	params["api_key"] = a.token
 	var report interface{}
@@ -137,10 +103,10 @@ func (a *Api) ReportProgress(state *PlaybackState) error {
 		PlaylistLength:      state.PlaylistLength * ticksToSecond,
 	}
 
-	if state.Event == EventStart {
+	if state.Event == interfaces.EventStart {
 		url = "/Sessions/Playing"
 		report = started
-	} else if state.Event == EventStop {
+	} else if state.Event == interfaces.EventStop {
 		url = "/Sessions/Playing/Stopped"
 		report = started
 	} else {

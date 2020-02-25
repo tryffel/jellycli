@@ -23,9 +23,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"sync"
 	"tryffel.net/go/jellycli/config"
-	"tryffel.net/go/jellycli/controller"
+	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
-	"tryffel.net/go/jellycli/player"
 	"tryffel.net/go/jellycli/util"
 	"unicode/utf8"
 )
@@ -76,7 +75,7 @@ type Status struct {
 	progress  ProgressBar
 	volume    ProgressBar
 
-	lastState player.State
+	lastState interfaces.State
 
 	controlsFgColor tcell.Color
 	controlsBgColor tcell.Color
@@ -87,15 +86,15 @@ type Status struct {
 	detailsMainColor tcell.Color
 	detailsDimColor  tcell.Color
 
-	state controller.Status
+	state interfaces.ExtendedStatus
 	song  *models.SongInfo
 
-	actionCb func(state player.State, volume int)
+	actionCb func(state interfaces.State, volume int)
 
-	controller controller.MediaController
+	controller interfaces.MediaController
 }
 
-func newStatus(ctrl controller.MediaController) *Status {
+func newStatus(ctrl interfaces.MediaController) *Status {
 	s := &Status{frame: tview.NewBox()}
 	s.controller = ctrl
 
@@ -136,9 +135,9 @@ func newStatus(ctrl controller.MediaController) *Status {
 	s.progress = NewProgressBar(40, 100)
 	s.volume = NewProgressBar(10, 100)
 
-	state := player.PlayingState{
-		State:               player.Stop,
-		PlayingType:         player.Playlist,
+	state := interfaces.PlayingState{
+		State:               interfaces.Stop,
+		PlayingType:         interfaces.Playlist,
 		Song:                "",
 		Artist:              "",
 		Album:               "",
@@ -149,14 +148,14 @@ func newStatus(ctrl controller.MediaController) *Status {
 		Volume:              50,
 	}
 
-	s.state = controller.Status{
+	s.state = interfaces.ExtendedStatus{
 		PlayingState: state,
 		Song:         nil,
 		Album:        nil,
 		Artist:       nil,
 	}
 
-	s.lastState = player.Stop
+	s.lastState = interfaces.Stop
 
 	s.buttons = []*tview.Button{
 		s.btnPrevious, s.btnBackward, s.btnPlay, s.btnForward, s.btnNext,
@@ -253,7 +252,7 @@ func (s *Status) GetFocusable() tview.Focusable {
 }
 
 func (s *Status) WriteStatus(screen tcell.Screen, x, y int) {
-	if s.state.PlayingState.State != player.Stop {
+	if s.state.State != interfaces.Stop {
 		xi := x
 		w, _ := screen.Size()
 		tview.Print(screen, effect(s.state.PlayingState.Song, "b")+" - ", x, y, w, tview.AlignLeft, s.detailsMainColor)
@@ -282,15 +281,15 @@ func (s *Status) buttonCb(name string) {
 	}
 	switch name {
 	case btnPlay:
-		s.actionCb(player.Play, -1)
+		s.actionCb(interfaces.Play, -1)
 	case btnPause:
-		s.actionCb(player.Pause, -1)
+		s.actionCb(interfaces.Pause, -1)
 	case btnNext:
-		s.actionCb(player.EndSong, -1)
+		s.actionCb(interfaces.EndSong, -1)
 	}
 }
 
-func (s *Status) UpdateState(state controller.Status, song *models.SongInfo) {
+func (s *Status) UpdateState(state interfaces.ExtendedStatus, song *models.SongInfo) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.state = state
@@ -305,9 +304,9 @@ func (s *Status) UpdateState(state controller.Status, song *models.SongInfo) {
 }
 
 func (s *Status) DrawButtons() {
-	if s.state.State == player.Play {
+	if s.state.State == interfaces.Play {
 		s.btnPlay.SetLabel(btnPause)
-	} else if s.state.State == player.Pause {
+	} else if s.state.State == interfaces.Pause {
 		s.btnPlay.SetLabel(btnPlay)
 	}
 }

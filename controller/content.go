@@ -23,6 +23,7 @@ import (
 	"sync"
 	"time"
 	"tryffel.net/go/jellycli/api"
+	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
 	"tryffel.net/go/jellycli/player"
 	"tryffel.net/go/jellycli/task"
@@ -45,10 +46,10 @@ type Content struct {
 
 	chanItemsAdded chan []*models.Song
 
-	statusChangedCb []func(state Status)
+	statusChangedCb []func(state interfaces.ExtendedStatus)
 	itemsCb         func([]models.Item)
 
-	playerState player.PlayingState
+	playerState interfaces.PlayingState
 
 	ticker *time.Ticker
 	queue  *queue
@@ -242,19 +243,19 @@ func (c *Content) SetItemsCallback(cb func([]models.Item)) {
 	c.itemsCb = cb
 }
 
-func (c *Content) GetView(view View) {
+func (c *Content) GetView(view interfaces.View) {
 	var err error
 	var items []models.Item
 
 	switch view {
-	case ViewAllArtists:
-	case ViewAllAlbums:
-	case ViewAllSongs:
-	case ViewFavoriteArtists:
-	case ViewFavoriteAlbums:
-	case ViewFavoriteSongs:
-	case ViewPlaylists:
-	case ViewLatestMusic:
+	case interfaces.ViewAllArtists:
+	case interfaces.ViewAllAlbums:
+	case interfaces.ViewAllSongs:
+	case interfaces.ViewFavoriteArtists:
+	case interfaces.ViewFavoriteAlbums:
+	case interfaces.ViewFavoriteSongs:
+	case interfaces.ViewPlaylists:
+	case interfaces.ViewLatestMusic:
 		var albums []*models.Album
 		albums, err = c.api.GetLatestAlbums()
 		if err == nil {
@@ -342,14 +343,25 @@ func (c *Content) RemoveQueueChangedCallback() {
 
 func (c *Content) Pause() {
 	a := player.Action{
-		State: player.Pause,
+		State: interfaces.Pause,
+	}
+	c.flushStatus(a)
+}
+
+func (c *Content) PlayPause() {
+	a := player.Action{}
+
+	if c.playerState.State == interfaces.Play {
+		a.State = interfaces.Pause
+	} else if c.playerState.State == interfaces.Pause {
+		a.State = interfaces.Continue
 	}
 	c.flushStatus(a)
 }
 
 func (c *Content) SetVolume(level int) {
 	a := player.Action{
-		State:  player.SetVolume,
+		State:  interfaces.SetVolume,
 		Volume: level,
 	}
 	c.flushStatus(a)
@@ -358,14 +370,14 @@ func (c *Content) SetVolume(level int) {
 
 func (c *Content) Continue() {
 	a := player.Action{
-		State: player.Continue,
+		State: interfaces.Continue,
 	}
 	c.flushStatus(a)
 }
 
 func (c *Content) StopMedia() {
 	a := player.Action{
-		State: player.Stop,
+		State: interfaces.Stop,
 	}
 	c.flushStatus(a)
 }
@@ -374,7 +386,7 @@ func (c *Content) Next() {
 	if len(c.queue.GetQueue()) > 1 {
 		// don't skip track if there's no more tracks available
 		status := player.Action{
-			State: player.EndSong,
+			State: interfaces.EndSong,
 		}
 		c.flushStatus(status)
 	}
@@ -389,7 +401,7 @@ func (c *Content) Seek(seconds int) {
 func (c *Content) SeekBackwards(seconds int) {
 }
 
-func (c *Content) AddStatusCallback(cb func(status Status)) {
+func (c *Content) AddStatusCallback(cb func(status interfaces.ExtendedStatus)) {
 	c.statusChangedCb = append(c.statusChangedCb, cb)
 }
 
@@ -412,7 +424,7 @@ func NewContent(a *api.Api, p *player.Player) (*Content, error) {
 		api:             a,
 		player:          p,
 		queue:           newQueue(),
-		statusChangedCb: []func(tate Status){},
+		statusChangedCb: []func(tate interfaces.ExtendedStatus){},
 	}
 
 	c.SetLoop(c.loop)
@@ -462,7 +474,7 @@ func (c *Content) loop() {
 			if err != nil {
 				logrus.Errorf("push status: %v", err)
 			}
-			if state.State == player.SongComplete {
+			if state.State == interfaces.SongComplete {
 				c.queue.songComplete()
 				c.ensurePlayerHasStream()
 			}
@@ -478,8 +490,8 @@ func (c *Content) loop() {
 
 }
 
-func (c *Content) pushState(state player.PlayingState) error {
-	status := Status{
+func (c *Content) pushState(state interfaces.PlayingState) error {
+	status := interfaces.ExtendedStatus{
 		PlayingState: state,
 	}
 
@@ -535,7 +547,7 @@ func (c *Content) ensurePlayerHasStream() {
 
 	//}
 
-	if c.playerState.State == player.Stop || c.playerState.State == player.SongComplete {
+	if c.playerState.State == interfaces.Stop || c.playerState.State == interfaces.SongComplete {
 		song := c.queue.currentSong()
 		logrus.Debugf("Giving player a new song to play: %s", song.Name)
 
@@ -555,8 +567,8 @@ func (c *Content) ensurePlayerHasStream() {
 		}
 
 		action := player.Action{
-			State:    player.Play,
-			Type:     player.Song,
+			State:    interfaces.Play,
+			Type:     interfaces.Song,
 			Volume:   0,
 			Artist:   artist.Name,
 			Album:    album.Name,

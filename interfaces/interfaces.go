@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Tero Vierimaa
+ * Copyright 2020 Tero Vierimaa
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package controller
+package interfaces
 
 import (
 	"tryffel.net/go/jellycli/models"
-	"tryffel.net/go/jellycli/player"
 )
 
 //MusicController gathers all necessary interfaces that can control media and queue plus query item metadata
@@ -79,6 +78,8 @@ type QueueController interface {
 
 //PlaybackController controls media playback. Current status is sent to StatusCallback, if set.
 type PlaybackController interface {
+	//PlayPause toggles pause
+	PlayPause()
 	//Pause pauses media that's currently playing. If none, do nothing.
 	Pause()
 	//Continue continues currently paused media.
@@ -95,7 +96,7 @@ type PlaybackController interface {
 	SeekBackwards(seconds int)
 	//AddStatusCallback adds callback that get's called every time status has changed,
 	//including playback progress
-	AddStatusCallback(func(staus Status))
+	AddStatusCallback(func(staus ExtendedStatus))
 	//SetVolume sets volume to given level in range of [0,100]
 	SetVolume(level int)
 }
@@ -132,8 +133,8 @@ const (
 	ViewLatestMusic
 )
 
-type Status struct {
-	player.PlayingState
+type ExtendedStatus struct {
+	PlayingState
 	Song          *models.Song
 	Album         *models.Album
 	Artist        *models.Artist

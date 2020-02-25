@@ -32,34 +32,6 @@ type PlaySong struct {
 }
 
 const (
-	// Player states
-	// StopMedia -> Play -> Pause -> (Continue) -> StopMedia
-	// Play new song
-
-	// Continue paused song, only a transition mode, never state of the player
-
-	//SetVolume, only transition mode
-
-	// Pause song
-
-	// StopMedia playing
-
-	//EndSong is a transition state to end current song
-
-	//SongComplete, only transition mode to notify song has changed
-
-	// Playing single song
-
-	// Playing album
-
-	// Playing artists discography
-
-	// Playing playlist
-
-	// Last action was ok
-
-	// Last action resulted in error
-
 	// How often to update state i.e. push status to playingstate channel
 	updateInterval = time.Second
 )

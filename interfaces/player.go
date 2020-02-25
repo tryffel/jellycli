@@ -45,21 +45,36 @@ func (p *PlayingState) Clear() {
 }
 
 const (
+	// Player states
+	// StopMedia -> Play -> Pause -> (Continue) -> StopMedia
+	// Play new song
 	Play State = iota
+	// Continue paused song, only a transition mode, never state of the player
 	Continue
+	//SetVolume, only transition mode
 	SetVolume
+	// Pause song
 	Pause
+	// StopMedia playing
 	Stop
+	//EndSong is a transition state to end current song
 	EndSong
+	//SongComplete, only transition mode to notify song has changed
 	SongComplete
 )
 
 const (
-	Song        Playtype     = 0
-	Album       Playtype     = 1
-	Artist      Playtype     = 2
-	Playlist    Playtype     = 3
-	StatusOk    PlayerStatus = 0
+	// Playing single song
+	Song Playtype = 0
+	// Playing album
+	Album Playtype = 1
+	// Playing artists discography
+	Artist Playtype = 2
+	// Playing playlist
+	Playlist Playtype = 3
+	// Last action was ok
+	StatusOk PlayerStatus = 0
+	// Last action resulted in error
 	StatusError PlayerStatus = 0
 )
 

@@ -310,7 +310,7 @@ func (a *Application) initApplication() error {
 
 	a.gui = ui.NewUi(a.content)
 
-	a.mpris, err = mpris2.NewController(*a.content)
+	a.mpris, err = mpris2.NewController(a.content)
 	if err != nil {
 		return fmt.Errorf("initialize dbus connection: %v", err)
 	}

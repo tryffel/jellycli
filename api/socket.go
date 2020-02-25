@@ -23,6 +23,12 @@ import (
 	"github.com/sirupsen/logrus"
 	"net/url"
 	"strings"
+	"time"
+)
+
+const (
+	pongTimeout = 60 * time.Second
+	pingPeriod  = (pongTimeout * 9) / 10
 )
 
 func (a *Api) connectSocket() error {
@@ -38,6 +44,12 @@ func (a *Api) connectSocket() error {
 
 	logrus.Infof("Websocket ok")
 	a.socket = socket
+
+	a.socket.SetReadDeadline(time.Now().Add(pongTimeout))
+	a.socket.SetPongHandler(func(string) error {
+		logrus.Trace("Websocket received pong")
+		return a.socket.SetReadDeadline(time.Now().Add(pongTimeout))
+	})
 	return nil
 }
 
@@ -56,7 +68,6 @@ func (a *Api) readMessage() {
 			logrus.Errorf("read websocket message: %v", err)
 		}
 		if msgType == websocket.TextMessage {
-			logrus.Info("Received message from websocket: ", buff)
 			err = a.parseInboudMessage(&buff)
 		}
 		go a.readMessage()

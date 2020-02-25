@@ -26,6 +26,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"time"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/task"
@@ -167,12 +168,19 @@ func (a *Api) loop() {
 		return
 	}
 
+	pingTicker := time.NewTicker(pingPeriod)
+
 	go a.readMessage()
 	for true {
 		select {
 		case <-a.StopChan():
 			break
 		case _ = <-a.socketChan:
+		case <-pingTicker.C:
+			logrus.Tracef("Websocket send ping")
+			timeout := time.Now().Add(time.Second * 15)
+			a.socket.SetWriteDeadline(timeout)
+			a.socket.WriteControl(websocket.PingMessage, []byte{}, timeout)
 		}
 	}
 

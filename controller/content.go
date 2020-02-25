@@ -490,24 +490,10 @@ func (c *Content) loop() {
 
 }
 
-func (c *Content) pushState(state interfaces.PlayingState) error {
-	status := interfaces.PlayingState{}
-	if !c.queue.empty() {
-		status.Song = c.queue.GetQueue()[0]
-		item := c.getItem(status.Song.Album)
-		if item != nil {
-			album, ok := item.(*models.Album)
-			if ok {
-				status.Album = album
-				status.AlbumImageUrl = c.api.ImageUrl(string(album.Id), album.ImageId)
-				item = c.getItem(album.Artist)
-				if item != nil {
-					artist, ok := item.(*models.Artist)
-					if ok {
-						status.Artist = artist
-					}
-				}
-			}
+func (c *Content) pushState(status interfaces.PlayingState) error {
+	if status.State != interfaces.Stop {
+		if status.Album != nil && status.AlbumImageUrl == "" {
+			status.AlbumImageUrl = c.api.ImageUrl(string(status.Album.Id), status.Album.ImageId)
 		}
 	}
 

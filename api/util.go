@@ -20,6 +20,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"io"
+	"time"
 	"tryffel.net/go/jellycli/interfaces"
 )
 
@@ -82,9 +84,9 @@ type playbackProgress struct {
 	Event interfaces.ApiPlaybackEvent
 }
 
+// ReportProgress reports playback status to server
 func (a *Api) ReportProgress(state *interfaces.ApiPlaybackState) error {
-	params := *a.defaultParams()
-	params["api_key"] = a.token
+	var err error
 	var report interface{}
 	var url string
 
@@ -116,22 +118,36 @@ func (a *Api) ReportProgress(state *interfaces.ApiPlaybackState) error {
 			Event:           state.Event,
 		}
 	}
+	if a.socket == nil {
+		params := *a.defaultParams()
+		params["api_key"] = a.token
+		body, err := json.Marshal(&report)
+		if err != nil {
+			return fmt.Errorf("json marshaling failed: %v", err)
+		}
+		var resp io.ReadCloser
+		resp, err = a.post(url, &body, &params)
+		resp.Close()
+
+	} else {
+		content := map[string]interface{}{}
+		content["MessageType"] = "ReportPlaybackStatus"
+		content["Data"] = report
+
+		a.socket.SetWriteDeadline(time.Now().Add(time.Second * 15))
+		err = a.socket.WriteJSON(content)
+		if err != nil {
+			logrus.Errorf("Send playback status via websocket: %v", err)
+		}
+
+	}
 
 	logrus.Debug("Progress event: ", state.Event)
 
-	body, err := json.Marshal(&report)
-
-	//logrus.Debug(string(body))
-	if err != nil {
-		return fmt.Errorf("json marshaling failed: %v", err)
-	}
-
-	resp, err := a.post(url, &body, &params)
-	resp.Close()
 	if err == nil {
 		return nil
 	} else {
-		return fmt.Errorf("failed to post progress: %v", err)
+		return fmt.Errorf("push progress: %v", err)
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 	"time"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
+	"tryffel.net/go/jellycli/models"
 	"tryffel.net/go/jellycli/task"
 )
 
@@ -18,12 +19,13 @@ type Action struct {
 	Volume int
 
 	// Provide either artist/album/song or audio id
-	Artist   string
-	Album    string
-	Song     string
-	Year     int
 	AudioId  string
 	Duration int
+
+	// Metadata, only used when playing new song
+	Song   *models.Song
+	Artist *models.Artist
+	Album  *models.Album
 }
 
 type PlaySong struct {
@@ -140,7 +142,7 @@ func (p *Player) loop() {
 }
 
 //handle any incoming actions. Return true if state has changed
-func (p *Player) handleAction(action Action) (bool, interfaces.PlaybackEvent) {
+func (p *Player) handleAction(action Action) (bool, interfaces.ApiPlaybackEvent) {
 	defaultEvent := interfaces.EventTimeUpdate
 	switch action.State {
 	case interfaces.SetVolume:
@@ -229,7 +231,6 @@ func (p *Player) PlaySong(action Action) bool {
 	p.state.Song = action.Song
 	p.state.Artist = action.Artist
 	p.state.Album = action.Album
-	p.state.Year = action.Year
 	p.state.CurrentSongDuration = action.Duration
 
 	p.reportStatus(interfaces.EventStart)
@@ -253,12 +254,11 @@ func (p *Player) playSongFromReader(play PlaySong) {
 	p.state.Song = action.Song
 	p.state.Artist = action.Artist
 	p.state.Album = action.Album
-	p.state.Year = action.Year
 	p.state.CurrentSongDuration = action.Duration
 }
 
-func (p *Player) reportStatus(event interfaces.PlaybackEvent) {
-	state := &interfaces.PlaybackState{
+func (p *Player) reportStatus(event interfaces.ApiPlaybackEvent) {
+	state := &interfaces.ApiPlaybackState{
 		Event:          event,
 		ItemId:         p.itemId,
 		IsPaused:       false,

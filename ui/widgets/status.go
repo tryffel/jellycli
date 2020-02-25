@@ -86,7 +86,7 @@ type Status struct {
 	detailsMainColor tcell.Color
 	detailsDimColor  tcell.Color
 
-	state interfaces.ExtendedStatus
+	state interfaces.PlayingState
 	song  *models.SongInfo
 
 	actionCb func(state interfaces.State, volume int)
@@ -138,9 +138,9 @@ func newStatus(ctrl interfaces.MediaController) *Status {
 	state := interfaces.PlayingState{
 		State:               interfaces.Stop,
 		PlayingType:         interfaces.Playlist,
-		Song:                "",
-		Artist:              "",
-		Album:               "",
+		Song:                nil,
+		Artist:              nil,
+		Album:               nil,
 		CurrentSongDuration: 0,
 		CurrentSongPast:     0,
 		PlaylistDuration:    0,
@@ -148,13 +148,7 @@ func newStatus(ctrl interfaces.MediaController) *Status {
 		Volume:              50,
 	}
 
-	s.state = interfaces.ExtendedStatus{
-		PlayingState: state,
-		Song:         nil,
-		Album:        nil,
-		Artist:       nil,
-	}
-
+	s.state = state
 	s.lastState = interfaces.Stop
 
 	s.buttons = []*tview.Button{
@@ -252,17 +246,17 @@ func (s *Status) GetFocusable() tview.Focusable {
 }
 
 func (s *Status) WriteStatus(screen tcell.Screen, x, y int) {
-	if s.state.State != interfaces.Stop {
+	if s.state.State != interfaces.Stop && (s.state.Song != nil && s.state.Album != nil && s.state.Artist != nil) {
 		xi := x
 		w, _ := screen.Size()
-		tview.Print(screen, effect(s.state.PlayingState.Song, "b")+" - ", x, y, w, tview.AlignLeft, s.detailsMainColor)
-		x += len(s.state.PlayingState.Song) + 3
-		tview.Print(screen, effect(s.state.PlayingState.Artist, "b")+" ", x, y, w, tview.AlignLeft, s.detailsMainColor)
-		x += len(s.state.PlayingState.Artist) + 1
+		tview.Print(screen, effect(s.state.Song.Name, "b")+" - ", x, y, w, tview.AlignLeft, s.detailsMainColor)
+		x += len(s.state.Song.Name) + 3
+		tview.Print(screen, effect(s.state.Artist.Name, "b")+" ", x, y, w, tview.AlignLeft, s.detailsMainColor)
+		x += len(s.state.Artist.Name) + 1
 		x = xi + 4
-		tview.Print(screen, s.state.PlayingState.Album+" ", x, y+1, w, tview.AlignLeft, s.detailsDimColor)
-		x += len(s.state.PlayingState.Album) + 1
-		tview.Print(screen, fmt.Sprintf("(%d)", s.state.Year), x, y+1, w, tview.AlignLeft, s.detailsDimColor)
+		tview.Print(screen, s.state.Album.Name+" ", x, y+1, w, tview.AlignLeft, s.detailsDimColor)
+		x += len(s.state.Album.Name) + 1
+		tview.Print(screen, fmt.Sprintf("(%d)", s.state.Album.Year), x, y+1, w, tview.AlignLeft, s.detailsDimColor)
 	}
 }
 
@@ -289,7 +283,7 @@ func (s *Status) buttonCb(name string) {
 	}
 }
 
-func (s *Status) UpdateState(state interfaces.ExtendedStatus, song *models.SongInfo) {
+func (s *Status) UpdateState(state interfaces.PlayingState, song *models.SongInfo) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.state = state

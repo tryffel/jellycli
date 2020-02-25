@@ -20,35 +20,35 @@ import (
 	"io"
 )
 
-type PlaybackEvent string
+type ApiPlaybackEvent string
 
 const (
 	// Internal events
-	EventStart PlaybackEvent = "start"
-	EventStop  PlaybackEvent = "stop"
+	EventStart ApiPlaybackEvent = "start"
+	EventStop  ApiPlaybackEvent = "stop"
 
 	// Outgoing events
-	EventTimeUpdate          PlaybackEvent = "TimeUpdate"
-	EventPause               PlaybackEvent = "Pause"
-	EventUnpause             PlaybackEvent = "Unnpause"
-	EventVolumeChange        PlaybackEvent = "VolumeChange"
-	EventRepeatModeChange    PlaybackEvent = "RepeatModeChange"
-	EventAudioTrackChange    PlaybackEvent = "AudioTrackChange"
-	EventSubtitleTrackChange PlaybackEvent = "SubtitleTrackChange"
-	EventPlaylistItemMove    PlaybackEvent = "PlaylistItemMove"
-	EventPlaylistItemRemove  PlaybackEvent = "PlaylistItemRemove"
-	EventPlaylistItemAdd     PlaybackEvent = "PlaylistItemAdd"
-	EventQualityChange       PlaybackEvent = "QualityChange"
+	EventTimeUpdate          ApiPlaybackEvent = "TimeUpdate"
+	EventPause               ApiPlaybackEvent = "Pause"
+	EventUnpause             ApiPlaybackEvent = "Unnpause"
+	EventVolumeChange        ApiPlaybackEvent = "VolumeChange"
+	EventRepeatModeChange    ApiPlaybackEvent = "RepeatModeChange"
+	EventAudioTrackChange    ApiPlaybackEvent = "AudioTrackChange"
+	EventSubtitleTrackChange ApiPlaybackEvent = "SubtitleTrackChange"
+	EventPlaylistItemMove    ApiPlaybackEvent = "PlaylistItemMove"
+	EventPlaylistItemRemove  ApiPlaybackEvent = "PlaylistItemRemove"
+	EventPlaylistItemAdd     ApiPlaybackEvent = "PlaylistItemAdd"
+	EventQualityChange       ApiPlaybackEvent = "QualityChange"
 )
 
 type Api interface {
-	ReportProgress(state *PlaybackState) error
+	ReportProgress(state *ApiPlaybackState) error
 	GetSongDirect(id string, codec string) (io.ReadCloser, error)
 }
 
 //Playbackstate reports playback back to server
-type PlaybackState struct {
-	Event    PlaybackEvent
+type ApiPlaybackState struct {
+	Event    ApiPlaybackEvent
 	ItemId   string
 	IsPaused bool
 	IsMuted  bool

@@ -96,12 +96,12 @@ type PlaybackController interface {
 	SeekBackwards(seconds int)
 	//AddStatusCallback adds callback that get's called every time status has changed,
 	//including playback progress
-	AddStatusCallback(func(staus ExtendedStatus))
+	AddStatusCallback(func(status PlayingState))
 	//SetVolume sets volume to given level in range of [0,100]
 	SetVolume(level int)
 }
 
-//MediaManager
+//MediaManager manages media: artists, albums, songs
 type MediaManager interface {
 	SearchArtists(search string) ([]*models.Artist, error)
 	SearchAlbums(search string) ([]*models.Album, error)
@@ -132,11 +132,3 @@ const (
 	ViewPlaylists
 	ViewLatestMusic
 )
-
-type ExtendedStatus struct {
-	PlayingState
-	Song          *models.Song
-	Album         *models.Album
-	Artist        *models.Artist
-	AlbumImageUrl string
-}

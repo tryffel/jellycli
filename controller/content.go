@@ -46,7 +46,7 @@ type Content struct {
 
 	chanItemsAdded chan []*models.Song
 
-	statusChangedCb []func(state interfaces.ExtendedStatus)
+	statusChangedCb []func(state interfaces.PlayingState)
 	itemsCb         func([]models.Item)
 
 	playerState interfaces.PlayingState
@@ -401,7 +401,7 @@ func (c *Content) Seek(seconds int) {
 func (c *Content) SeekBackwards(seconds int) {
 }
 
-func (c *Content) AddStatusCallback(cb func(status interfaces.ExtendedStatus)) {
+func (c *Content) AddStatusCallback(cb func(status interfaces.PlayingState)) {
 	c.statusChangedCb = append(c.statusChangedCb, cb)
 }
 
@@ -424,7 +424,7 @@ func NewContent(a *api.Api, p *player.Player) (*Content, error) {
 		api:             a,
 		player:          p,
 		queue:           newQueue(),
-		statusChangedCb: []func(tate interfaces.ExtendedStatus){},
+		statusChangedCb: []func(tate interfaces.PlayingState){},
 	}
 
 	c.SetLoop(c.loop)
@@ -491,10 +491,7 @@ func (c *Content) loop() {
 }
 
 func (c *Content) pushState(state interfaces.PlayingState) error {
-	status := interfaces.ExtendedStatus{
-		PlayingState: state,
-	}
-
+	status := interfaces.PlayingState{}
 	if !c.queue.empty() {
 		status.Song = c.queue.GetQueue()[0]
 		item := c.getItem(status.Song.Album)
@@ -570,10 +567,9 @@ func (c *Content) ensurePlayerHasStream() {
 			State:    interfaces.Play,
 			Type:     interfaces.Song,
 			Volume:   0,
-			Artist:   artist.Name,
-			Album:    album.Name,
-			Song:     song.Name,
-			Year:     album.Year,
+			Artist:   &artist,
+			Album:    &album,
+			Song:     song,
 			AudioId:  song.Id.String(),
 			Duration: song.Duration,
 		}

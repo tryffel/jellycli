@@ -61,7 +61,7 @@ func (m *MetadataMap) nonEmptySlice(field string, values []string) {
 }
 
 // mapFromStatus returns a MetadataMap from the Song struct in mpd.
-func mapFromStatus(s interfaces.ExtendedStatus) MetadataMap {
+func mapFromStatus(s interfaces.PlayingState) MetadataMap {
 	if s.Song == nil {
 		// No song
 		return MetadataMap{

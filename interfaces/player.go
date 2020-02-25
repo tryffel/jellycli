@@ -16,14 +16,16 @@
 
 package interfaces
 
+import "tryffel.net/go/jellycli/models"
+
 //PlayerState holds data about currently playing song if any
 type PlayingState struct {
-	State       State
-	PlayingType Playtype
-	Song        string
-	Artist      string
-	Album       string
-	Year        int
+	State         State
+	PlayingType   Playtype
+	Song          *models.Song
+	Album         *models.Album
+	Artist        *models.Artist
+	AlbumImageUrl string
 
 	// Content duration in sec
 	CurrentSongDuration int
@@ -36,10 +38,10 @@ type PlayingState struct {
 
 //remove song info from state
 func (p *PlayingState) Clear() {
-	p.Song = ""
-	p.Artist = ""
-	p.Album = ""
-	p.Year = 0
+	p.Song = nil
+	p.Album = nil
+	p.Artist = nil
+	p.AlbumImageUrl = ""
 	p.CurrentSongDuration = 0
 	p.CurrentSongPast = 0
 }

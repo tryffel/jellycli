@@ -310,7 +310,7 @@ func (w *Window) showModal(modal modal.Modal, height, width uint, lockSize bool)
 	}
 }
 
-func (w *Window) statusCb(state interfaces.ExtendedStatus) {
+func (w *Window) statusCb(state interfaces.PlayingState) {
 	w.status.UpdateState(state, nil)
 	w.app.QueueUpdateDraw(func() {})
 }

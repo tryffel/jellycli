@@ -79,10 +79,10 @@ type playbackStarted struct {
 
 type playbackProgress struct {
 	playbackStarted
-	Event interfaces.PlaybackEvent
+	Event interfaces.ApiPlaybackEvent
 }
 
-func (a *Api) ReportProgress(state *interfaces.PlaybackState) error {
+func (a *Api) ReportProgress(state *interfaces.ApiPlaybackState) error {
 	params := *a.defaultParams()
 	params["api_key"] = a.token
 	var report interface{}

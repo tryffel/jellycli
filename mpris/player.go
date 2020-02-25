@@ -32,7 +32,7 @@ import (
 // https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html
 type Player struct {
 	*MediaController
-	lastState interfaces.ExtendedStatus
+	lastState interfaces.PlayingState
 }
 
 // TrackID is the Unique track identifier.
@@ -78,7 +78,7 @@ const (
 )
 
 //UpdateStatus updates status to dbus
-func (p *Player) UpdateStatus(state interfaces.ExtendedStatus) {
+func (p *Player) UpdateStatus(state interfaces.PlayingState) {
 	p.lastState = state
 	var playStatus PlaybackStatus
 	switch state.State {

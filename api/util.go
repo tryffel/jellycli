@@ -118,7 +118,7 @@ func (a *Api) ReportProgress(state *interfaces.ApiPlaybackState) error {
 			Event:           state.Event,
 		}
 	}
-	if a.socket == nil {
+	if a.socket == nil || state.Event == interfaces.EventStart || state.Event == interfaces.EventStop {
 		params := *a.defaultParams()
 		params["api_key"] = a.token
 		body, err := json.Marshal(&report)
@@ -134,12 +134,13 @@ func (a *Api) ReportProgress(state *interfaces.ApiPlaybackState) error {
 		content["MessageType"] = "ReportPlaybackStatus"
 		content["Data"] = report
 
+		a.socketLock.Lock()
 		a.socket.SetWriteDeadline(time.Now().Add(time.Second * 15))
 		err = a.socket.WriteJSON(content)
+		a.socketLock.Unlock()
 		if err != nil {
 			logrus.Errorf("Send playback status via websocket: %v", err)
 		}
-
 	}
 
 	logrus.Debug("Progress event: ", state.Event)

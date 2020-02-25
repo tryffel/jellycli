@@ -26,6 +26,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"sync"
 	"time"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
@@ -47,6 +48,7 @@ type Api struct {
 
 	controller interfaces.MediaController
 
+	socketLock sync.Mutex
 	socket     *websocket.Conn
 	socketChan chan interface{}
 }
@@ -179,8 +181,10 @@ func (a *Api) loop() {
 		case <-pingTicker.C:
 			logrus.Tracef("Websocket send ping")
 			timeout := time.Now().Add(time.Second * 15)
+			a.socketLock.Lock()
 			a.socket.SetWriteDeadline(timeout)
 			a.socket.WriteControl(websocket.PingMessage, []byte{}, timeout)
+			a.socketLock.Unlock()
 		}
 	}
 

@@ -156,7 +156,7 @@ func (a *Api) Connect() error {
 
 	err = a.connectSocket()
 	if err != nil {
-		logrus.Info("No websocket connection: %v", err)
+		logrus.Infof("No websocket connection: %v", err)
 	}
 
 	return nil

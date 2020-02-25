@@ -27,6 +27,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"tryffel.net/go/jellycli/config"
+	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/task"
 )
 
@@ -42,6 +43,8 @@ type Api struct {
 	client    *http.Client
 	loggedIn  bool
 	musicView string
+
+	controller interfaces.MediaController
 
 	socket     *websocket.Conn
 	socketChan chan interface{}
@@ -62,6 +65,7 @@ func NewApi(host string) (*Api, error) {
 	a.DeviceId = id
 	a.SessionId = randomKey(15)
 	a.Name = "api"
+	a.SetLoop(a.loop)
 
 	a.cache, err = NewCache()
 	if err != nil {
@@ -69,6 +73,10 @@ func NewApi(host string) (*Api, error) {
 	}
 
 	return a, nil
+}
+
+func (a *Api) SetController(c interfaces.MediaController) {
+	a.controller = c
 }
 
 func (a *Api) Host() string {
@@ -155,20 +163,22 @@ func (a *Api) Connect() error {
 }
 
 func (a *Api) loop() {
+	if a.socket == nil {
+		return
+	}
+
+	go a.readMessage()
 	for true {
 		select {
 		case <-a.StopChan():
 			break
-		case msg := <-a.socketChan:
-			err := a.handleSocketInbound(msg)
-			if err != nil {
-				logrus.Errorf("Handle incoming socket message: %v", err)
-			}
+		case _ = <-a.socketChan:
 		}
 	}
 
-	if a.socket != nil {
-		a.socket.Close()
+	err := a.socket.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+	if err != nil {
+		logrus.Errorf("close websocket: %v", err)
 	}
 }
 

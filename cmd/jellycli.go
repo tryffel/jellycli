@@ -107,7 +107,10 @@ func (a *Application) Start() error {
 	if err != nil {
 		return fmt.Errorf("connect to server: %v", err)
 	}
-	tasks := []task.Tasker{a.player, a.content}
+
+	a.api.SetController(a.content)
+
+	tasks := []task.Tasker{a.player, a.content, a.api}
 
 	go a.stopOnSignal()
 
@@ -122,7 +125,7 @@ func (a *Application) Start() error {
 
 func (a *Application) Stop() error {
 	logrus.Info("Stopping application")
-	tasks := []task.Tasker{a.player, a.content}
+	tasks := []task.Tasker{a.player, a.content, a.api}
 	var err error
 	var hasError bool
 	for _, v := range tasks {

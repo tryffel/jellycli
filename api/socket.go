@@ -17,10 +17,12 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"net/url"
+	"strings"
 )
 
 func (a *Api) connectSocket() error {
@@ -39,15 +41,68 @@ func (a *Api) connectSocket() error {
 	return nil
 }
 
-func (a *Api) handleSocketInbound(msg interface{}) error {
-	logrus.Debug("Received socket message: ", msg)
-	return nil
-
-}
-
 func (a *Api) handleSocketOutbount(msg interface{}) error {
 	if a.socket == nil {
 		return fmt.Errorf("socket not open")
 	}
 	return a.socket.WriteJSON(msg)
+}
+
+// read next message from socket in blocking mode
+func (a *Api) readMessage() {
+	if a.socket != nil {
+		msgType, buff, err := a.socket.ReadMessage()
+		if err != nil {
+			logrus.Errorf("read websocket message: %v", err)
+		}
+		if msgType == websocket.TextMessage {
+			logrus.Info("Received message from websocket: ", buff)
+			err = a.parseInboudMessage(&buff)
+		}
+		go a.readMessage()
+	}
+
+}
+
+type webSocketInboudMsg struct {
+	MessageType string                 `json:"MessageType"`
+	Data        map[string]interface{} `json:"Data"`
+}
+
+type controlCommand struct {
+	Name      string `json:"Name"`
+	Arguments interface{}
+}
+
+func (a *Api) parseInboudMessage(buff *[]byte) error {
+	msg := webSocketInboudMsg{}
+	err := json.Unmarshal(*buff, &msg)
+	if err != nil {
+		logrus.Errorf("Parse json: %v", err)
+		return fmt.Errorf("parse json: %v", err)
+	}
+
+	cmd := strings.ToLower(msg.MessageType)
+	if cmd == "generalcommand" {
+	} else if cmd == "playstate" {
+		data := msg.Data
+		rawCmd := data["Command"]
+		cmd, ok := rawCmd.(string)
+		if ok {
+			err = a.pushCommand(cmd)
+		}
+	}
+	return err
+}
+
+func (a *Api) pushCommand(cmd string) error {
+	if a.controller == nil {
+		return nil
+	}
+
+	switch cmd {
+	case "PlayPause":
+		a.controller.PlayPause()
+	}
+	return nil
 }

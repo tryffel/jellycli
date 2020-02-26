@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Tero Vierimaa
+ * Copyright 2020 Tero Vierimaa
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package controller
+package interfaces
 
 import (
 	"tryffel.net/go/jellycli/models"
-	"tryffel.net/go/jellycli/player"
 )
 
 //MusicController gathers all necessary interfaces that can control media and queue plus query item metadata
@@ -79,15 +78,17 @@ type QueueController interface {
 
 //PlaybackController controls media playback. Current status is sent to StatusCallback, if set.
 type PlaybackController interface {
+	//PlayPause toggles pause
+	PlayPause()
 	//Pause pauses media that's currently playing. If none, do nothing.
 	Pause()
 	//Continue continues currently paused media.
 	Continue()
 	//StopMedia stops playing media.
 	StopMedia()
-	//Next plays currently next item in queue, if any.
+	//Next plays currently next item in queue. If there's no next song available, this method does nothing.
 	Next()
-	//Previous plays last played song (first in history)
+	//Previous plays last played song (first in history) if there is one.
 	Previous()
 	//Seek seeks forward given seconds
 	Seek(seconds int)
@@ -95,12 +96,12 @@ type PlaybackController interface {
 	SeekBackwards(seconds int)
 	//AddStatusCallback adds callback that get's called every time status has changed,
 	//including playback progress
-	AddStatusCallback(func(staus Status))
+	AddStatusCallback(func(status PlayingState))
 	//SetVolume sets volume to given level in range of [0,100]
 	SetVolume(level int)
 }
 
-//MediaManager
+//MediaManager manages media: artists, albums, songs
 type MediaManager interface {
 	SearchArtists(search string) ([]*models.Artist, error)
 	SearchAlbums(search string) ([]*models.Album, error)
@@ -131,11 +132,3 @@ const (
 	ViewPlaylists
 	ViewLatestMusic
 )
-
-type Status struct {
-	player.PlayingState
-	Song          *models.Song
-	Album         *models.Album
-	Artist        *models.Artist
-	AlbumImageUrl string
-}

@@ -21,11 +21,15 @@ import (
 	"errors"
 	"fmt"
 	"github.com/denisbrodbeck/machineid"
+	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"sync"
+	"time"
 	"tryffel.net/go/jellycli/config"
+	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/task"
 )
 
@@ -41,13 +45,20 @@ type Api struct {
 	client    *http.Client
 	loggedIn  bool
 	musicView string
+
+	controller interfaces.MediaController
+
+	socketLock sync.Mutex
+	socket     *websocket.Conn
+	socketChan chan interface{}
 }
 
 func NewApi(host string) (*Api, error) {
 	a := &Api{
-		host:   host,
-		token:  "",
-		client: &http.Client{},
+		host:       host,
+		token:      "",
+		client:     &http.Client{},
+		socketChan: make(chan interface{}),
 	}
 
 	id, err := machineid.ProtectedID(config.AppName)
@@ -56,12 +67,19 @@ func NewApi(host string) (*Api, error) {
 	}
 	a.DeviceId = id
 	a.SessionId = randomKey(15)
+	a.Name = "api"
+	a.SetLoop(a.loop)
 
 	a.cache, err = NewCache()
 	if err != nil {
 		return a, fmt.Errorf("create cache: %v", err)
 	}
+
 	return a, nil
+}
+
+func (a *Api) SetController(c interfaces.MediaController) {
+	a.controller = c
 }
 
 func (a *Api) Host() string {
@@ -129,15 +147,51 @@ func (a *Api) SetServerId(id string) {
 	a.serverId = id
 }
 
+// Connect opens a connection to server. If websockets are supported, use that. Report capabilities to server.
+// This should be called before streaming any media
+func (a *Api) Connect() error {
+
+	var err error
+	err = a.ReportCapabilities()
+	if err != nil {
+		logrus.Warningf("report capabilities: %v", err)
+	}
+
+	err = a.connectSocket()
+	if err != nil {
+		logrus.Infof("No websocket connection: %v", err)
+	}
+
+	return nil
+}
+
 func (a *Api) loop() {
+	if a.socket == nil {
+		return
+	}
+
+	pingTicker := time.NewTicker(pingPeriod)
+
+	go a.readMessage()
 	for true {
 		select {
 		case <-a.StopChan():
 			break
-
+		case _ = <-a.socketChan:
+		case <-pingTicker.C:
+			logrus.Tracef("Websocket send ping")
+			timeout := time.Now().Add(time.Second * 15)
+			a.socketLock.Lock()
+			a.socket.SetWriteDeadline(timeout)
+			a.socket.WriteControl(websocket.PingMessage, []byte{}, timeout)
+			a.socketLock.Unlock()
 		}
 	}
 
+	err := a.socket.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+	if err != nil {
+		logrus.Errorf("close websocket: %v", err)
+	}
 }
 
 func getBodyMsg(body io.ReadCloser) string {

@@ -263,3 +263,7 @@ func (a *AlbumView) playAlbum() {
 		a.playSongsFunc(songs)
 	}
 }
+
+func (a *AlbumView) Blur() {
+	a.Grid.Blur()
+}

@@ -20,7 +20,7 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 	"tryffel.net/go/jellycli/config"
-	"tryffel.net/go/jellycli/controller"
+	"tryffel.net/go/jellycli/interfaces"
 )
 
 type ViewModal struct {
@@ -28,7 +28,7 @@ type ViewModal struct {
 	visible bool
 
 	doneFunc func()
-	viewFunc func(view controller.View)
+	viewFunc func(view interfaces.View)
 }
 
 func (v *ViewModal) SetDoneFunc(doneFunc func()) {
@@ -80,13 +80,13 @@ func (v *ViewModal) SetVisible(visible bool) {
 	v.visible = visible
 }
 
-func (v *ViewModal) namedSelectFunc(view controller.View) func() {
+func (v *ViewModal) namedSelectFunc(view interfaces.View) func() {
 	return func() {
 		v.selectFunc(view)
 	}
 }
 
-func (v *ViewModal) selectFunc(view controller.View) {
+func (v *ViewModal) selectFunc(view interfaces.View) {
 	if v.viewFunc != nil {
 		v.viewFunc(view)
 	}
@@ -95,7 +95,7 @@ func (v *ViewModal) selectFunc(view controller.View) {
 
 }
 
-func (v *ViewModal) SetViewFunc(viewFunc func(view controller.View)) {
+func (v *ViewModal) SetViewFunc(viewFunc func(view interfaces.View)) {
 	v.viewFunc = viewFunc
 }
 
@@ -116,14 +116,14 @@ func NewViewModal() *ViewModal {
 	v.list.SetHighlightFullLine(true)
 	v.list.SetBorderPadding(2, 2, 2, 2)
 
-	v.list.AddItem("1. Latest Music", "", 0, v.namedSelectFunc(controller.ViewLatestMusic))
-	v.list.AddItem("2. All Artists", "", 0, v.namedSelectFunc(controller.ViewAllArtists))
-	v.list.AddItem("3. All Albums", "", 0, v.namedSelectFunc(controller.ViewAllAlbums))
-	v.list.AddItem("4. All Songs", "", 0, v.namedSelectFunc(controller.ViewAllSongs))
-	v.list.AddItem("5. Favorite Artists", "", 0, v.namedSelectFunc(controller.ViewFavoriteArtists))
-	v.list.AddItem("6. Favorite Albums", "", 0, v.namedSelectFunc(controller.ViewFavoriteAlbums))
-	v.list.AddItem("7. Favorite Songs", "", 0, v.namedSelectFunc(controller.ViewFavoriteSongs))
-	v.list.AddItem("8. Playlists", "", 0, v.namedSelectFunc(controller.ViewPlaylists))
+	v.list.AddItem("1. Latest Music", "", 0, v.namedSelectFunc(interfaces.ViewLatestMusic))
+	v.list.AddItem("2. All Artists", "", 0, v.namedSelectFunc(interfaces.ViewAllArtists))
+	v.list.AddItem("3. All Albums", "", 0, v.namedSelectFunc(interfaces.ViewAllAlbums))
+	v.list.AddItem("4. All Songs", "", 0, v.namedSelectFunc(interfaces.ViewAllSongs))
+	v.list.AddItem("5. Favorite Artists", "", 0, v.namedSelectFunc(interfaces.ViewFavoriteArtists))
+	v.list.AddItem("6. Favorite Albums", "", 0, v.namedSelectFunc(interfaces.ViewFavoriteAlbums))
+	v.list.AddItem("7. Favorite Songs", "", 0, v.namedSelectFunc(interfaces.ViewFavoriteSongs))
+	v.list.AddItem("8. Playlists", "", 0, v.namedSelectFunc(interfaces.ViewPlaylists))
 
 	return v
 }

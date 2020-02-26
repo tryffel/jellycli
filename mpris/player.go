@@ -23,8 +23,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"math"
 	"time"
-	"tryffel.net/go/jellycli/controller"
-	"tryffel.net/go/jellycli/player"
+	"tryffel.net/go/jellycli/interfaces"
 )
 
 // This file implements a struct that satisfies the `org.mpris.MediaPlayer2.Player` interface.
@@ -33,7 +32,7 @@ import (
 // https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html
 type Player struct {
 	*MediaController
-	lastState controller.Status
+	lastState interfaces.PlayingState
 }
 
 // TrackID is the Unique track identifier.
@@ -79,30 +78,34 @@ const (
 )
 
 //UpdateStatus updates status to dbus
-func (p *Player) UpdateStatus(state controller.Status) {
+func (p *Player) UpdateStatus(state interfaces.PlayingState) {
 	p.lastState = state
 	var playStatus PlaybackStatus
 	switch state.State {
-	case player.Play:
+	case interfaces.Play:
 		playStatus = PlaybackStatusPlaying
-	case player.Pause:
+	case interfaces.Pause:
 		playStatus = PlaybackStatusPaused
-	case player.Stop:
+	case interfaces.Stop:
 		playStatus = PlaybackStatusStopped
 	}
 	object := objectName("Player")
+
+	var pos int64 = 0
+	var data = MetadataMap{}
+
 	if state.Song != nil {
-		pos := int64(state.CurrentSongPast * 1000 * 1000)
-		data := mapFromStatus(state)
-		data["Position"] = pos
-		if err := p.props.Set(object, "Metadata", dbus.MakeVariant(data)); err != nil {
-			logrus.Error(err)
-			return
-		}
-		if err := p.props.Set(object, "Position", dbus.MakeVariant(pos)); err != nil {
-			logrus.Error(err)
-			return
-		}
+		pos = int64(state.CurrentSongPast * 1000 * 1000)
+		data = mapFromStatus(state)
+
+	}
+	if err := p.props.Set(object, "Metadata", dbus.MakeVariant(data)); err != nil {
+		logrus.Error(err)
+		return
+	}
+	if err := p.props.Set(object, "Position", dbus.MakeVariant(pos)); err != nil {
+		logrus.Error(err)
+		return
 	}
 
 	if err := p.props.Set(object, "PlaybackStatus", dbus.MakeVariant(playStatus)); err != nil {
@@ -172,6 +175,7 @@ func (p *Player) properties() map[string]*prop.Prop {
 // Next skips to the next track in the tracklist.
 // https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html#Method:Next
 func (p *Player) Next() *dbus.Error {
+	p.controller.Next()
 	return nil
 }
 
@@ -207,9 +211,9 @@ func (p *Player) Stop() *dbus.Error {
 // If playback is stopped, starts playback.
 // https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html#Method:PlayPause
 func (p *Player) PlayPause() *dbus.Error {
-	if p.lastState.State == player.Play {
+	if p.lastState.State == interfaces.Play {
 		p.controller.Pause()
-	} else if p.lastState.State == player.Pause {
+	} else if p.lastState.State == interfaces.Pause {
 		p.controller.Continue()
 	}
 	return nil

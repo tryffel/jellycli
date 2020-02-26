@@ -18,7 +18,7 @@ package mpris
 
 import (
 	"fmt"
-	"tryffel.net/go/jellycli/controller"
+	"tryffel.net/go/jellycli/interfaces"
 
 	"github.com/godbus/dbus"
 )
@@ -61,7 +61,7 @@ func (m *MetadataMap) nonEmptySlice(field string, values []string) {
 }
 
 // mapFromStatus returns a MetadataMap from the Song struct in mpd.
-func mapFromStatus(s controller.Status) MetadataMap {
+func mapFromStatus(s interfaces.PlayingState) MetadataMap {
 	if s.Song == nil {
 		// No song
 		return MetadataMap{

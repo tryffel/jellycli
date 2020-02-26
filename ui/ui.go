@@ -18,7 +18,7 @@ package ui
 
 import (
 	"tryffel.net/go/jellycli/controller"
-	"tryffel.net/go/jellycli/player"
+	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/task"
 	"tryffel.net/go/jellycli/ui/widgets"
 )
@@ -68,15 +68,15 @@ func (gui *Gui) loop() {
 	}
 }
 
-func (gui *Gui) Control(state player.State, volume int) {
+func (gui *Gui) Control(state interfaces.State, volume int) {
 	switch state {
-	case player.Continue:
+	case interfaces.Continue:
 		gui.controller.Continue()
-	case player.Pause:
+	case interfaces.Pause:
 		gui.controller.Pause()
-	case player.Stop:
+	case interfaces.Stop:
 		gui.controller.StopMedia()
-	case player.SetVolume:
+	case interfaces.SetVolume:
 		gui.controller.SetVolume(volume)
 	}
 }

@@ -5,47 +5,27 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"time"
-	"tryffel.net/go/jellycli/api"
 	"tryffel.net/go/jellycli/config"
+	"tryffel.net/go/jellycli/interfaces"
+	"tryffel.net/go/jellycli/models"
 	"tryffel.net/go/jellycli/task"
 )
-
-type State int
-type Playtype int
-type Status int
 
 //Action includes instruction for player to play
 type Action struct {
 	// What to do
-	State  State
-	Type   Playtype
+	State  interfaces.State
+	Type   interfaces.Playtype
 	Volume int
 
 	// Provide either artist/album/song or audio id
-	Artist   string
-	Album    string
-	Song     string
-	Year     int
 	AudioId  string
 	Duration int
-}
 
-//PlayerState holds data about currently playing song if any
-type PlayingState struct {
-	State       State
-	PlayingType Playtype
-	Song        string
-	Artist      string
-	Album       string
-	Year        int
-
-	// Content duration in sec
-	CurrentSongDuration int
-	CurrentSongPast     int
-	PlaylistDuration    int
-	PlaylistLeft        int
-	// Volume [0,100]
-	Volume int
+	// Metadata, only used when playing new song
+	Song   *models.Song
+	Artist *models.Artist
+	Album  *models.Album
 }
 
 type PlaySong struct {
@@ -54,36 +34,6 @@ type PlaySong struct {
 }
 
 const (
-	// Player states
-	// StopMedia -> Play -> Pause -> (Continue) -> StopMedia
-	// Play new song
-	Play State = iota
-	// Continue paused song, only a transition mode, never state of the player
-	Continue
-	//SetVolume, only transition mode
-	SetVolume
-	// Pause song
-	Pause
-	// StopMedia playing
-	Stop
-
-	//SongComplete, only transition mode to notify song has changed
-	SongComplete
-
-	// Playing single song
-	Song Playtype = 0
-	// Playing album
-	Album Playtype = 1
-	// Playing artists discography
-	Artist Playtype = 2
-	// Playing playlist
-	Playlist Playtype = 3
-
-	// Last action was ok
-	StatusOk Status = 0
-	// Last action resulted in error
-	StatusError Status = 0
-
 	// How often to update state i.e. push status to playingstate channel
 	updateInterval = time.Second
 )
@@ -92,11 +42,11 @@ const (
 type Player struct {
 	task.Task
 
-	Api *api.Api
+	Api interfaces.Api
 	// chanAction is for user interactions
 	chanAction chan Action
 	// chanState is updated when state is changed
-	chanState chan PlayingState
+	chanState chan interfaces.PlayingState
 
 	chanStreamComplete chan bool
 
@@ -104,7 +54,7 @@ type Player struct {
 
 	ticker *time.Ticker
 
-	state      PlayingState
+	state      interfaces.PlayingState
 	lastAction *Action
 
 	audio  *audio
@@ -113,13 +63,13 @@ type Player struct {
 }
 
 // NewPlayer constructs new player instance
-func NewPlayer(a *api.Api) (*Player, error) {
+func NewPlayer(a interfaces.Api) (*Player, error) {
 	p := &Player{
 		Api:                a,
 		chanAction:         make(chan Action, 3),
-		chanState:          make(chan PlayingState, 3),
-		chanStreamComplete: make(chan bool),
-		chanAddSong:        make(chan PlaySong),
+		chanState:          make(chan interfaces.PlayingState, 3),
+		chanStreamComplete: make(chan bool, 3),
+		chanAddSong:        make(chan PlaySong, 3),
 		ticker:             nil,
 		audio:              nil,
 	}
@@ -132,7 +82,7 @@ func NewPlayer(a *api.Api) (*Player, error) {
 	p.Name = "AudioPlayer"
 
 	p.audio.pause(true)
-	p.state.State = Stop
+	p.state.State = interfaces.Stop
 	p.state.Volume = 50
 	return p, nil
 }
@@ -143,7 +93,7 @@ func (p *Player) ActionChannel() chan Action {
 }
 
 //StateChannel return output channel for player state
-func (p *Player) StateChannel() chan PlayingState {
+func (p *Player) StateChannel() chan interfaces.PlayingState {
 	return p.chanState
 }
 
@@ -160,8 +110,8 @@ func (p *Player) loop() {
 		case <-p.ticker.C:
 			diff := time.Since(chunkStarted).Seconds()
 			if diff >= 10 {
-				if p.state.State == Play || p.state.State == Pause {
-					go p.reportStatus(api.EventTimeUpdate)
+				if p.state.State == interfaces.Play || p.state.State == interfaces.Pause {
+					go p.reportStatus(interfaces.EventTimeUpdate)
 				}
 				// Query new chunk every 10 sec
 				chunkStarted = time.Now()
@@ -179,18 +129,7 @@ func (p *Player) loop() {
 				logrus.Error("Invalid action, probably incorrect transition")
 			}
 		case <-p.chanStreamComplete:
-			logrus.Debug("Stream complete")
-			if p.reader != nil {
-				err := p.reader.Close()
-				if err != nil {
-					logrus.Errorf("Failed to close reader: %v", err)
-				}
-				p.reader = nil
-			}
-			p.stop()
-			p.state.State = SongComplete
-			p.RefreshState()
-			p.state.State = Stop
+			p.endStream()
 		case <-p.StopChan():
 			// Program is stopping
 			p.stop()
@@ -203,10 +142,10 @@ func (p *Player) loop() {
 }
 
 //handle any incoming actions. Return true if state has changed
-func (p *Player) handleAction(action Action) (bool, api.PlaybackEvent) {
-	defaultEvent := api.EventTimeUpdate
+func (p *Player) handleAction(action Action) (bool, interfaces.ApiPlaybackEvent) {
+	defaultEvent := interfaces.EventTimeUpdate
 	switch action.State {
-	case SetVolume:
+	case interfaces.SetVolume:
 		if p.state.Volume != action.Volume && action.Volume != -1 {
 			if action.Volume > config.AudioMaxVolume {
 				action.Volume = config.AudioMaxVolume
@@ -215,36 +154,43 @@ func (p *Player) handleAction(action Action) (bool, api.PlaybackEvent) {
 			}
 			p.audio.setVolume(action.Volume)
 			p.state.Volume = action.Volume
-			go p.reportStatus(api.EventVolumeChange)
-			return true, api.EventVolumeChange
+			go p.reportStatus(interfaces.EventVolumeChange)
+			return true, interfaces.EventVolumeChange
+		} else {
+			return true, interfaces.EventVolumeChange
 		}
-	case Pause:
-		if p.state.State == Play && p.audio.hasStreamer() {
+	case interfaces.Pause:
+		if p.state.State == interfaces.Play && p.audio.hasStreamer() {
 			p.audio.pause(true)
-			p.state.State = Pause
-			return true, api.EventPause
+			p.state.State = interfaces.Pause
+			return true, interfaces.EventPause
 		}
 		return false, defaultEvent
-	case Play:
-		if p.state.State == Stop || p.state.State == Pause || p.state.State == Play {
+	case interfaces.Play:
+		if p.state.State == interfaces.Stop || p.state.State == interfaces.Pause || p.state.State == interfaces.Play {
 			if p.PlaySong(action) {
-				return true, api.EventPlaylistItemAdd
+				return true, interfaces.EventPlaylistItemAdd
 			}
 			return false, defaultEvent
 		}
-	case Stop:
-		if p.state.State == Pause || p.state.State == Play {
+	case interfaces.Stop:
+		if p.state.State == interfaces.Pause || p.state.State == interfaces.Play {
 			p.stop()
-			p.state.State = Stop
-			return true, api.EventStop
+			p.state.State = interfaces.Stop
+			return true, interfaces.EventStop
 		}
-	case Continue:
-		if p.state.State == Pause && p.audio.hasStreamer() {
+	case interfaces.Continue:
+		if p.state.State == interfaces.Pause && p.audio.hasStreamer() {
 			p.audio.pause(false)
-			p.state.State = Play
-			return true, api.EventUnpause
+			p.state.State = interfaces.Play
+			return true, interfaces.EventUnpause
 		}
 		return false, defaultEvent
+	case interfaces.EndSong:
+		if p.state.State == interfaces.Pause || p.state.State == interfaces.Play {
+			p.endStream()
+			return true, interfaces.EventStop
+		}
 	default:
 		logrus.Error("Got invalid action: ", action.State)
 		return false, defaultEvent
@@ -254,11 +200,11 @@ func (p *Player) handleAction(action Action) (bool, api.PlaybackEvent) {
 }
 
 func (p *Player) stop() {
-	if p.state.State == Play || p.state.State == Pause {
+	if p.state.State == interfaces.Play || p.state.State == interfaces.Pause {
 		p.audio.stop()
-		p.reportStatus(api.EventStop)
+		p.reportStatus(interfaces.EventStop)
 	}
-	p.state.State = Stop
+	p.state.State = interfaces.Stop
 }
 
 //RefreshState pushes current state into state channel
@@ -283,12 +229,13 @@ func (p *Player) PlaySong(action Action) bool {
 	}
 	p.itemId = action.AudioId
 	p.reader = reader
-	p.state.State = Play
+	p.state.State = interfaces.Play
 	p.state.Song = action.Song
 	p.state.Artist = action.Artist
 	p.state.Album = action.Album
-	p.state.Year = action.Year
 	p.state.CurrentSongDuration = action.Duration
+
+	p.reportStatus(interfaces.EventStart)
 	return true
 }
 
@@ -305,16 +252,15 @@ func (p *Player) playSongFromReader(play PlaySong) {
 
 	p.itemId = action.AudioId
 	p.reader = play.Song
-	p.state.State = Play
+	p.state.State = interfaces.Play
 	p.state.Song = action.Song
 	p.state.Artist = action.Artist
 	p.state.Album = action.Album
-	p.state.Year = action.Year
 	p.state.CurrentSongDuration = action.Duration
 }
 
-func (p *Player) reportStatus(event api.PlaybackEvent) {
-	state := &api.PlaybackState{
+func (p *Player) reportStatus(event interfaces.ApiPlaybackEvent) {
+	state := &interfaces.ApiPlaybackState{
 		Event:          event,
 		ItemId:         p.itemId,
 		IsPaused:       false,
@@ -324,7 +270,7 @@ func (p *Player) reportStatus(event api.PlaybackEvent) {
 		Volume:         p.state.Volume,
 	}
 
-	if p.state.State == Pause {
+	if p.state.State == interfaces.Pause {
 		state.IsPaused = true
 	}
 
@@ -332,4 +278,20 @@ func (p *Player) reportStatus(event api.PlaybackEvent) {
 	if err != nil {
 		logrus.Error("Failed to report status: ", err.Error())
 	}
+}
+
+func (p *Player) endStream() {
+	logrus.Debug("Stream complete")
+	if p.reader != nil {
+		err := p.reader.Close()
+		if err != nil {
+			logrus.Errorf("Failed to close reader: %v", err)
+		}
+		p.reader = nil
+	}
+	p.stop()
+	p.state.State = interfaces.SongComplete
+	p.state.Clear()
+	p.RefreshState()
+	p.state.State = interfaces.Stop
 }

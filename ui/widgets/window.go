@@ -21,9 +21,8 @@ import (
 	"github.com/rivo/tview"
 	"github.com/sirupsen/logrus"
 	"tryffel.net/go/jellycli/config"
-	"tryffel.net/go/jellycli/controller"
+	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
-	"tryffel.net/go/jellycli/player"
 	"tryffel.net/go/jellycli/ui/widgets/modal"
 	"tryffel.net/go/twidgets"
 )
@@ -51,7 +50,7 @@ type Window struct {
 	customGrid bool
 	modal      modal.Modal
 
-	mediaController   controller.MediaController
+	mediaController   interfaces.MediaController
 	mediaView         tview.Primitive
 	mediaViewSelected bool
 
@@ -59,7 +58,7 @@ type Window struct {
 	lastFocus tview.Primitive
 }
 
-func NewWindow(mc controller.MediaController) Window {
+func NewWindow(mc interfaces.MediaController) Window {
 	w := Window{
 		app:    tview.NewApplication(),
 		status: newStatus(mc),
@@ -183,9 +182,9 @@ func (w *Window) mediaCtrl(event *tcell.EventKey) bool {
 	key := event.Key()
 	switch key {
 	case ctrls.PlayPause:
-		if w.status.state.State == player.Pause {
+		if w.status.state.State == interfaces.Pause {
 			go w.mediaController.Continue()
-		} else if w.status.state.State == player.Play {
+		} else if w.status.state.State == interfaces.Play {
 			go w.mediaController.Pause()
 		}
 	case ctrls.VolumeDown:
@@ -194,6 +193,8 @@ func (w *Window) mediaCtrl(event *tcell.EventKey) bool {
 	case ctrls.VolumeUp:
 		volume := w.status.state.Volume + 5
 		go w.mediaController.SetVolume(volume)
+	case ctrls.Next:
+		w.mediaController.Next()
 	default:
 		return false
 	}
@@ -202,7 +203,7 @@ func (w *Window) mediaCtrl(event *tcell.EventKey) bool {
 }
 
 // Open view
-func (w *Window) openViewFunc(view controller.View) {
+func (w *Window) openViewFunc(view interfaces.View) {
 	go w.mediaController.GetView(view)
 }
 
@@ -237,10 +238,17 @@ func (w *Window) moveCtrl(key tcell.Key) bool {
 		if w.mediaViewSelected {
 			w.lastFocus = w.mediaView
 			w.app.SetFocus(w.mediaNav)
+			if w.lastFocus != nil {
+				w.lastFocus.Blur()
+			}
 			w.mediaViewSelected = false
 		} else {
+			w.lastFocus = w.app.GetFocus()
 			w.app.SetFocus(w.mediaView)
 			w.mediaViewSelected = true
+			if w.lastFocus != nil {
+				w.lastFocus.Blur()
+			}
 		}
 		return true
 	}
@@ -302,7 +310,7 @@ func (w *Window) showModal(modal modal.Modal, height, width uint, lockSize bool)
 	}
 }
 
-func (w *Window) statusCb(state controller.Status) {
+func (w *Window) statusCb(state interfaces.PlayingState) {
 	w.status.UpdateState(state, nil)
 	w.app.QueueUpdateDraw(func() {})
 }

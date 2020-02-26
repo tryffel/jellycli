@@ -18,6 +18,7 @@ package api
 
 import (
 	"io"
+	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
 )
 
@@ -29,7 +30,7 @@ type MediaServer interface {
 	//TODO: set single / multiple of artist, album, playlist, song
 	Search(query string, limit int) (*SearchResult, error)
 	//ReportProgress reports current playing progress to server
-	ReportProgress(state *PlaybackState) error
+	ReportProgress(state *interfaces.ApiPlaybackState) error
 
 	//GetItem retrieves single item by its id
 	GetItem(id models.Id) (models.Item, error)

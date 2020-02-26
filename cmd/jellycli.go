@@ -47,11 +47,7 @@ func main() {
 	if startErr != nil {
 		logrus.Errorf("Failed to start application: %v", startErr)
 	}
-	<-catchSignals()
-	logrus.Info("Stopping application")
-
 	stopErr := app.Stop()
-
 	if startErr == nil && stopErr == nil {
 		os.Exit(0)
 	}
@@ -106,8 +102,15 @@ func NewApplication() (*Application, error) {
 }
 
 func (a *Application) Start() error {
-	tasks := []task.Tasker{a.player, a.content}
 	var err error
+	err = a.api.Connect()
+	if err != nil {
+		return fmt.Errorf("connect to server: %v", err)
+	}
+
+	a.api.SetController(a.content)
+
+	tasks := []task.Tasker{a.player, a.content, a.api}
 
 	go a.stopOnSignal()
 
@@ -122,7 +125,7 @@ func (a *Application) Start() error {
 
 func (a *Application) Stop() error {
 	logrus.Info("Stopping application")
-	tasks := []task.Tasker{a.player, a.content}
+	tasks := []task.Tasker{a.player, a.content, a.api}
 	var err error
 	var hasError bool
 	for _, v := range tasks {
@@ -307,7 +310,7 @@ func (a *Application) initApplication() error {
 
 	a.gui = ui.NewUi(a.content)
 
-	a.mpris, err = mpris2.NewController(*a.content)
+	a.mpris, err = mpris2.NewController(a.content)
 	if err != nil {
 		return fmt.Errorf("initialize dbus connection: %v", err)
 	}

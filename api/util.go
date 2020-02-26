@@ -20,6 +20,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"io"
+	"tryffel.net/go/jellycli/interfaces"
 )
 
 const (
@@ -76,49 +78,14 @@ type playbackStarted struct {
 	PlaylistIndex       int
 }
 
-type PlaybackEvent string
-
-const (
-	// Internal events
-	EventStart PlaybackEvent = "start"
-	EventStop  PlaybackEvent = "stop"
-
-	// Outgoing events
-	EventTimeUpdate          PlaybackEvent = "TimeUpdate"
-	EventPause               PlaybackEvent = "Pause"
-	EventUnpause             PlaybackEvent = "Unnpause"
-	EventVolumeChange        PlaybackEvent = "VolumeChange"
-	EventRepeatModeChange    PlaybackEvent = "RepeatModeChange"
-	EventAudioTrackChange    PlaybackEvent = "AudioTrackChange"
-	EventSubtitleTrackChange PlaybackEvent = "SubtitleTrackChange"
-	EventPlaylistItemMove    PlaybackEvent = "PlaylistItemMove"
-	EventPlaylistItemRemove  PlaybackEvent = "PlaylistItemRemove"
-	EventPlaylistItemAdd     PlaybackEvent = "PlaylistItemAdd"
-	EventQualityChange       PlaybackEvent = "QualityChange"
-)
-
 type playbackProgress struct {
 	playbackStarted
-	Event PlaybackEvent
+	Event interfaces.ApiPlaybackEvent
 }
 
-//Playbackstate reports playback back to server
-type PlaybackState struct {
-	Event    PlaybackEvent
-	ItemId   string
-	IsPaused bool
-	IsMuted  bool
-	// Total length of current playlist in seconds
-	PlaylistLength int
-	// Position in seconds
-	Position int
-	// Volume in 0-100
-	Volume int
-}
-
-func (a *Api) ReportProgress(state *PlaybackState) error {
-	params := *a.defaultParams()
-	params["api_key"] = a.token
+// ReportProgress reports playback status to server
+func (a *Api) ReportProgress(state *interfaces.ApiPlaybackState) error {
+	var err error
 	var report interface{}
 	var url string
 
@@ -137,10 +104,10 @@ func (a *Api) ReportProgress(state *PlaybackState) error {
 		PlaylistLength:      state.PlaylistLength * ticksToSecond,
 	}
 
-	if state.Event == EventStart {
+	if state.Event == interfaces.EventStart {
 		url = "/Sessions/Playing"
 		report = started
-	} else if state.Event == EventStop {
+	} else if state.Event == interfaces.EventStop {
 		url = "/Sessions/Playing/Stopped"
 		report = started
 	} else {
@@ -151,20 +118,40 @@ func (a *Api) ReportProgress(state *PlaybackState) error {
 		}
 	}
 
-	logrus.Debug("Progress event: ", state.Event)
-
+	// webui does not accept websocket response for now, so fall back to http posts. No p
+	//if a.socket == nil || state.Event == interfaces.EventStart || state.Event == interfaces.EventStop {
+	params := *a.defaultParams()
+	params["api_key"] = a.token
 	body, err := json.Marshal(&report)
-
-	//logrus.Debug(string(body))
 	if err != nil {
 		return fmt.Errorf("json marshaling failed: %v", err)
 	}
+	var resp io.ReadCloser
+	resp, err = a.post(url, &body, &params)
+	resp.Close()
 
-	_, err = a.post(url, body, &params)
+	/*
+		} else {
+			content := map[string]interface{}{}
+			content["MessageType"] = "ReportPlaybackStatus"
+			content["Data"] = report
+
+			a.socketLock.Lock()
+			a.socket.SetWriteDeadline(time.Now().Add(time.Second * 15))
+			err = a.socket.WriteJSON(content)
+			a.socketLock.Unlock()
+			if err != nil {
+				logrus.Errorf("Send playback status via websocket: %v", err)
+			}
+		}
+	*/
+
+	logrus.Debug("Progress event: ", state.Event)
+
 	if err == nil {
 		return nil
 	} else {
-		return fmt.Errorf("failed to post progress: %v", err)
+		return fmt.Errorf("push progress: %v", err)
 	}
 }
 
@@ -175,4 +162,35 @@ func (a *Api) GetCacheItems() int {
 //ImageUrl returns primary image url for item, if there is one. Otherwise return empty
 func (a *Api) ImageUrl(item, imageTag string) string {
 	return fmt.Sprintf("%s/Items/%s/Images/Primary?maxHeight=500&tag=%s&quality=90", a.host, item, imageTag)
+}
+
+func (a *Api) ReportCapabilities() error {
+	data := map[string]interface{}{}
+	data["PlayableMediaTypes"] = []string{"Audio"}
+	data["SupportedCommands"] = []string{
+		"VolumeUp",
+		"VolumeDown",
+		"Mute",
+		"Unmute",
+		"ToggleMute",
+		"SetVolume",
+	}
+	data["SupportsMediaControl"] = true
+	data["SupportsPersistentIdentifier"] = false
+
+	params := *a.defaultParams()
+	params["api_key"] = a.token
+
+	body, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("json: %v", err)
+	}
+
+	url := "/Sessions/Capabilities/Full"
+	resp, err := a.post(url, &body, &params)
+	if err != nil {
+		return err
+	}
+	resp.Close()
+	return nil
 }

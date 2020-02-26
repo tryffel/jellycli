@@ -24,7 +24,7 @@ import (
 	"os"
 	"strings"
 	"tryffel.net/go/jellycli/config"
-	"tryffel.net/go/jellycli/controller"
+	"tryffel.net/go/jellycli/interfaces"
 )
 
 const (
@@ -41,7 +41,7 @@ func objectName(name string) string {
 type MediaController struct {
 	dbus       *dbus.Conn
 	props      *prop.Properties
-	controller controller.Content
+	controller interfaces.MediaController
 	name       string
 }
 
@@ -56,7 +56,7 @@ func (m *MediaController) Name() string {
 }
 
 //NewController creates new Mpris controller and connects to DBus.
-func NewController(controller controller.Content) (c *MediaController, err error) {
+func NewController(controller interfaces.MediaController) (c *MediaController, err error) {
 	c = &MediaController{
 		name:       fmt.Sprintf("%s.%s.instance%d", baseObject, strings.ToLower(config.AppName), os.Getpid()),
 		controller: controller,

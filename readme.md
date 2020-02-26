@@ -6,6 +6,10 @@ Terminal client for Jellyfin, mostly for music at the moment. This is very much 
 * Play songs
 * Add songs to queue
 * Control (and view) play state through Dbus integration
+* Control from other clients through websocket. Currently implemented:
+    * Play / pause / stop
+    * Set volume
+    * Next track
 
 ## Building:
 Assuming go installed:

@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"io"
-	"time"
 	"tryffel.net/go/jellycli/interfaces"
 )
 
@@ -118,30 +117,34 @@ func (a *Api) ReportProgress(state *interfaces.ApiPlaybackState) error {
 			Event:           state.Event,
 		}
 	}
-	if a.socket == nil || state.Event == interfaces.EventStart || state.Event == interfaces.EventStop {
-		params := *a.defaultParams()
-		params["api_key"] = a.token
-		body, err := json.Marshal(&report)
-		if err != nil {
-			return fmt.Errorf("json marshaling failed: %v", err)
-		}
-		var resp io.ReadCloser
-		resp, err = a.post(url, &body, &params)
-		resp.Close()
 
-	} else {
-		content := map[string]interface{}{}
-		content["MessageType"] = "ReportPlaybackStatus"
-		content["Data"] = report
-
-		a.socketLock.Lock()
-		a.socket.SetWriteDeadline(time.Now().Add(time.Second * 15))
-		err = a.socket.WriteJSON(content)
-		a.socketLock.Unlock()
-		if err != nil {
-			logrus.Errorf("Send playback status via websocket: %v", err)
-		}
+	// webui does not accept websocket response for now, so fall back to http posts. No p
+	//if a.socket == nil || state.Event == interfaces.EventStart || state.Event == interfaces.EventStop {
+	params := *a.defaultParams()
+	params["api_key"] = a.token
+	body, err := json.Marshal(&report)
+	if err != nil {
+		return fmt.Errorf("json marshaling failed: %v", err)
 	}
+	var resp io.ReadCloser
+	resp, err = a.post(url, &body, &params)
+	resp.Close()
+
+	/*
+		} else {
+			content := map[string]interface{}{}
+			content["MessageType"] = "ReportPlaybackStatus"
+			content["Data"] = report
+
+			a.socketLock.Lock()
+			a.socket.SetWriteDeadline(time.Now().Add(time.Second * 15))
+			err = a.socket.WriteJSON(content)
+			a.socketLock.Unlock()
+			if err != nil {
+				logrus.Errorf("Send playback status via websocket: %v", err)
+			}
+		}
+	*/
 
 	logrus.Debug("Progress event: ", state.Event)
 

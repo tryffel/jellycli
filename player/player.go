@@ -156,6 +156,8 @@ func (p *Player) handleAction(action Action) (bool, interfaces.ApiPlaybackEvent)
 			p.state.Volume = action.Volume
 			go p.reportStatus(interfaces.EventVolumeChange)
 			return true, interfaces.EventVolumeChange
+		} else {
+			return true, interfaces.EventVolumeChange
 		}
 	case interfaces.Pause:
 		if p.state.State == interfaces.Play && p.audio.hasStreamer() {

@@ -22,6 +22,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -95,6 +96,24 @@ func (a *Api) parseInboudMessage(buff *[]byte) error {
 
 	cmd := strings.ToLower(msg.MessageType)
 	if cmd == "generalcommand" {
+		data := msg.Data
+		name := data["Name"]
+		ar := data["Arguments"]
+		args, ok := ar.(map[string]interface{})
+		if ok {
+			switch name {
+			case "SetVolume":
+				vol := args["Volume"]
+				volume, err := strconv.Atoi(vol.(string))
+				if err != nil {
+					logrus.Error("Invalid volume parameter")
+				} else {
+					a.controller.SetVolume(volume)
+				}
+			}
+		} else {
+			logrus.Error("unexpected command format from websocket, expected general command args map[string]interface, got", a)
+		}
 	} else if cmd == "playstate" {
 		data := msg.Data
 		rawCmd := data["Command"]

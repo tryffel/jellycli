@@ -114,6 +114,12 @@ func (a *Api) pushCommand(cmd string) error {
 	switch cmd {
 	case "PlayPause":
 		a.controller.PlayPause()
+	case "NextTrack":
+		a.controller.Next()
+	case "Stop":
+		a.controller.StopMedia()
+	default:
+		logrus.Info("Unknown websocket playstate command: %s", cmd)
 	}
 	return nil
 }

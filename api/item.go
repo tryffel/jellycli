@@ -257,7 +257,7 @@ func (a *Api) GetAlbumSongs(album models.Id) ([]*models.Song, error) {
 	params["api_key"] = a.token
 	params["Recursive"] = "true"
 	params["ParentId"] = album.String()
-	params["SortBy"] = "IndexNumber"
+	params["SortBy"] = "SortName"
 	params["Limit"] = defaultLimit
 
 	resp, err := a.get(fmt.Sprintf("/Users/%s/Items", a.userId), &params)

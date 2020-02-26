@@ -376,6 +376,7 @@ func (c *Content) Continue() {
 }
 
 func (c *Content) StopMedia() {
+	c.queue.ClearQueue()
 	a := player.Action{
 		State: interfaces.Stop,
 	}

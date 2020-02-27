@@ -240,9 +240,27 @@ func (a *AlbumView) SetAlbum(album *models.Album, songs []*models.Song) {
 
 	album.SongCount = len(a.songs)
 	a.album = album
-	a.description.SetText(fmt.Sprintf("%s\n%d tracks  %s  %d",
-		album.Name,
-		album.SongCount, util.SecToStringApproximate(album.Duration), album.Year))
+
+	text := album.Name
+	if len(a.album.AdditionalArtists) > 1 {
+		text += " ("
+		for i, v := range a.album.AdditionalArtists {
+			if i > 0 {
+				text += ", "
+			}
+			text += v.Name
+		}
+		text += ")"
+
+	} else if len(a.album.AdditionalArtists) == 1 {
+		text += ": " + album.AdditionalArtists[0].Name
+		text += " "
+	}
+
+	text += fmt.Sprintf("\n%d tracks  %s  %d",
+		album.SongCount, util.SecToStringApproximate(album.Duration), album.Year)
+
+	a.description.SetText(text)
 
 	discs := map[int]bool{}
 	for _, v := range songs {

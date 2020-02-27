@@ -173,8 +173,9 @@ func formatBytes(bytes uint64) string {
 func (h *Help) statsPage() string {
 	text := "[yellow]Statistics[-]\n"
 
-	text += fmt.Sprintf("Server Name: %s\nServer Version: %s\nCache items: %d\nMemory allocated: %s",
-		h.stats.ServerName, h.stats.ServerVersion, h.stats.CacheObjects, h.stats.HeapString())
+	text += fmt.Sprintf("Server Name: %s\nServer Version: %s\nCache items: %d\nMemory allocated: %s\n"+
+		"Websocket enabled: %t",
+		h.stats.ServerName, h.stats.ServerVersion, h.stats.CacheObjects, h.stats.HeapString(), h.stats.WebSocket)
 	return text
 }
 

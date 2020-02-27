@@ -123,6 +123,7 @@ func (c *Content) GetStatistics() models.Stats {
 		CacheObjects:  cache,
 		ServerName:    name,
 		ServerVersion: version,
+		WebSocket:     c.api.WebSocketEnabled(),
 	}
 
 	return stats

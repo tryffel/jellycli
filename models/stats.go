@@ -24,6 +24,7 @@ type Stats struct {
 	CacheObjects  int
 	ServerName    string
 	ServerVersion string
+	WebSocket     bool
 }
 
 func (s *Stats) HeapString() string {

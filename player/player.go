@@ -49,8 +49,7 @@ type Player struct {
 	chanState chan interfaces.PlayingState
 
 	chanStreamComplete chan bool
-
-	chanAddSong chan PlaySong
+	chanAddSong        chan PlaySong
 
 	ticker *time.Ticker
 
@@ -97,8 +96,9 @@ func (p *Player) StateChannel() chan interfaces.PlayingState {
 	return p.chanState
 }
 
-func (p *Player) AddSongChannel() *chan PlaySong {
-	return &p.chanAddSong
+// AddSong adds song to play after current song
+func (p *Player) AddSong(song PlaySong) {
+	p.chanAddSong <- song
 }
 
 func (p *Player) loop() {
@@ -252,11 +252,14 @@ func (p *Player) playSongFromReader(play PlaySong) {
 
 	p.itemId = action.AudioId
 	p.reader = play.Song
-	p.state.State = interfaces.Play
+	p.state.State = interfaces.SongStarted
 	p.state.Song = action.Song
 	p.state.Artist = action.Artist
 	p.state.Album = action.Album
 	p.state.CurrentSongDuration = action.Duration
+
+	p.RefreshState()
+	p.state.State = interfaces.Play
 }
 
 func (p *Player) reportStatus(event interfaces.ApiPlaybackEvent) {

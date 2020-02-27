@@ -53,6 +53,23 @@ type Content struct {
 
 	ticker *time.Ticker
 	queue  *queue
+	// is new song being downloaded
+	downloadingSong bool
+	// is new song pending acknowledgment from player
+	newSongPending bool
+}
+
+//is download pending / ongoing
+func (c *Content) isDownloadingSong() bool {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+	return c.downloadingSong
+}
+
+func (c *Content) isNewSongPending() bool {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+	return c.newSongPending
 }
 
 func (c *Content) SearchArtists(search string) ([]*models.Artist, error) {
@@ -469,6 +486,13 @@ func (c *Content) loop() {
 		case <-c.StopChan():
 			break
 		case state := <-c.player.StateChannel():
+			if state.State == interfaces.SongStarted {
+				if c.isNewSongPending() {
+					c.lock.Lock()
+					c.newSongPending = false
+					c.lock.Unlock()
+				}
+			}
 			c.playerState = state
 
 			err := c.pushState(state)
@@ -525,6 +549,10 @@ func (c *Content) ensurePlayerHasStream() {
 		return
 	}
 
+	if c.isDownloadingSong() || c.isNewSongPending() {
+		return
+	}
+
 	// Download new song if current song is almost finished
 	//left := c.playerState.CurrentSongDuration - c.playerState.CurrentSongPast
 	//if left < 10 {
@@ -560,6 +588,27 @@ func (c *Content) ensurePlayerHasStream() {
 			AudioId:  song.Id.String(),
 			Duration: song.Duration,
 		}
-		c.player.ActionChannel() <- action
+		go c.getNextSong(action)
 	}
+}
+
+func (c *Content) getNextSong(action player.Action) {
+	c.lock.Lock()
+	c.downloadingSong = true
+	c.lock.Unlock()
+
+	reader, err := c.api.GetSongDirect(action.AudioId, "mp3")
+	if err != nil {
+		logrus.Error("failed to request file over http: ", err.Error())
+	} else {
+		song := player.PlaySong{
+			Action: action,
+			Song:   reader,
+		}
+		c.player.AddSong(song)
+	}
+	c.lock.Lock()
+	c.downloadingSong = false
+	c.newSongPending = true
+	c.lock.Unlock()
 }

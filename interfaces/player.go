@@ -63,6 +63,9 @@ const (
 	EndSong
 	//SongComplete, only transition mode to notify song has changed
 	SongComplete
+
+	//SongStarted, only transition mode to notify a new song has started
+	SongStarted
 )
 
 const (

@@ -233,6 +233,10 @@ func (a *Api) GetAlbum(id models.Id) (models.Album, error) {
 		return al, fmt.Errorf("get albums songs: %v", err)
 	}
 
+	for _, v := range songs {
+		v.AlbumArtist = al.Artist
+	}
+
 	ids := make([]models.Id, len(songs))
 	items := make([]models.Item, len(songs))
 	for i, v := range songs {

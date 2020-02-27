@@ -83,16 +83,23 @@ func (a *album) toAlbum() *models.Album {
 		artist = models.Id(a.Artists[0].Id)
 	}
 
+	artists := make([]models.IdName, len(a.Artists))
+	for i, v := range a.Artists {
+		artists[i].Name = v.Name
+		artists[i].Id = models.Id(v.Id)
+	}
+
 	return &models.Album{
-		Id:        models.Id(a.Id),
-		Name:      a.Name,
-		Year:      a.Year,
-		Duration:  a.Duration / ticksToSecond,
-		Artist:    artist,
-		Songs:     nil,
-		SongCount: -1,
-		ImageId:   a.ImageTags.Primary,
-		DiscCount: 0,
+		Id:                models.Id(a.Id),
+		Name:              a.Name,
+		Year:              a.Year,
+		Duration:          a.Duration / ticksToSecond,
+		Artist:            artist,
+		Songs:             nil,
+		SongCount:         -1,
+		ImageId:           a.ImageTags.Primary,
+		DiscCount:         0,
+		AdditionalArtists: artists,
 	}
 }
 
@@ -102,21 +109,29 @@ type songs struct {
 }
 
 type song struct {
-	Name           string `json:"Name"`
-	Id             string `json:"Id"`
-	Duration       int    `json:"RunTimeTicks"`
-	ProductionYear int    `json:"ProductionYear"`
-	IndexNumber    int    `json:"IndexNumber"`
-	Type           string `json:"Type"`
-	AlbumId        string `json:"AlbumId"`
-	Album          string `json:"Album"`
-	DiscNumber     int    `json:"ParentIndexNumber"`
+	Name           string   `json:"Name"`
+	Id             string   `json:"Id"`
+	Duration       int      `json:"RunTimeTicks"`
+	ProductionYear int      `json:"ProductionYear"`
+	IndexNumber    int      `json:"IndexNumber"`
+	Type           string   `json:"Type"`
+	AlbumId        string   `json:"AlbumId"`
+	Album          string   `json:"Album"`
+	DiscNumber     int      `json:"ParentIndexNumber"`
+	Artists        []nameId `json:"ArtistItems"`
 }
 
 func (s *song) toSong() *models.Song {
 	if s.Type != mediaTypeSong {
 		logrus.Warningf("Converting (%s) to song", s.Type)
 	}
+
+	artists := make([]models.IdName, len(s.Artists))
+	for i, v := range s.Artists {
+		artists[i].Name = v.Name
+		artists[i].Id = models.Id(v.Id)
+	}
+
 	return &models.Song{
 		Id:         models.Id(s.Id),
 		Name:       s.Name,
@@ -124,6 +139,7 @@ func (s *song) toSong() *models.Song {
 		Album:      models.Id(s.AlbumId),
 		Index:      s.IndexNumber,
 		DiscNumber: s.DiscNumber,
+		Artists:    artists,
 	}
 }
 

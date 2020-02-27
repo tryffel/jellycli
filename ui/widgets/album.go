@@ -100,6 +100,7 @@ func (a *albumSong) setText() {
 	spaces := w - dL - nameL - 2
 	space := ""
 
+	// calculate space needed between name etc and duration
 	if spaces <= 0 {
 		lines := tview.WordWrap(name, w-2)
 		if len(lines) >= 1 {
@@ -123,6 +124,28 @@ func (a *albumSong) setText() {
 	}
 
 	text := name + space + duration
+
+	space = "      "
+	artists := space
+
+	// print artists if needed
+	if len(a.song.Artists) > 1 {
+		for i, v := range a.song.Artists {
+			if i > 0 {
+				artists += ", "
+			}
+			artists += v.Name
+		}
+		if len(artists) > w {
+			artists = space + fmt.Sprintf("%d artists", len(a.song.Artists))
+		} else {
+			text += artists
+		}
+	} else if len(a.song.Artists) == 1 {
+		if a.song.Artists[0].Id != a.song.AlbumArtist && a.song.AlbumArtist != "" {
+			text += space + a.song.Artists[0].Name
+		}
+	}
 	a.SetText(text)
 }
 

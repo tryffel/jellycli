@@ -391,6 +391,10 @@ func (w *Window) selectAlbum(album *models.Album) {
 	if err != nil {
 		logrus.Errorf("get album songs: %v", err)
 	} else {
+		for _, v := range songs {
+			v.AlbumArtist = album.Artist
+		}
+
 		w.album.SetAlbum(album, songs)
 		w.setViewWidget(w.album)
 	}

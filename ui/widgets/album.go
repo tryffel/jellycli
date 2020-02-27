@@ -59,10 +59,13 @@ type albumSong struct {
 	song *models.Song
 }
 
-func (a *albumSong) SetSelected(selected bool) {
-	if selected {
-		a.SetBackgroundColor(config.ColorProgress)
-	} else {
+func (a *albumSong) SetSelected(selected twidgets.Selection) {
+	switch selected {
+	case twidgets.Selected:
+		a.SetBackgroundColor(config.ColorBtnBackgroundSelected)
+	case twidgets.Blurred:
+		a.SetBackgroundColor(config.ColorBtnBackground)
+	case twidgets.Deselected:
 		a.SetBackgroundColor(config.ColorBackground)
 	}
 }

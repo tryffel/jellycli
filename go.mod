@@ -20,5 +20,5 @@ require (
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
 	golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae // indirect
-	tryffel.net/go/twidgets v0.0.0-20200227143710-4dafc49554bb
+	tryffel.net/go/twidgets v0.0.0-20200227161046-1308e83391bf
 )

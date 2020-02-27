@@ -139,12 +139,13 @@ func (a *AlbumCover) SetRect(x, y, w, h int) {
 	a.TextView.SetRect(x, y, w, h)
 }
 
-func (a *AlbumCover) SetSelected(selected bool) {
-	if selected {
-		a.SetTextColor(config.ColorSelection)
-		a.SetBackgroundColor(config.ColorSelectionBackground)
-	} else {
-		a.SetTextColor(config.ColorPrimary)
+func (a *AlbumCover) SetSelected(selected twidgets.Selection) {
+	switch selected {
+	case twidgets.Selected:
+		a.SetBackgroundColor(config.ColorBtnBackgroundSelected)
+	case twidgets.Blurred:
+		a.SetBackgroundColor(config.ColorBtnBackground)
+	case twidgets.Deselected:
 		a.SetBackgroundColor(config.ColorBackground)
 	}
 }

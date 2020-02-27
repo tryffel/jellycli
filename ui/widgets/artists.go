@@ -95,11 +95,11 @@ func newArtistCover(artist *models.Artist) *ArtistCover {
 	return a
 }
 
-func (a *ArtistCover) SetSelected(s bool) {
-	if s {
+func (a *ArtistCover) SetSelected(s twidgets.Selection) {
+	if s == twidgets.Selected {
 		a.SetTextColor(config.ColorSelection)
 		a.SetBackgroundColor(config.ColorSelectionBackground)
-	} else {
+	} else if s == twidgets.Deselected {
 		a.SetTextColor(config.ColorPrimary)
 		a.SetBackgroundColor(config.ColorBackground)
 

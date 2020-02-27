@@ -67,13 +67,14 @@ func (q *Queue) SetData(items []*models.SongInfo, duration int) {
 	if q.mode == QueueModeQueue {
 		text = fmt.Sprintf("Total duration: %s, songs: %d\n\n", util.SecToString(duration), len(items))
 		for i, v := range items {
-			text += fmt.Sprintf("%d. %s - %s (%s) %s\n", i+1, v.Name, v.Album, v.Artist, util.SecToString(v.Duration))
+			text += fmt.Sprintf("%d. %s - %s (%s) %s\n",
+				i+1, v.Name, v.Album, v.Artist, util.SecToString(v.Duration))
 		}
 	} else if q.mode == QueueModeHistory {
 		text = fmt.Sprintf("Total history: %s, songs: %d\n\n", util.SecToString(duration), len(items))
-		for i, _ := range items {
-			item := items[len(items)-1]
-			text += fmt.Sprintf("%d. %s - %s (%s) %s\n", i+1, item.Name, item.Album, item.Artist, util.SecToString(item.Duration))
+		for i, item := range items {
+			text += fmt.Sprintf("%d. %s - %s (%s) %s\n",
+				i+1, item.Name, item.Album, item.Artist, util.SecToString(item.Duration))
 		}
 	}
 	q.text.SetText(text)

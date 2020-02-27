@@ -226,7 +226,12 @@ func (w *Window) navBarCtrl(key tcell.Key) bool {
 		w.queue.SetData(w.mediaController.GetQueue(), w.mediaController.QueueDuration())
 	case navBar.History:
 		w.showModal(w.history, 20, 60, true)
-		w.history.SetData(w.mediaController.GetHistory(100), 0)
+		items := w.mediaController.GetHistory(100)
+		duration := 0
+		for _, v := range items {
+			duration += v.Duration
+		}
+		w.history.SetData(items, duration)
 	default:
 		return false
 	}

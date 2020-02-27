@@ -27,68 +27,31 @@ import (
 	"tryffel.net/go/twidgets"
 )
 
-type albumHeader struct {
-	*tview.Grid
-	artist      *models.Artist
-	album       *models.Album
-	description *tview.TextView
-
-	prevBtn  *tview.Button
-	infobtn  *tview.Button
-	playBtn  *tview.Button
-	prevFunc func()
+type button struct {
+	*tview.Button
 }
 
-func newAlbumHeader(prevFunc func()) *albumHeader {
-	a := &albumHeader{
-		Grid:        tview.NewGrid(),
-		artist:      nil,
-		album:       nil,
-		description: tview.NewTextView(),
-		prevBtn:     tview.NewButton("Back"),
-		infobtn:     tview.NewButton("Info"),
-		playBtn:     tview.NewButton("Play"),
-		prevFunc:    prevFunc,
+func (b *button) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+	return b.Button.InputHandler()
+}
+
+func (b *button) Focus(delegate func(p tview.Primitive)) {
+	b.Button.Focus(delegate)
+}
+
+func (b *button) GetFocusable() tview.Focusable {
+	return b.Button.GetFocusable()
+}
+
+func (b *button) SetBlurFunc(blur func(key tcell.Key)) {
+	b.Button.SetBlurFunc(blur)
+}
+
+func newButton(label string) *button {
+	return &button{
+		Button: tview.NewButton(label),
 	}
 
-	a.description.SetBorderPadding(0, 0, 1, 1)
-
-	btns := []*tview.Button{a.prevBtn, a.infobtn, a.playBtn}
-	for _, v := range btns {
-		v.SetBackgroundColor(config.ColorBtnBackground)
-		v.SetLabelColor(config.ColorBtnLabel)
-		v.SetBackgroundColorActivated(config.ColorBtnBackgroundSelected)
-		v.SetLabelColorActivated(config.ColorBtnLabelSelected)
-	}
-
-	a.SetBorder(true)
-	a.SetBorderColor(config.ColorBorder)
-
-	a.Grid.SetRows(1, 1, 1, 1)
-	a.Grid.SetColumns(6, 2, 10, -1, 10, -1, 10, -3)
-	a.Grid.SetMinSize(1, 6)
-	a.Grid.SetBackgroundColor(config.ColorBackground)
-
-	a.Grid.AddItem(a.prevBtn, 0, 0, 1, 1, 1, 5, false)
-	a.Grid.AddItem(a.description, 0, 2, 2, 5, 1, 10, false)
-	a.Grid.AddItem(a.infobtn, 3, 4, 1, 1, 1, 10, false)
-	a.Grid.AddItem(a.playBtn, 3, 2, 1, 1, 1, 10, true)
-
-	a.description.SetBackgroundColor(config.ColorBackground)
-	a.description.SetTextColor(config.ColorPrimary)
-
-	return a
-}
-
-func (a *albumHeader) SetArtist(artist *models.Artist) {
-	a.artist = artist
-}
-
-func (a *albumHeader) SetAlbum(album *models.Album) {
-	a.album = album
-	a.description.SetText(fmt.Sprintf("%s\n%d tracks  %s  %d",
-		album.Name,
-		album.SongCount, util.SecToStringApproximate(album.Duration), album.Year))
 }
 
 type albumSong struct {
@@ -167,41 +130,73 @@ func newAlbumSong(s *models.Song) *albumSong {
 	return song
 }
 
+// AlbumView shows user a header (album name, info, buttons) and list of songs
 type AlbumView struct {
-	*tview.Grid
+	*twidgets.Banner
 	list        *twidgets.ScrollList
 	songs       []*albumSong
-	header      *albumHeader
+	artist      *models.Artist
+	album       *models.Album
 	listFocused bool
 
 	playSongFunc  func(song *models.Song)
 	playSongsFunc func(songs []*models.Song)
+
+	description *tview.TextView
+	prevBtn     *button
+	infobtn     *button
+	playBtn     *button
+	prevFunc    func()
 }
 
+//NewAlbumView initializes new album view
 func NewAlbumview(playSong func(song *models.Song), playSongs func(songs []*models.Song)) *AlbumView {
 	a := &AlbumView{
-		Grid:          tview.NewGrid(),
+		Banner:        twidgets.NewBanner(),
 		list:          twidgets.NewScrollList(nil),
-		header:        newAlbumHeader(nil),
 		playSongFunc:  playSong,
 		playSongsFunc: playSongs,
+
+		description: tview.NewTextView(),
+		prevBtn:     newButton("Back"),
+		infobtn:     newButton("Info"),
+		playBtn:     newButton("Play"),
 	}
 
 	a.list.ItemHeight = 2
 	a.list.Padding = 1
+	a.list.SetInputCapture(a.listHandler)
+	a.list.SetBorder(true)
 
 	a.SetBorder(true)
 	a.SetBorderColor(config.ColorBorder)
 	a.list.SetBackgroundColor(config.ColorBackground)
 	a.Grid.SetBackgroundColor(config.ColorBackground)
-	a.Grid.SetRows(6, -1)
-	a.Grid.SetColumns(-1)
-
-	a.Grid.AddItem(a.header, 0, 0, 1, 1, 5, 25, false)
-	a.Grid.AddItem(a.list, 1, 0, 1, 1, 5, 25, false)
 	a.listFocused = false
+	a.playBtn.SetSelectedFunc(a.playAlbum)
 
-	a.header.playBtn.SetSelectedFunc(a.playAlbum)
+	a.Banner.Grid.SetRows(1, 1, 1, 1, -1)
+	a.Banner.Grid.SetColumns(6, 2, 10, -1, 10, -1, 10, -3)
+	a.Banner.Grid.SetMinSize(1, 6)
+
+	a.Banner.Grid.AddItem(a.prevBtn, 0, 0, 1, 1, 1, 5, false)
+	a.Banner.Grid.AddItem(a.description, 0, 2, 2, 5, 1, 10, false)
+	a.Banner.Grid.AddItem(a.playBtn, 3, 2, 1, 1, 1, 10, false)
+	a.Banner.Grid.AddItem(a.infobtn, 3, 4, 1, 1, 1, 10, false)
+	a.Banner.Grid.AddItem(a.list, 4, 0, 1, 8, 4, 10, false)
+
+	btns := []*button{a.prevBtn, a.playBtn, a.infobtn}
+	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.infobtn, a.list}
+	for _, btn := range btns {
+		btn.SetLabelColor(config.ColorBtnLabel)
+		btn.SetLabelColorActivated(config.ColorBtnLabelSelected)
+		btn.SetBackgroundColor(config.ColorBtnBackground)
+		btn.SetBackgroundColorActivated(config.ColorBtnBackgroundSelected)
+		btn.SetInputCapture(a.btnHandler)
+	}
+	a.Banner.Selectable = selectables
+	a.description.SetBackgroundColor(config.ColorBackground)
+	a.description.SetTextColor(config.ColorPrimary)
 	return a
 }
 
@@ -211,7 +206,10 @@ func (a *AlbumView) SetAlbum(album *models.Album, songs []*models.Song) {
 	items := make([]twidgets.ListItem, len(songs))
 
 	album.SongCount = len(a.songs)
-	a.header.SetAlbum(album)
+	a.album = album
+	a.description.SetText(fmt.Sprintf("%s\n%d tracks  %s  %d",
+		album.Name,
+		album.SongCount, util.SecToStringApproximate(album.Duration), album.Year))
 	for i, v := range songs {
 		a.songs[i] = newAlbumSong(v)
 		items[i] = a.songs[i]
@@ -225,9 +223,9 @@ func (a *AlbumView) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 		key := event.Key()
 		if a.listFocused {
 			index := a.list.GetSelectedIndex()
-			if index == 0 && key == tcell.KeyUp {
+			if index == 0 && (key == tcell.KeyUp || key == tcell.KeyCtrlK) {
 				a.listFocused = false
-				a.header.Focus(func(p tview.Primitive) {})
+				a.prevBtn.Focus(func(p tview.Primitive) {})
 				a.list.Blur()
 			} else if key == tcell.KeyEnter {
 				a.playSong(index)
@@ -235,13 +233,10 @@ func (a *AlbumView) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 				a.list.InputHandler()(event, setFocus)
 			}
 		} else {
-			r := event.Rune()
-			if r == 'j' || key == tcell.KeyDown {
+			if key == tcell.KeyDown || key == tcell.KeyCtrlJ {
 				a.listFocused = true
-				a.header.Blur()
 				a.list.Focus(func(p tview.Primitive) {})
 			} else {
-				a.header.InputHandler()(event, setFocus)
 			}
 		}
 	}
@@ -266,4 +261,29 @@ func (a *AlbumView) playAlbum() {
 
 func (a *AlbumView) Blur() {
 	a.Grid.Blur()
+}
+
+// map other keys to tab to enable navigation between buttons without using tab
+func (a *AlbumView) btnHandler(key *tcell.EventKey) *tcell.EventKey {
+	switch key.Key() {
+	case tcell.KeyCtrlJ, tcell.KeyDown:
+		return tcell.NewEventKey(tcell.KeyTAB, ' ', tcell.ModNone)
+	case tcell.KeyCtrlK, tcell.KeyUp:
+		return tcell.NewEventKey(tcell.KeyBacktab, ' ', tcell.ModNone)
+	default:
+		return key
+	}
+}
+
+func (a *AlbumView) listHandler(key *tcell.EventKey) *tcell.EventKey {
+	btn := a.btnHandler(key)
+	if btn != key {
+		return btn
+	}
+	if key.Key() == tcell.KeyEnter {
+		index := a.list.GetSelectedIndex()
+		a.playSong(index)
+		return nil
+	}
+	return key
 }

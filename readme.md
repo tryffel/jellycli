@@ -2,6 +2,8 @@
 
 Terminal client for Jellyfin, mostly for music at the moment. This is very much work-in-progress.
 
+![Screenshot](screenshot.png)
+
 ## Features
 * Play songs
 * Add songs to queue

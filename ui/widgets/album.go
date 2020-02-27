@@ -163,7 +163,7 @@ func NewAlbumview(playSong func(song *models.Song), playSongs func(songs []*mode
 		description: tview.NewTextView(),
 		prevBtn:     newButton("Back"),
 		infobtn:     newButton("Info"),
-		playBtn:     newButton("Play"),
+		playBtn:     newButton("Play all"),
 	}
 
 	a.list.ItemHeight = 2
@@ -184,7 +184,7 @@ func NewAlbumview(playSong func(song *models.Song), playSongs func(songs []*mode
 
 	a.Banner.Grid.AddItem(a.prevBtn, 0, 0, 1, 1, 1, 5, false)
 	a.Banner.Grid.AddItem(a.description, 0, 2, 2, 5, 1, 10, false)
-	a.Banner.Grid.AddItem(a.playBtn, 3, 2, 1, 1, 1, 10, false)
+	a.Banner.Grid.AddItem(a.playBtn, 3, 2, 1, 1, 1, 10, true)
 	a.Banner.Grid.AddItem(a.infobtn, 3, 4, 1, 1, 1, 10, false)
 	a.Banner.Grid.AddItem(a.list, 4, 0, 1, 8, 4, 10, false)
 
@@ -260,10 +260,6 @@ func (a *AlbumView) playAlbum() {
 		}
 		a.playSongsFunc(songs)
 	}
-}
-
-func (a *AlbumView) Blur() {
-	a.Grid.Blur()
 }
 
 // map other keys to tab to enable navigation between buttons without using tab

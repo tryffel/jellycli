@@ -14,7 +14,7 @@ require (
 	github.com/onsi/ginkgo v1.12.0 // indirect
 	github.com/onsi/gomega v1.9.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/rivo/tview v0.0.0-20200219210816-cd38d7432498
+	github.com/rivo/tview v0.0.0-20191018125527-685bf6da76c2
 	github.com/rivo/uniseg v0.1.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2

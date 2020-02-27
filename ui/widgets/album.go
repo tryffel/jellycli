@@ -56,7 +56,8 @@ func newButton(label string) *button {
 
 type albumSong struct {
 	*tview.TextView
-	song *models.Song
+	song        *models.Song
+	showDiscNum bool
 }
 
 func (a *albumSong) SetSelected(selected twidgets.Selection) {
@@ -87,7 +88,12 @@ func (a *albumSong) setText() {
 	_, _, w, _ := a.GetRect()
 	duration := util.SecToString(a.song.Duration)
 	dL := len(duration)
-	name := fmt.Sprintf("%d. %s", a.song.Index, a.song.Name)
+	var name string
+	if a.showDiscNum {
+		name = fmt.Sprintf("%d %d. %s", a.song.DiscNumber, a.song.Index, a.song.Name)
+	} else {
+		name = fmt.Sprintf("%d. %s", a.song.Index, a.song.Name)
+	}
 	nameL := uniseg.GraphemeClusterCount(name)
 
 	// width - duration - name - padding
@@ -120,10 +126,11 @@ func (a *albumSong) setText() {
 	a.SetText(text)
 }
 
-func newAlbumSong(s *models.Song) *albumSong {
+func newAlbumSong(s *models.Song, showDiscNum bool) *albumSong {
 	song := &albumSong{
-		TextView: tview.NewTextView(),
-		song:     s,
+		TextView:    tview.NewTextView(),
+		song:        s,
+		showDiscNum: showDiscNum,
 	}
 	song.SetBackgroundColor(config.ColorBackground)
 	song.SetTextColor(config.ColorPrimary)
@@ -213,8 +220,15 @@ func (a *AlbumView) SetAlbum(album *models.Album, songs []*models.Song) {
 	a.description.SetText(fmt.Sprintf("%s\n%d tracks  %s  %d",
 		album.Name,
 		album.SongCount, util.SecToStringApproximate(album.Duration), album.Year))
+
+	discs := map[int]bool{}
+	for _, v := range songs {
+		discs[v.DiscNumber] = true
+	}
+	album.DiscCount = len(discs)
+	showDiscNum := album.DiscCount != 1
 	for i, v := range songs {
-		a.songs[i] = newAlbumSong(v)
+		a.songs[i] = newAlbumSong(v, showDiscNum)
 		items[i] = a.songs[i]
 	}
 

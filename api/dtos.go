@@ -92,6 +92,7 @@ func (a *album) toAlbum() *models.Album {
 		Songs:     nil,
 		SongCount: -1,
 		ImageId:   a.ImageTags.Primary,
+		DiscCount: 0,
 	}
 }
 
@@ -109,6 +110,7 @@ type song struct {
 	Type           string `json:"Type"`
 	AlbumId        string `json:"AlbumId"`
 	Album          string `json:"Album"`
+	DiscNumber     int    `json:"ParentIndexNumber"`
 }
 
 func (s *song) toSong() *models.Song {
@@ -116,11 +118,12 @@ func (s *song) toSong() *models.Song {
 		logrus.Warningf("Converting (%s) to song", s.Type)
 	}
 	return &models.Song{
-		Id:       models.Id(s.Id),
-		Name:     s.Name,
-		Duration: s.Duration / ticksToSecond,
-		Album:    models.Id(s.AlbumId),
-		Index:    s.IndexNumber,
+		Id:         models.Id(s.Id),
+		Name:       s.Name,
+		Duration:   s.Duration / ticksToSecond,
+		Album:      models.Id(s.AlbumId),
+		Index:      s.IndexNumber,
+		DiscNumber: s.DiscNumber,
 	}
 }
 

@@ -74,7 +74,7 @@ func NewWindow(mc interfaces.MediaController) Window {
 
 	w.setLayout()
 	w.app.SetRoot(w.layout, true)
-	w.app.SetFocus(w.layout)
+	w.app.SetFocus(w.mediaNav)
 
 	w.app.SetInputCapture(w.eventHandler)
 	//w.window.SetInputCapture(w.eventHandler)

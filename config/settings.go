@@ -48,7 +48,7 @@ const (
 )
 
 var GridBordersShow = true
-var GridBordersColor = ColorSecondary
+var GridBordersColor = Color.Border
 
 //DebugGridBorders enables grid borders if config.Debug is true and if config.GridBordesShow is true
 // Else do nothing

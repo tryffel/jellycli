@@ -51,10 +51,12 @@ func NewQueue(mode QueueMode) *Queue {
 		q.text.SetTitle("History")
 	}
 
-	q.text.SetBackgroundColor(config.ColorBackground)
-	q.text.SetBorderColor(config.ColorBorder)
-	q.text.SetTextColor(config.ColorPrimary)
-	q.text.SetTitleColor(config.ColorPrimary)
+	colors := config.Color.Modal
+
+	q.text.SetBackgroundColor(colors.Background)
+	q.text.SetBorderColor(config.Color.Border)
+	q.text.SetTextColor(colors.Text)
+	q.text.SetTitleColor(config.Color.TextSecondary)
 	q.text.SetBorderPadding(2, 2, 2, 2)
 	q.text.SetWordWrap(true)
 	q.text.SetScrollable(true)
@@ -117,12 +119,12 @@ func (q *Queue) InputHandler() func(event *tcell.EventKey, setFocus func(p tview
 }
 
 func (q *Queue) Focus(delegate func(p tview.Primitive)) {
-	q.text.SetBorderColor(config.ColorBorderFocus)
+	q.text.SetBorderColor(config.Color.BorderFocus)
 	q.text.Focus(delegate)
 }
 
 func (q *Queue) Blur() {
-	q.text.SetBorderColor(config.ColorBorder)
+	q.text.SetBorderColor(config.Color.Border)
 	q.text.Blur()
 }
 

@@ -42,10 +42,9 @@ func NewArtistList(selectFunc func(artist *models.Artist)) *ArtistList {
 	a.ItemHeight = 2
 
 	a.SetBorder(true)
-	a.SetBorderColor(config.ColorBorder)
-	a.SetBackgroundColor(config.ColorBackground)
+	a.SetBorderColor(config.Color.Border)
+	a.SetBackgroundColor(config.Color.Background)
 	a.SetBorder(true)
-	a.SetBorderColor(config.ColorBorder)
 	return a
 }
 
@@ -87,8 +86,8 @@ func newArtistCover(artist *models.Artist) *ArtistCover {
 		TextView: tview.NewTextView(),
 		artist:   artist,
 	}
-	a.SetBackgroundColor(config.ColorBackground)
-	a.SetTextColor(config.ColorPrimary)
+	a.SetBackgroundColor(config.Color.Background)
+	a.SetTextColor(config.Color.Text)
 
 	a.SetText(artist.Name)
 
@@ -97,11 +96,11 @@ func newArtistCover(artist *models.Artist) *ArtistCover {
 
 func (a *ArtistCover) SetSelected(s twidgets.Selection) {
 	if s == twidgets.Selected {
-		a.SetTextColor(config.ColorSelection)
-		a.SetBackgroundColor(config.ColorSelectionBackground)
+		a.SetTextColor(config.Color.TextSelected)
+		a.SetBackgroundColor(config.Color.BackgroundSelected)
 	} else if s == twidgets.Deselected {
-		a.SetTextColor(config.ColorPrimary)
-		a.SetBackgroundColor(config.ColorBackground)
+		a.SetTextColor(config.Color.Text)
+		a.SetBackgroundColor(config.Color.Background)
 
 	}
 }

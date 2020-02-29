@@ -70,12 +70,12 @@ func (h *Help) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.
 }
 
 func (h *Help) Focus(delegate func(p tview.Primitive)) {
-	h.TextView.SetBorderColor(config.ColorBorderFocus)
+	h.TextView.SetBorderColor(config.Color.BorderFocus)
 	h.TextView.Focus(delegate)
 }
 
 func (h *Help) Blur() {
-	h.TextView.SetBorderColor(config.ColorBorder)
+	h.TextView.SetBorderColor(config.Color.Border)
 	h.TextView.Blur()
 }
 
@@ -87,11 +87,12 @@ func NewHelp(doneCb func()) *Help {
 	h := &Help{TextView: tview.NewTextView()}
 	h.closeCb = doneCb
 
-	h.SetBackgroundColor(config.ColorBackground)
+	colors := config.Color.Modal
+	h.SetBackgroundColor(colors.Background)
 	h.SetBorder(true)
 	h.SetTitle("Help")
-	h.SetBorderColor(config.ColorBorder)
-	h.SetTitleColor(config.ColorPrimary)
+	h.SetBorderColor(config.Color.Border)
+	h.SetTitleColor(config.Color.TextSecondary)
 	h.SetDynamicColors(true)
 	h.SetBorderPadding(0, 1, 2, 2)
 

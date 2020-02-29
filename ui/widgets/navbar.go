@@ -64,30 +64,24 @@ func NewNavBar(callback func(key *tcell.Key)) *NavBar {
 		callback: callback,
 	}
 
+	colors := config.Color.NavBar
+
 	nb.grid.SetBorder(false)
-	nb.grid.SetBorderColor(config.ColorNavBar)
-	nb.grid.SetBackgroundColor(config.ColorNavBar)
-	nb.grid.SetRows(-1)
+	nb.grid.SetBorderColor(config.Color.Border)
+	nb.grid.SetBackgroundColor(colors.Background)
+	nb.grid.SetRows(1)
 	config.DebugGridBorders(nb.grid)
 
 	buttons := []string{
 		"Help",
-		"View",
-		"Search",
 		"Queue",
 		"History",
-		"Settings",
-		"Quit",
 	}
 
 	keybindings := []tcell.Key{
 		config.KeyBinds.NavigationBar.Help,
-		config.KeyBinds.NavigationBar.View,
-		config.KeyBinds.NavigationBar.Search,
 		config.KeyBinds.NavigationBar.Queue,
 		config.KeyBinds.NavigationBar.History,
-		config.KeyBinds.NavigationBar.Settings,
-		config.KeyBinds.NavigationBar.Help,
 	}
 
 	// Use grid of |<space><button>space><button><space>...|
@@ -105,8 +99,8 @@ func NewNavBar(callback func(key *tcell.Key)) *NavBar {
 	for i, name := range buttons {
 		nb.btns[i] = tview.NewButton(fmt.Sprintf("%s %s", tcell.KeyNames[keybindings[i]], name))
 		nb.btns[i].SetSelectedFunc(nb.namedCb(keybindings[i]))
-		nb.btns[i].SetBackgroundColor(config.ColorNavBar)
-		nb.btns[i].SetLabelColor(config.ColorLightext)
+		nb.btns[i].SetBackgroundColor(colors.ButtonBackground)
+		nb.btns[i].SetLabelColor(colors.Text)
 		nb.grid.AddItem(nb.btns[i], 0, i*2, 1, 1, 1, 4, false)
 	}
 	return nb

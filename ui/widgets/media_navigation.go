@@ -62,12 +62,11 @@ func NewMediaNavigation(selectFunc func(selection MediaSelect)) *MediaNavigation
 	}
 
 	m.SetBorder(true)
-	m.SetBorderColor(config.ColorBorder)
-	m.SetBackgroundColor(config.ColorBackground)
+	m.SetBorderColor(config.Color.Border)
+	m.SetBackgroundColor(config.Color.NavBar.Background)
 	m.SetBorder(true)
-	m.SetBorderColor(config.ColorBorder)
 	m.SetSelectable(true, false)
-	m.SetSelectedStyle(config.ColorPrimary, config.ColorBorder, 0)
+	m.SetSelectedStyle(config.Color.TextSelected, config.Color.BackgroundSelected, 0)
 
 	for i, v := range mediaSelections {
 		cell := tableCell(v)
@@ -91,7 +90,7 @@ func (m *MediaNavigation) markDisabledMethods() {
 
 	for _, v := range notImplemented {
 		cell := m.Table.GetCell(int(v), 0)
-		cell.SetTextColor(config.ColorSecondaryDim)
+		cell.SetTextColor(config.Color.TextDisabled)
 	}
 }
 
@@ -110,4 +109,11 @@ func (m *MediaNavigation) InputHandler() func(event *tcell.EventKey, setFocus fu
 
 func (m *MediaNavigation) SetCount(id MediaSelect, count int) {
 	m.Table.SetCellSimple(int(id), 1, fmt.Sprint(count))
+}
+
+func tableCell(text string) *tview.TableCell {
+	c := tview.NewTableCell(text)
+	c.SetTextColor(config.Color.Text)
+	c.SetAlign(tview.AlignLeft)
+	return c
 }

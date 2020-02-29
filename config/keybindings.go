@@ -82,13 +82,9 @@ func DefaultKeyBindings() KeyBindings {
 			MuteUnmute: tcell.KeyF11,
 		},
 		NavigationBar: NavigationBarBindings{
-			Quit:     tcell.KeyF12,
-			Help:     tcell.KeyF1,
-			View:     tcell.KeyF2,
-			Search:   tcell.KeyF3,
-			Queue:    tcell.KeyF4,
-			History:  tcell.KeyF5,
-			Settings: tcell.KeyF5,
+			Help:    tcell.KeyF1,
+			Queue:   tcell.KeyF4,
+			History: tcell.KeyF5,
 		},
 		Moving: MovingBindings{
 			Up:    tcell.KeyUp,

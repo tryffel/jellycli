@@ -32,11 +32,9 @@ type Window struct {
 	layout *twidgets.ModalLayout
 
 	// Widgets
-	navBar   *NavBar
+	navBar   *twidgets.NavBar
 	status   *Status
 	mediaNav *MediaNavigation
-	search   *modal.Search
-	view     *modal.ViewModal
 	help     *modal.Help
 	queue    *modal.Queue
 	history  *modal.Queue
@@ -69,7 +67,8 @@ func NewWindow(mc interfaces.MediaController) Window {
 	w.artist = NewArtistView(w.selectAlbum)
 	w.album = NewAlbumview(w.playSong, w.playSongs)
 	w.mediaNav = NewMediaNavigation(w.selectMedia)
-	w.navBar = NewNavBar(w.keyHandlerCb)
+	w.navBar = twidgets.NewNavBar(config.Color.NavBar.ToWidgetsNavBar(), w.navBarHandler)
+
 	w.mediaController = mc
 
 	w.setLayout()
@@ -78,23 +77,28 @@ func NewWindow(mc interfaces.MediaController) Window {
 
 	w.app.SetInputCapture(w.eventHandler)
 	//w.window.SetInputCapture(w.eventHandler)
-	w.search = modal.NewSearch(w.searchCb)
-	w.search.SetDoneFunc(w.wrapCloseModal(w.search))
 	w.help = modal.NewHelp(w.closeHelp)
 	w.help.SetDoneFunc(w.wrapCloseModal(w.help))
 	w.queue = modal.NewQueue(modal.QueueModeQueue)
 	w.queue.SetDoneFunc(w.wrapCloseModal(w.queue))
-	w.view = modal.NewViewModal()
-	w.view.SetDoneFunc(w.wrapCloseModal(w.view))
-	w.view.SetViewFunc(w.openViewFunc)
 
-	w.layout.Grid().SetBackgroundColor(config.ColorBackground)
+	w.layout.Grid().SetBackgroundColor(config.Color.Background)
 
 	w.history = modal.NewQueue(modal.QueueModeHistory)
 	w.history.SetDoneFunc(w.wrapCloseModal(w.history))
 
 	w.mediaController.SetItemsCallback(w.itemsCb)
 	w.mediaController.AddStatusCallback(w.statusCb)
+
+	navBarLabels := []string{"Help", "Queue", "History"}
+
+	sc := config.KeyBinds.NavigationBar
+	navBarShortucts := []tcell.Key{sc.Help, sc.Queue, sc.History}
+
+	for i, v := range navBarLabels {
+		btn := tview.NewButton(v)
+		w.navBar.AddButton(btn, navBarShortucts[i])
+	}
 
 	return w
 }
@@ -138,8 +142,7 @@ func (w *Window) eventHandler(event *tcell.EventKey) *tcell.EventKey {
 	return event
 }
 
-// Keyhandler that has to react to buttons or drop them completely
-func (w *Window) keyHandlerCb(key *tcell.Key) {
+func (w *Window) navBarHandler(label string) {
 
 }
 
@@ -217,10 +220,6 @@ func (w *Window) navBarCtrl(key tcell.Key) bool {
 		stats := w.mediaController.GetStatistics()
 		w.help.SetStats(stats)
 		w.showModal(w.help, 25, 50, true)
-	case navBar.View:
-		w.showModal(w.view, 20, 50, true)
-	case navBar.Search:
-		w.showModal(w.search, 10, 50, true)
 	case navBar.Queue:
 		w.showModal(w.queue, 20, 60, true)
 		w.queue.SetData(w.mediaController.GetQueue(), w.mediaController.QueueDuration())

@@ -16,26 +16,125 @@
 
 package config
 
-import "github.com/gdamore/tcell"
-
-var (
-	ColorBackground            = tcell.Color234 //Dark gray
-	ColorPrimary               = tcell.Color51  // Cyan
-	ColorPrimaryDim            = tcell.Color44  // Ligh cyan
-	ColorSecondary             = tcell.Color141 //
-	ColorSecondaryDim          = tcell.Color134
-	ColorBorder                = tcell.Color246 // Gray
-	ColorBorderFocus           = tcell.Color253
-	ColroMainFrame             = tcell.Color246 // Lighter gray
-	ColorControls              = tcell.Color202 // Orange
-	ColorProgress              = tcell.Color202 // Orange
-	ColorNavBar                = tcell.Color24
-	ColorNavBarBtn             = tcell.Color31
-	ColorLightext              = tcell.Color250
-	ColorSelection             = tcell.Color253
-	ColorSelectionBackground   = tcell.Color23
-	ColorBtnBackgroundSelected = tcell.Color23
-	ColorBtnBackground         = tcell.Color241
-	ColorBtnLabelSelected      = tcell.Color253
-	ColorBtnLabel              = tcell.Color254
+import (
+	"github.com/gdamore/tcell"
+	"tryffel.net/go/twidgets"
 )
+
+const (
+	colorBackground      = tcell.Color234
+	colorModalBackground = tcell.Color236
+	colorText            = tcell.Color252
+	colorShortcut        = tcell.Color214
+	TextSecondary        = tcell.Color179
+	TextDisabled         = tcell.Color241
+)
+
+var Color = defaultColors()
+
+type AppColor struct {
+	Background               tcell.Color
+	Border                   tcell.Color
+	BorderFocus              tcell.Color
+	ButtonBackground         tcell.Color
+	ButtonBackgroundSelected tcell.Color
+	ButtonLabel              tcell.Color
+	ButtonLabelSelected      tcell.Color
+	Text                     tcell.Color
+	TextSecondary            tcell.Color
+	TextDisabled             tcell.Color
+	BackgroundSelected       tcell.Color
+	TextSelected             tcell.Color
+	NavBar                   ColorNavBar
+	Status                   ColorStatus
+	Modal                    ColorModal
+}
+
+func defaultColors() AppColor {
+	return AppColor{
+		Background:               colorBackground,
+		Border:                   tcell.Color246,
+		BorderFocus:              tcell.Color253,
+		ButtonBackground:         tcell.Color241,
+		ButtonBackgroundSelected: tcell.Color23,
+		ButtonLabel:              tcell.Color254,
+		ButtonLabelSelected:      tcell.Color253,
+		Text:                     colorText,
+		TextSecondary:            TextSecondary,
+		TextDisabled:             TextDisabled,
+		BackgroundSelected:       tcell.Color23,
+		TextSelected:             tcell.Color252,
+		NavBar:                   defaultColorNavBar(),
+		Status:                   defaultColorStatus(),
+		Modal:                    defaultColorModal(),
+	}
+}
+
+type ColorModal struct {
+	Background tcell.Color
+	Text       tcell.Color
+	Headers    tcell.Color
+}
+
+func defaultColorModal() ColorModal {
+	return ColorModal{
+		Background: colorModalBackground,
+		Text:       tcell.Color252,
+		Headers:    tcell.Color228,
+	}
+}
+
+type ColorNavBar struct {
+	Background       tcell.Color
+	Text             tcell.Color
+	ButtonBackground tcell.Color
+	Shortcut         tcell.Color
+}
+
+func (c *ColorNavBar) ToWidgetsNavBar() *twidgets.NavBarColors {
+	return &twidgets.NavBarColors{
+		Background:            c.Background,
+		BackgroundFocus:       c.Background,
+		ButtonBackground:      c.ButtonBackground,
+		ButtonBackgroundFocus: c.ButtonBackground,
+		Text:                  c.Text,
+		TextFocus:             c.Text,
+		Shortcut:              c.Shortcut,
+		ShortcutFocus:         c.Shortcut,
+	}
+}
+
+func defaultColorNavBar() ColorNavBar {
+	return ColorNavBar{
+		Background:       colorBackground,
+		Text:             colorText,
+		ButtonBackground: colorBackground,
+		Shortcut:         colorShortcut,
+	}
+}
+
+type ColorStatus struct {
+	Background       tcell.Color
+	Border           tcell.Color
+	ProgressBar      tcell.Color
+	Text             tcell.Color
+	ButtonBackground tcell.Color
+	ButtonLabel      tcell.Color
+	Shortcuts        tcell.Color
+	TextPrimary      tcell.Color
+	TextSecondary    tcell.Color
+}
+
+func defaultColorStatus() ColorStatus {
+	return ColorStatus{
+		Background:       colorBackground,
+		Border:           tcell.Color245,
+		ProgressBar:      tcell.Color245,
+		Text:             colorText,
+		ButtonBackground: tcell.Color240,
+		ButtonLabel:      colorText,
+		Shortcuts:        colorShortcut,
+		TextPrimary:      colorText,
+		TextSecondary:    tcell.Color26,
+	}
+}

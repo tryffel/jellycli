@@ -52,9 +52,9 @@ func NewAlbumCover(index int, album *models.Album) *AlbumCover {
 	}
 
 	a.SetBorder(false)
-	a.SetBackgroundColor(config.ColorBackground)
+	a.SetBackgroundColor(config.Color.Background)
 	a.SetBorderPadding(0, 0, 1, 1)
-	a.SetTextColor(config.ColorPrimary)
+	a.SetTextColor(config.Color.Text)
 	ar := printArtists(a.artists, 40)
 	text := fmt.Sprintf("%d. %s\n%d", index, album.Name, album.Year)
 	if ar != "" {
@@ -78,11 +78,13 @@ func (a *AlbumCover) SetRect(x, y, w, h int) {
 func (a *AlbumCover) SetSelected(selected twidgets.Selection) {
 	switch selected {
 	case twidgets.Selected:
-		a.SetBackgroundColor(config.ColorBtnBackgroundSelected)
+		a.SetBackgroundColor(config.Color.BackgroundSelected)
+		a.SetTextColor(config.Color.TextSelected)
 	case twidgets.Blurred:
-		a.SetBackgroundColor(config.ColorBtnBackground)
+		a.SetBackgroundColor(config.Color.TextDisabled)
 	case twidgets.Deselected:
-		a.SetBackgroundColor(config.ColorBackground)
+		a.SetBackgroundColor(config.Color.Background)
+		a.SetTextColor(config.Color.Text)
 	}
 }
 
@@ -186,20 +188,20 @@ func NewArtistView(selectAlbum func(album *models.Album)) *ArtistView {
 	a.list.ItemHeight = 3
 
 	a.SetBorder(true)
-	a.SetBorderColor(config.ColorBorder)
-	a.SetBackgroundColor(config.ColorBackground)
-	a.list.SetBackgroundColor(config.ColorBackground)
+	a.SetBorderColor(config.Color.Border)
+	a.SetBackgroundColor(config.Color.Background)
+	a.list.SetBackgroundColor(config.Color.Background)
 	a.list.SetBorder(true)
-	a.SetBorderColor(config.ColorBorder)
-	a.list.SetBackgroundColor(config.ColorBackground)
+	a.list.SetBorderColor(config.Color.Border)
+	a.SetBorderColor(config.Color.Border)
 
 	btns := []*button{a.prevBtn, a.playBtn, a.similarBtn}
 	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.similarBtn, a.list}
 	for _, v := range btns {
-		v.SetBackgroundColor(config.ColorBtnBackground)
-		v.SetLabelColor(config.ColorBtnLabel)
-		v.SetBackgroundColorActivated(config.ColorBtnBackgroundSelected)
-		v.SetLabelColorActivated(config.ColorBtnLabelSelected)
+		v.SetBackgroundColor(config.Color.ButtonBackground)
+		v.SetLabelColor(config.Color.ButtonLabel)
+		v.SetBackgroundColorActivated(config.Color.ButtonBackgroundSelected)
+		v.SetLabelColorActivated(config.Color.ButtonLabelSelected)
 	}
 
 	a.Banner.Selectable = selectables
@@ -207,9 +209,9 @@ func NewArtistView(selectAlbum func(album *models.Album)) *ArtistView {
 	a.Grid.SetRows(1, 1, 1, 1, -1)
 	a.Grid.SetColumns(6, 2, 10, -1, 10, -1, 10, -3)
 	a.Grid.SetMinSize(1, 6)
-	a.Grid.SetBackgroundColor(config.ColorBackground)
-	a.name.SetBackgroundColor(config.ColorBackground)
-	a.name.SetTextColor(config.ColorPrimary)
+	a.Grid.SetBackgroundColor(config.Color.Background)
+	a.name.SetBackgroundColor(config.Color.Background)
+	a.name.SetTextColor(config.Color.Text)
 
 	a.Grid.AddItem(a.prevBtn, 0, 0, 1, 1, 1, 5, false)
 	a.Grid.AddItem(a.name, 0, 2, 2, 5, 1, 10, false)

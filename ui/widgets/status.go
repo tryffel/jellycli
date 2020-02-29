@@ -98,13 +98,15 @@ func newStatus(ctrl interfaces.MediaController) *Status {
 	s := &Status{frame: tview.NewBox()}
 	s.controller = ctrl
 
-	s.controlsBgColor = config.ColorBackground
-	s.controlsFgColor = config.ColorControls
-	s.detailsMainColor = config.ColorPrimary
-	s.detailsDimColor = config.ColorPrimaryDim
-	s.detailsBgColor = config.ColorBackground
+	colors := config.Color.Status
 
-	s.frame.SetBackgroundColor(s.controlsBgColor)
+	s.controlsBgColor = colors.ButtonBackground
+	s.controlsFgColor = colors.ButtonLabel
+	s.detailsMainColor = colors.Text
+	s.detailsDimColor = colors.TextSecondary
+	s.detailsBgColor = colors.Background
+
+	s.frame.SetBackgroundColor(colors.Background)
 	s.layout = tview.NewGrid()
 	s.layout.SetBorder(true)
 
@@ -112,7 +114,7 @@ func newStatus(ctrl interfaces.MediaController) *Status {
 	s.layout.SetColumns(-1, 5, -1)
 	s.frame.SetBorder(true)
 	s.frame.SetBorderAttributes(tcell.AttrBold)
-	s.frame.SetBorderColor(s.controlsFgColor)
+	s.frame.SetBorderColor(colors.Border)
 
 	s.details = tview.NewTextView()
 
@@ -164,8 +166,8 @@ func newStatus(ctrl interfaces.MediaController) *Status {
 	}
 
 	for _, v := range s.buttons {
-		v.SetBackgroundColor(s.controlsFgColor)
-		v.SetLabelColor(s.controlsBgColor)
+		v.SetBackgroundColor(s.controlsBgColor)
+		v.SetLabelColor(s.controlsFgColor)
 		v.SetBorder(false)
 	}
 	return s
@@ -196,20 +198,22 @@ func (s *Status) Draw(screen tcell.Screen) {
 
 	topX := x + 1
 
-	tview.Print(screen, progress, topX, y-1, progressLen+5, tview.AlignLeft, config.ColorControls)
+	colors := config.Color.Status
+
+	tview.Print(screen, progress, topX, y-1, progressLen+5, tview.AlignLeft, colors.ProgressBar)
 	topX += progressLen + progressLen/10
-	tview.Print(screen, volume, topX, y-1, w, tview.AlignLeft, config.ColorControls)
+	tview.Print(screen, volume, topX, y-1, w, tview.AlignLeft, colors.ProgressBar)
 
 	tview.Print(screen, util.PackKeyBindingName(config.KeyBinds.Global.VolumeDown, 5),
-		topX+7, y, topX+16, tview.AlignLeft, config.ColorControls)
+		topX+7, y, topX+16, tview.AlignLeft, colors.Shortcuts)
 	tview.Print(screen, util.PackKeyBindingName(config.KeyBinds.Global.VolumeUp, 5),
-		topX+18, y, topX+1, tview.AlignLeft, config.ColorControls)
+		topX+18, y, topX+1, tview.AlignLeft, colors.Shortcuts)
 
 	btnY := y + 1
 	btnX := x + 1
 
 	for i, v := range s.buttons {
-		tview.Print(screen, s.shortCuts[i], btnX, btnY-1, 4, tview.AlignLeft, config.ColorControls)
+		tview.Print(screen, s.shortCuts[i], btnX, btnY-1, 4, tview.AlignLeft, colors.Shortcuts)
 
 		v.SetRect(btnX, btnY, 3, 1)
 		v.Draw(screen)
@@ -254,9 +258,9 @@ func (s *Status) WriteStatus(screen tcell.Screen, x, y int) {
 		tview.Print(screen, effect(s.state.Artist.Name, "b")+" ", x, y, w, tview.AlignLeft, s.detailsMainColor)
 		x += len(s.state.Artist.Name) + 1
 		x = xi + 4
-		tview.Print(screen, s.state.Album.Name+" ", x, y+1, w, tview.AlignLeft, s.detailsDimColor)
+		tview.Print(screen, s.state.Album.Name+" ", x, y+1, w, tview.AlignLeft, s.detailsMainColor)
 		x += len(s.state.Album.Name) + 1
-		tview.Print(screen, fmt.Sprintf("(%d)", s.state.Album.Year), x, y+1, w, tview.AlignLeft, s.detailsDimColor)
+		tview.Print(screen, fmt.Sprintf("(%d)", s.state.Album.Year), x, y+1, w, tview.AlignLeft, s.detailsMainColor)
 	}
 }
 

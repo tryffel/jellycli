@@ -79,11 +79,13 @@ type albumSong struct {
 func (a *albumSong) SetSelected(selected twidgets.Selection) {
 	switch selected {
 	case twidgets.Selected:
-		a.SetBackgroundColor(config.ColorBtnBackgroundSelected)
+		a.SetBackgroundColor(config.Color.BackgroundSelected)
+		a.SetTextColor(config.Color.TextSelected)
 	case twidgets.Blurred:
-		a.SetBackgroundColor(config.ColorBtnBackground)
+		a.SetBackgroundColor(config.Color.TextDisabled)
 	case twidgets.Deselected:
-		a.SetBackgroundColor(config.ColorBackground)
+		a.SetBackgroundColor(config.Color.Background)
+		a.SetTextColor(config.Color.Text)
 	}
 }
 
@@ -171,8 +173,8 @@ func newAlbumSong(s *models.Song, showDiscNum bool) *albumSong {
 		song:        s,
 		showDiscNum: showDiscNum,
 	}
-	song.SetBackgroundColor(config.ColorBackground)
-	song.SetTextColor(config.ColorPrimary)
+	song.SetBackgroundColor(config.Color.Background)
+	song.SetTextColor(config.Color.Text)
 	song.setText()
 	song.SetBorderPadding(0, 0, 1, 1)
 
@@ -216,11 +218,12 @@ func NewAlbumview(playSong func(song *models.Song), playSongs func(songs []*mode
 	a.list.Padding = 1
 	a.list.SetInputCapture(a.listHandler)
 	a.list.SetBorder(true)
+	a.list.SetBorderColor(config.Color.Border)
 
 	a.SetBorder(true)
-	a.SetBorderColor(config.ColorBorder)
-	a.list.SetBackgroundColor(config.ColorBackground)
-	a.Grid.SetBackgroundColor(config.ColorBackground)
+	a.SetBorderColor(config.Color.Border)
+	a.list.SetBackgroundColor(config.Color.Background)
+	a.Grid.SetBackgroundColor(config.Color.Background)
 	a.listFocused = false
 	a.playBtn.SetSelectedFunc(a.playAlbum)
 
@@ -237,14 +240,14 @@ func NewAlbumview(playSong func(song *models.Song), playSongs func(songs []*mode
 	btns := []*button{a.prevBtn, a.playBtn, a.infobtn}
 	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.infobtn, a.list}
 	for _, btn := range btns {
-		btn.SetLabelColor(config.ColorBtnLabel)
-		btn.SetLabelColorActivated(config.ColorBtnLabelSelected)
-		btn.SetBackgroundColor(config.ColorBtnBackground)
-		btn.SetBackgroundColorActivated(config.ColorBtnBackgroundSelected)
+		btn.SetLabelColor(config.Color.ButtonLabel)
+		btn.SetLabelColorActivated(config.Color.ButtonLabelSelected)
+		btn.SetBackgroundColor(config.Color.ButtonBackground)
+		btn.SetBackgroundColorActivated(config.Color.ButtonBackgroundSelected)
 	}
 	a.Banner.Selectable = selectables
-	a.description.SetBackgroundColor(config.ColorBackground)
-	a.description.SetTextColor(config.ColorPrimary)
+	a.description.SetBackgroundColor(config.Color.Background)
+	a.description.SetTextColor(config.Color.Text)
 	return a
 }
 

@@ -24,7 +24,7 @@ import (
 
 const (
 	AppName = "Jellycli"
-	Version = "0.0.1"
+	Version = "0.1.0"
 
 	LogLevel = logrus.WarnLevel
 )

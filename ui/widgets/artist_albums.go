@@ -189,7 +189,6 @@ func NewArtistView(selectAlbum func(album *models.Album)) *ArtistView {
 	a.SetBorderColor(config.ColorBorder)
 	a.SetBackgroundColor(config.ColorBackground)
 	a.list.SetBackgroundColor(config.ColorBackground)
-	a.list.SetInputCapture(a.btnHandler)
 	a.list.SetBorder(true)
 	a.SetBorderColor(config.ColorBorder)
 	a.list.SetBackgroundColor(config.ColorBackground)
@@ -201,7 +200,6 @@ func NewArtistView(selectAlbum func(album *models.Album)) *ArtistView {
 		v.SetLabelColor(config.ColorBtnLabel)
 		v.SetBackgroundColorActivated(config.ColorBtnBackgroundSelected)
 		v.SetLabelColorActivated(config.ColorBtnLabelSelected)
-		v.SetInputCapture(a.btnHandler)
 	}
 
 	a.Banner.Selectable = selectables
@@ -235,24 +233,4 @@ func (a *ArtistView) selectAlbum(index int) {
 		album := a.albumCovers[index]
 		a.selectFunc(album.album)
 	}
-}
-
-// map other keys to tab to enable navigation between buttons without using tab
-func (a *ArtistView) btnHandler(key *tcell.EventKey) *tcell.EventKey {
-	switch key.Key() {
-	case tcell.KeyCtrlJ, tcell.KeyDown:
-		return tcell.NewEventKey(tcell.KeyTAB, ' ', tcell.ModNone)
-	case tcell.KeyCtrlK, tcell.KeyUp:
-		return tcell.NewEventKey(tcell.KeyBacktab, ' ', tcell.ModNone)
-	default:
-		return key
-	}
-}
-
-func (a *ArtistView) listHandler(key *tcell.EventKey) *tcell.EventKey {
-	btn := a.btnHandler(key)
-	if btn != key {
-		return btn
-	}
-	return key
 }

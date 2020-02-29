@@ -143,10 +143,10 @@ func (h *Help) shortcutsPage() string {
 	return `[yellow]Movement[-]:
 * Up/Down: Key up / down
 * VIM-like keys: 
-	* Up / Down: J / K, move between buttons an lists with Ctrl-K & Ctrl-J
+	* Up / Down: J / K, 
 	* Top / Bottom of list: g / G 
-	* List Up / Down: Ctrl+F / Ctrl+B
-* Switch panels: Tab
+	* Page Up / Down: Ctrl+F / Ctrl+B
+* Switch between panels: Tab
 
 [yellow]Forms[-]:
 * Tab / Shift-Tab moves between form fields

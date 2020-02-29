@@ -32,7 +32,23 @@ type button struct {
 }
 
 func (b *button) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-	return b.Button.InputHandler()
+	return func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+		override := event
+		key := event.Key()
+		r := event.Rune()
+
+		if key == tcell.KeyTAB || key == tcell.KeyDown || r == 'j' {
+			override = tcell.NewEventKey(tcell.KeyTAB, 'j', tcell.ModNone)
+		} else if key == tcell.KeyUp || r == 'k' {
+			override = tcell.NewEventKey(tcell.KeyBacktab, 'k', tcell.ModShift)
+		}
+
+		if override == event {
+			b.Button.InputHandler()(event, setFocus)
+		} else {
+			b.Button.InputHandler()(override, setFocus)
+		}
+	}
 }
 
 func (b *button) Focus(delegate func(p tview.Primitive)) {
@@ -225,7 +241,6 @@ func NewAlbumview(playSong func(song *models.Song), playSongs func(songs []*mode
 		btn.SetLabelColorActivated(config.ColorBtnLabelSelected)
 		btn.SetBackgroundColor(config.ColorBtnBackground)
 		btn.SetBackgroundColorActivated(config.ColorBtnBackgroundSelected)
-		btn.SetInputCapture(a.btnHandler)
 	}
 	a.Banner.Selectable = selectables
 	a.description.SetBackgroundColor(config.ColorBackground)
@@ -317,23 +332,7 @@ func (a *AlbumView) playAlbum() {
 	}
 }
 
-// map other keys to tab to enable navigation between buttons without using tab
-func (a *AlbumView) btnHandler(key *tcell.EventKey) *tcell.EventKey {
-	switch key.Key() {
-	case tcell.KeyCtrlJ, tcell.KeyDown:
-		return tcell.NewEventKey(tcell.KeyTAB, ' ', tcell.ModNone)
-	case tcell.KeyCtrlK, tcell.KeyUp:
-		return tcell.NewEventKey(tcell.KeyBacktab, ' ', tcell.ModNone)
-	default:
-		return key
-	}
-}
-
 func (a *AlbumView) listHandler(key *tcell.EventKey) *tcell.EventKey {
-	btn := a.btnHandler(key)
-	if btn != key {
-		return btn
-	}
 	if key.Key() == tcell.KeyEnter {
 		index := a.list.GetSelectedIndex()
 		a.playSong(index)

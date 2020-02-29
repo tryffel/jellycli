@@ -1,11 +1,12 @@
 # Jellycli
 
-Terminal client for Jellyfin, mostly for music at the moment. This is very much work-in-progress.
+Terminal client for Jellyfin, mostly for music at the moment.
 
 ![Screenshot](screenshot.png)
 
 ## Features
 * Play songs
+* Play albums
 * Add songs to queue
 * Control (and view) play state through Dbus integration
 * Control from other clients through websocket. Currently implemented:

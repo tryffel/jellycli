@@ -325,7 +325,7 @@ func (a *Application) initApplication() error {
 }
 
 func setLogging() *os.File {
-	logrus.SetLevel(logrus.DebugLevel)
+	logrus.SetLevel(config.LogLevel)
 	format := &prefixed.TextFormatter{
 		ForceColors:      false,
 		DisableColors:    true,

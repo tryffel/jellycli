@@ -18,6 +18,7 @@ package config
 
 import (
 	"github.com/rivo/tview"
+	"github.com/sirupsen/logrus"
 	"time"
 )
 
@@ -25,6 +26,11 @@ const (
 	AppName = "Jellycli"
 	Version = "0.0.1"
 
+	LogLevel = logrus.WarnLevel
+)
+
+// audio configuration
+const (
 	AudioSamplingRate = 44100
 	AudioBufferPeriod = time.Millisecond * 50
 

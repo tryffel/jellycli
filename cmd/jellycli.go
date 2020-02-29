@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
+	"io"
 	"os"
 	"os/signal"
 	"strconv"
@@ -73,6 +74,11 @@ func NewApplication() (*Application, error) {
 	a := &Application{}
 
 	a.logfile = setLogging()
+
+	// write to both log file and stdout for startup, in case there are any errors that prevent gui
+	writer := io.MultiWriter(a.logfile, os.Stdout)
+	logrus.SetOutput(writer)
+
 	err = a.initConfig()
 	if err != nil {
 		return a, err
@@ -120,6 +126,8 @@ func (a *Application) Start() error {
 			return fmt.Errorf("failed to start tasks: %v", err)
 		}
 	}
+
+	logrus.SetOutput(a.logfile)
 	return a.gui.Start()
 }
 

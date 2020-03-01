@@ -31,7 +31,8 @@ func ReadUserInput(name string, mask bool) (string, error) {
 	var val string
 	var err error
 	if mask {
-		raw, err := terminal.ReadPassword(syscall.Stdin)
+		// needs cast for windows
+		raw, err := terminal.ReadPassword(int(syscall.Stdin))
 		if err != nil {
 			return "", fmt.Errorf("failed to read user input: %v", err)
 		}

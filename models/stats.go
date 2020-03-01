@@ -18,15 +18,21 @@ package models
 
 import "fmt"
 
-//Stats includes some statistics about application
+// Stats are application-wide statistics and usage info
 type Stats struct {
-	Heap          int
-	CacheObjects  int
-	ServerName    string
+	// Heap describes memory allocation in bytes
+	Heap int
+	// CacheObjects tells how many items are in cache at the moment
+	CacheObjects int
+	// ServerName is jellyfin server name
+	ServerName string
+	// ServerVersion server version
 	ServerVersion string
-	WebSocket     bool
+	// WebSocket boolean if websocket is supported and connected
+	WebSocket bool
 }
 
+// HeapString returns heap usage in human-readable format
 func (s *Stats) HeapString() string {
 	bytes := s.Heap
 	if bytes < 1024 {

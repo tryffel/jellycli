@@ -16,6 +16,7 @@
 
 package models
 
+// View is a jellyfin-collection
 type View struct {
 	Name string
 	Id   Id

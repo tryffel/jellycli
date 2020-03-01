@@ -16,14 +16,20 @@
 
 package models
 
+// Song always belongs to album (even if single) and has artist.
+// There might be multiple artists.
 type Song struct {
-	Id          Id
-	Name        string
-	Duration    int
-	Index       int
-	Album       Id
-	DiscNumber  int
-	Artists     []IdName
+	// Id as unique identifier for song
+	Id       Id
+	Name     string
+	Duration int
+	Index    int
+	Album    Id
+	// DiscNumber tells which disc song is part of
+	DiscNumber int
+	// Artists are all artist taking part in song
+	Artists []IdName
+	// AlbumArtist is primary artist
 	AlbumArtist Id
 }
 

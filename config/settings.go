@@ -53,6 +53,9 @@ const (
 	LatestMusicCount = "50"
 )
 
+// LogFile is log file location
+var LogFile string
+
 var GridBordersShow = true
 var GridBordersColor = Color.Border
 

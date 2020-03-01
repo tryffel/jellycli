@@ -23,7 +23,9 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"path"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"tryffel.net/go/jellycli/api"
@@ -66,6 +68,7 @@ type Application struct {
 	mpris       *mpris2.MediaController
 	mprisPlayer *mpris2.Player
 	logfile     *os.File
+	logFileName string
 }
 
 //NewApplication instantiates new player
@@ -349,14 +352,17 @@ func setLogging() *os.File {
 		Once:             sync.Once{},
 	}
 	logrus.SetFormatter(format)
-	file, err := os.OpenFile("jellycli.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.FileMode(0760))
+	dir := os.TempDir()
+	file := path.Join(dir, fmt.Sprintf("%s.log", strings.ToLower(config.AppName)))
+	fd, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.FileMode(0760))
 	if err != nil {
-		logrus.Error("failed to open log file: ", err.Error())
+		logrus.Error("failed to open log fd: ", err.Error())
 		return nil
 	}
 
-	logrus.SetOutput(file)
-	return file
+	config.LogFile = file
+	logrus.SetOutput(fd)
+	return fd
 }
 
 func catchSignals() chan os.Signal {

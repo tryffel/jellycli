@@ -23,6 +23,7 @@ import (
 	"sync"
 	"time"
 	"tryffel.net/go/jellycli/api"
+	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
 	"tryffel.net/go/jellycli/player"
@@ -124,6 +125,7 @@ func (c *Content) GetStatistics() models.Stats {
 		ServerName:    name,
 		ServerVersion: version,
 		WebSocket:     c.api.WebSocketEnabled(),
+		LogFile:       config.LogFile,
 	}
 
 	return stats

@@ -30,6 +30,8 @@ type Stats struct {
 	ServerVersion string
 	// WebSocket boolean if websocket is supported and connected
 	WebSocket bool
+	//LogFile contains log file location
+	LogFile string
 }
 
 // HeapString returns heap usage in human-readable format

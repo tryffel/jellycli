@@ -175,8 +175,9 @@ func (h *Help) statsPage() string {
 	text := "[yellow]Statistics[-]\n"
 
 	text += fmt.Sprintf("Server Name: %s\nServer Version: %s\nCache items: %d\nMemory allocated: %s\n"+
-		"Websocket enabled: %t",
-		h.stats.ServerName, h.stats.ServerVersion, h.stats.CacheObjects, h.stats.HeapString(), h.stats.WebSocket)
+		"Websocket enabled: %t\nLog file: %s",
+		h.stats.ServerName, h.stats.ServerVersion, h.stats.CacheObjects, h.stats.HeapString(), h.stats.WebSocket,
+		h.stats.LogFile)
 	return text
 }
 

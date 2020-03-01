@@ -15,11 +15,21 @@ Terminal client for Jellyfin, mostly for music at the moment.
     * Next track
 
 ## Building:
-Assuming go installed:
+**You will need Go 1.13 installed and configured**
+
+Download package
 ```
+go get -u tryffel.net/go/jellycli
+```
+If you get output 'no go files in ...', run:
+```
+go get -u tryffel.net/go/jellycli
 go get -u tryffel.net/go/jellycli/cmd
-# go to /cmd
-go run .
+```
+Build & run
+```
+go build -o jellycli tryffel.net/go/jellycli/cmd
+./jellycli
 ```
 
 On first time application asks for Jellyfin host, username, password and default collection for music. 

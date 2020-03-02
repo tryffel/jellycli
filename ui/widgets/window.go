@@ -86,7 +86,6 @@ func NewWindow(mc interfaces.MediaController) Window {
 	w.history = modal.NewQueue(modal.QueueModeHistory)
 	w.history.SetDoneFunc(w.wrapCloseModal(w.history))
 
-	w.mediaController.SetItemsCallback(w.itemsCb)
 	w.mediaController.AddStatusCallback(w.statusCb)
 
 	navBarLabels := []string{"Help", "Queue", "History"}
@@ -204,11 +203,6 @@ func (w *Window) mediaCtrl(event *tcell.EventKey) bool {
 	return true
 }
 
-// Open view
-func (w *Window) openViewFunc(view interfaces.View) {
-	go w.mediaController.GetView(view)
-}
-
 func (w *Window) navBarCtrl(key tcell.Key) bool {
 	navBar := config.KeyBinds.NavigationBar
 	switch key {
@@ -316,11 +310,6 @@ func (w *Window) showModal(modal modal.Modal, height, width uint, lockSize bool)
 
 func (w *Window) statusCb(state interfaces.PlayingState) {
 	w.status.UpdateState(state, nil)
-	w.app.QueueUpdateDraw(func() {})
-}
-
-func (w *Window) itemsCb(items []models.Item) {
-	//w.browser.setData(items)
 	w.app.QueueUpdateDraw(func() {})
 }
 

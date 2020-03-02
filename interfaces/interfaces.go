@@ -22,34 +22,9 @@ import (
 
 //MusicController gathers all necessary interfaces that can control media and queue plus query item metadata
 type MediaController interface {
-	ItemController
 	QueueController
 	PlaybackController
 	MediaManager
-}
-
-//ItemController retrieves children and returns them with ItemsCallback
-//Manages item metadata and not the files themselves.
-// If itemsCallback is not set, no results will be retrieved.
-type ItemController interface {
-	//GetItem gets item with given id. If none found or if errors, return nil
-	GetItem(id models.Id, itemType models.ItemType)
-
-	//GetItems get multiple items for given ids.
-	GetItems(ids []models.Id, itemType models.ItemType)
-
-	//GetChildren returns children for given parent id. If there are none, returns nil
-	GetChildren(parent models.Id, parentType models.ItemType)
-	//GetParent returns parent for child id. If there is no parent, return nil
-	GetParent(child models.Id, childType models.ItemType)
-	//SetItemsCallback sets callback that gets called when items are retrieved
-	SetItemsCallback(func([]models.Item))
-	//RemoveItemsCallback removes items callback if there's any
-	RemoveItemsCallback()
-	//GetDefaultItems()
-
-	//GetView shows one of predefined views
-	GetView(view View)
 }
 
 //QueueController controls queue and history

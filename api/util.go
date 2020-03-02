@@ -194,7 +194,3 @@ func (a *Api) ReportCapabilities() error {
 	resp.Close()
 	return nil
 }
-
-func (a *Api) WebSocketEnabled() bool {
-	return a.socket != nil
-}

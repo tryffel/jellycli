@@ -33,6 +33,15 @@ import (
 	"tryffel.net/go/jellycli/task"
 )
 
+type socketState int
+
+const (
+	socketConnected socketState = iota
+	socketDisconnected
+	socketReConnecting
+	socketAwaitsReconnecting
+)
+
 type Api struct {
 	task.Task
 	cache     *Cache
@@ -48,17 +57,16 @@ type Api struct {
 
 	controller interfaces.MediaController
 
-	socketLock sync.Mutex
-	socket     *websocket.Conn
-	socketChan chan interface{}
+	socketLock  sync.RWMutex
+	socket      *websocket.Conn
+	socketState socketState
 }
 
 func NewApi(host string) (*Api, error) {
 	a := &Api{
-		host:       host,
-		token:      "",
-		client:     &http.Client{},
-		socketChan: make(chan interface{}),
+		host:   host,
+		token:  "",
+		client: &http.Client{},
 	}
 
 	id, err := machineid.ProtectedID(config.AppName)
@@ -172,19 +180,63 @@ func (a *Api) loop() {
 
 	pingTicker := time.NewTicker(pingPeriod)
 
+	// how often to check socket state
+	socketTimer := time.NewTimer(time.Second * 2)
+	// backoff for reconnecting socket
+	socketBackOff := time.Second
+
 	go a.readMessage()
 	for true {
 		select {
 		case <-a.StopChan():
 			break
-		case _ = <-a.socketChan:
 		case <-pingTicker.C:
 			logrus.Tracef("Websocket send ping")
 			timeout := time.Now().Add(time.Second * 15)
 			a.socketLock.Lock()
-			a.socket.SetWriteDeadline(timeout)
-			a.socket.WriteControl(websocket.PingMessage, []byte{}, timeout)
+			if a.socketState == socketConnected {
+				err := a.socket.SetWriteDeadline(timeout)
+				if err != nil {
+					logrus.Errorf("set socket write deadline: %v", err)
+					a.handleSocketError(err)
+				}
+				err = a.socket.WriteControl(websocket.PingMessage, []byte{}, timeout)
+				if err != nil {
+					logrus.Errorf("send ping to socket: %v", err)
+					a.handleSocketError(err)
+				}
+			}
 			a.socketLock.Unlock()
+		// keep websocket connected if possible
+		case <-socketTimer.C:
+			a.socketLock.RLock()
+			state := a.socketState
+			a.socketLock.RUnlock()
+			if state == socketConnected {
+				// no worries
+				socketTimer.Reset(time.Second * 2)
+				socketBackOff = time.Second * 2
+			} else if state == socketReConnecting {
+				// await
+				socketTimer.Reset(time.Second)
+				logrus.Debug("websocket reconnect ongoing")
+			} else if state == socketAwaitsReconnecting || state == socketDisconnected {
+				// start reconnection
+
+				ok := a.reconnectSocket()
+				if ok {
+					socketTimer.Reset(time.Second)
+					socketBackOff = 0
+					go a.readMessage()
+				} else {
+					socketBackOff *= 2
+					if socketBackOff > time.Second*30 {
+						socketBackOff = time.Second * 30
+					}
+					socketTimer.Reset(socketBackOff)
+					logrus.Debugf("websocket reconnection failed, retry after %s", socketBackOff.String())
+				}
+			}
 		}
 	}
 

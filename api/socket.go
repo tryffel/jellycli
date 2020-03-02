@@ -18,17 +18,19 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"net/url"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
 const (
-	pongTimeout = 60 * time.Second
+	pongTimeout = 10 * time.Second
 	pingPeriod  = (pongTimeout * 9) / 10
 )
 
@@ -38,19 +40,32 @@ func (a *Api) connectSocket() error {
 	}
 	u, err := url.Parse(a.host)
 	host := u.Host + u.Path
-	socket, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("wss://%s/socket?api_key=%s&deviceId=%s", host, a.token, a.DeviceId), nil)
+	dialer := websocket.Dialer{
+		Proxy:            nil,
+		HandshakeTimeout: time.Second * 10,
+	}
+	logrus.Debug("connecting websocket to ", host)
+	socket, _, err := dialer.Dial(
+		fmt.Sprintf("wss://%s/socket?api_key=%s&deviceId=%s", host, a.token, a.DeviceId), nil)
 	if err != nil {
+		a.socketState = socketDisconnected
 		return fmt.Errorf("websocket connection failed: %v", err)
 	}
-
-	logrus.Infof("Websocket ok")
+	a.socketLock.Lock()
+	defer a.socketLock.Unlock()
+	logrus.Debugf("websocket connected")
 	a.socket = socket
 
-	a.socket.SetReadDeadline(time.Now().Add(pongTimeout))
+	err = a.socket.SetReadDeadline(time.Now().Add(pongTimeout))
+	if err != nil {
+		logrus.Errorf("set socket read deadline: %v", err)
+	}
 	a.socket.SetPongHandler(func(string) error {
 		logrus.Trace("Websocket received pong")
 		return a.socket.SetReadDeadline(time.Now().Add(pongTimeout))
 	})
+
+	a.socketState = socketConnected
 	return nil
 }
 
@@ -61,19 +76,19 @@ func (a *Api) handleSocketOutbount(msg interface{}) error {
 	return a.socket.WriteJSON(msg)
 }
 
-// read next message from socket in blocking mode
+// read next message from socket in blocking mode. Messages are read as long as socket connection is ok
 func (a *Api) readMessage() {
-	if a.socket != nil {
+	if a.WebsocketOk() {
 		msgType, buff, err := a.socket.ReadMessage()
 		if err != nil {
-			logrus.Errorf("read websocket message: %v", err)
+			a.handleSocketError(err)
 		}
 		if msgType == websocket.TextMessage {
 			err = a.parseInboudMessage(&buff)
+			a.handleSocketError(err)
 		}
 		go a.readMessage()
 	}
-
 }
 
 type webSocketInboudMsg struct {
@@ -141,4 +156,69 @@ func (a *Api) pushCommand(cmd string) error {
 		logrus.Info("Unknown websocket playstate command: ", cmd)
 	}
 	return nil
+}
+
+// handle errors and try reconnecting
+func (a *Api) handleSocketError(err error) {
+	if err == nil {
+		return
+	}
+
+	a.socketLock.Lock()
+	defer a.socketLock.Unlock()
+	if a.socketState == socketReConnecting {
+		return
+	}
+
+	awaitReconnect := func(reason string) {
+		if a.socketState == socketConnected {
+			a.socketState = socketAwaitsReconnecting
+			logrus.Warning("Websocket closed: ", reason)
+		}
+	}
+
+	if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
+		awaitReconnect("going away")
+	} else if websocket.IsUnexpectedCloseError(err, websocket.CloseAbnormalClosure) {
+		awaitReconnect("abnormal closure")
+	} else if errors.Is(err, syscall.ECONNABORTED) {
+		// happens when disconnected from network, e.g. computer on sleep
+		awaitReconnect("connection aborted")
+	} else if strings.Contains(err.Error(), "i/o timeout") {
+		// happens when disconnected from network, e.g. computer on sleep
+		awaitReconnect("io timeout")
+	} else {
+		logrus.Errorf("unknown socket err: %v", err)
+	}
+}
+
+// WebsocketOk returns true if websocket connection is ok
+func (a *Api) WebsocketOk() bool {
+	a.socketLock.RLock()
+	defer a.socketLock.RUnlock()
+	return a.socketState == socketConnected
+}
+
+// try reconnecting socket. Return true if success
+func (a *Api) reconnectSocket() bool {
+	a.socketLock.Lock()
+	a.socketState = socketReConnecting
+	var err error
+	if a.socket != nil {
+		err = a.socket.Close()
+		if err != nil {
+			logrus.Debugf("reconnect socket: close socket: %v", err)
+		} else {
+			a.socket = nil
+		}
+	}
+
+	a.socketLock.Unlock()
+	err = a.connectSocket()
+	if err != nil {
+		logrus.Debugf("reconnect socket: %v", err)
+		return false
+	}
+	logrus.Warning("Websocket reconnected")
+	return true
 }

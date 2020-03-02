@@ -92,7 +92,7 @@ func NewQueue() *Queue {
 func (q *Queue) AddSong(song *models.Song, index int) {
 	var s *albumSong
 	if index == -1 {
-		s := newAlbumSong(song, false)
+		s := newAlbumSong(song, false, len(q.songs))
 		q.songs = append(q.songs, s)
 	} else if index >= 0 || index < len(q.songs)-2 {
 	}
@@ -105,7 +105,7 @@ func (q *Queue) SetSongs(songs []*models.Song) {
 	q.songs = make([]*albumSong, len(songs))
 	items := make([]twidgets.ListItem, len(songs))
 	for i, v := range songs {
-		s := newAlbumSong(v, false)
+		s := newAlbumSong(v, false, i+1)
 		q.songs[i] = s
 		items[i] = s
 	}

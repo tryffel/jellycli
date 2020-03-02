@@ -74,6 +74,7 @@ type albumSong struct {
 	*tview.TextView
 	song        *models.Song
 	showDiscNum bool
+	index       int
 }
 
 func (a *albumSong) SetSelected(selected twidgets.Selection) {
@@ -108,9 +109,9 @@ func (a *albumSong) setText() {
 	dL := len(duration)
 	var name string
 	if a.showDiscNum {
-		name = fmt.Sprintf("%d %d. %s", a.song.DiscNumber, a.song.Index, a.song.Name)
+		name = fmt.Sprintf("%d %d. %s", a.index, a.song.Index, a.song.Name)
 	} else {
-		name = fmt.Sprintf("%d. %s", a.song.Index, a.song.Name)
+		name = fmt.Sprintf("%d. %s", a.index, a.song.Name)
 	}
 	nameL := uniseg.GraphemeClusterCount(name)
 
@@ -167,12 +168,21 @@ func (a *albumSong) setText() {
 	a.SetText(text)
 }
 
-func newAlbumSong(s *models.Song, showDiscNum bool) *albumSong {
+// showDiscNum: whether to print disc number.
+// overrideIndex: set -1 to use song index, else overrides index
+func newAlbumSong(s *models.Song, showDiscNum bool, overrideIndex int) *albumSong {
 	song := &albumSong{
 		TextView:    tview.NewTextView(),
 		song:        s,
 		showDiscNum: showDiscNum,
 	}
+
+	if overrideIndex == -1 {
+		song.index = s.Index
+	} else {
+		song.index = overrideIndex
+	}
+
 	song.SetBackgroundColor(config.Color.Background)
 	song.SetTextColor(config.Color.Text)
 	song.setText()
@@ -287,7 +297,7 @@ func (a *AlbumView) SetAlbum(album *models.Album, songs []*models.Song) {
 	album.DiscCount = len(discs)
 	showDiscNum := album.DiscCount != 1
 	for i, v := range songs {
-		a.songs[i] = newAlbumSong(v, showDiscNum)
+		a.songs[i] = newAlbumSong(v, showDiscNum, -1)
 		items[i] = a.songs[i]
 	}
 

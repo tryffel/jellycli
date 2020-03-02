@@ -100,27 +100,15 @@ func (q *Queue) AddSong(song *models.Song, index int) {
 }
 
 // SetSongs clears current songs and sets new ones
-func (q *Queue) SetSongs(songInfo []*models.SongInfo) {
+func (q *Queue) SetSongs(songs []*models.Song) {
 	q.Clear()
-	songs := make([]*models.Song, len(songInfo))
-	q.songs = make([]*albumSong, len(songInfo))
-	items := make([]twidgets.ListItem, len(songInfo))
-	for i, v := range songInfo {
-		songs[i] = &models.Song{
-			Id:          v.Id,
-			Name:        v.Name,
-			Duration:    v.Duration,
-			Album:       v.AlbumId,
-			Artists:     nil,
-			AlbumArtist: v.ArtistId,
-			Index:       i + 1,
-		}
-
-		s := newAlbumSong(songs[i], false)
+	q.songs = make([]*albumSong, len(songs))
+	items := make([]twidgets.ListItem, len(songs))
+	for i, v := range songs {
+		s := newAlbumSong(v, false)
 		q.songs[i] = s
 		items[i] = s
 	}
-
 	q.list.AddItems(items...)
 	q.printDescription()
 }

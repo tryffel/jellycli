@@ -80,6 +80,11 @@ func NewWindow(mc interfaces.MediaController) Window {
 	w.help = modal.NewHelp(w.closeHelp)
 	w.help.SetDoneFunc(w.wrapCloseModal(w.help))
 	w.queue = NewQueue()
+	w.mediaController.SetQueueChangedCallback(func(songs []*models.Song) {
+		w.app.QueueUpdate(func() {
+			w.queue.SetSongs(songs)
+		})
+	})
 
 	w.layout.Grid().SetBackgroundColor(config.Color.Background)
 
@@ -214,8 +219,6 @@ func (w *Window) navBarCtrl(key tcell.Key) bool {
 		w.help.SetStats(stats)
 		w.showModal(w.help, 25, 50, true)
 	case navBar.Queue:
-		songs := w.mediaController.GetQueue()
-		w.queue.SetSongs(songs)
 		w.setViewWidget(w.queue)
 	case navBar.History:
 		w.showModal(w.history, 20, 60, true)

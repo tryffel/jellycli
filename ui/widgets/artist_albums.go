@@ -193,6 +193,7 @@ func NewArtistView(selectAlbum func(album *models.Album)) *ArtistView {
 	a.list.SetBackgroundColor(config.Color.Background)
 	a.list.SetBorder(true)
 	a.list.SetBorderColor(config.Color.Border)
+	a.list.Grid.SetColumns(-1, 5)
 	a.SetBorderColor(config.Color.Border)
 
 	btns := []*button{a.prevBtn, a.playBtn, a.similarBtn}
@@ -213,8 +214,10 @@ func NewArtistView(selectAlbum func(album *models.Album)) *ArtistView {
 	a.name.SetBackgroundColor(config.Color.Background)
 	a.name.SetTextColor(config.Color.Text)
 
+	a.list.Grid.SetColumns(1, -1)
+
 	a.Grid.AddItem(a.prevBtn, 0, 0, 1, 1, 1, 5, false)
-	a.Grid.AddItem(a.name, 0, 2, 2, 5, 1, 10, false)
+	a.Grid.AddItem(a.name, 0, 2, 2, 6, 1, 10, false)
 	a.Grid.AddItem(a.playBtn, 3, 2, 1, 1, 1, 10, false)
 	a.Grid.AddItem(a.similarBtn, 3, 4, 1, 1, 1, 10, false)
 	a.Grid.AddItem(a.list, 4, 0, 1, 8, 6, 20, false)

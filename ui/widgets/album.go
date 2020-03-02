@@ -229,6 +229,7 @@ func NewAlbumview(playSong func(song *models.Song), playSongs func(songs []*mode
 	a.list.SetInputCapture(a.listHandler)
 	a.list.SetBorder(true)
 	a.list.SetBorderColor(config.Color.Border)
+	a.list.Grid.SetColumns(1, -1)
 
 	a.SetBorder(true)
 	a.SetBorderColor(config.Color.Border)
@@ -242,7 +243,7 @@ func NewAlbumview(playSong func(song *models.Song), playSongs func(songs []*mode
 	a.Banner.Grid.SetMinSize(1, 6)
 
 	a.Banner.Grid.AddItem(a.prevBtn, 0, 0, 1, 1, 1, 5, false)
-	a.Banner.Grid.AddItem(a.description, 0, 2, 2, 5, 1, 10, false)
+	a.Banner.Grid.AddItem(a.description, 0, 2, 2, 6, 1, 10, false)
 	a.Banner.Grid.AddItem(a.playBtn, 3, 2, 1, 1, 1, 10, true)
 	a.Banner.Grid.AddItem(a.infobtn, 3, 4, 1, 1, 1, 10, false)
 	a.Banner.Grid.AddItem(a.list, 4, 0, 1, 8, 4, 10, false)

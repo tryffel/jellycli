@@ -181,5 +181,5 @@ type views struct {
 }
 
 type images struct {
-	Primary string `json:"Primary`
+	Primary string `json:"Primary"`
 }

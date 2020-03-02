@@ -63,7 +63,9 @@ func (a *Api) login(username, password string) error {
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := a.client.Do(req)
-	defer resp.Body.Close()
+	if resp.Body != nil {
+		defer resp.Body.Close()
+	}
 	if err != nil {
 		return fmt.Errorf("failed to login: %v", err)
 	}

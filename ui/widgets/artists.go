@@ -27,6 +27,7 @@ import (
 
 type ArtistList struct {
 	*twidgets.ScrollList
+	*previous
 	selectFunc func(artist *models.Artist)
 	artists    []*ArtistCover
 }
@@ -35,6 +36,7 @@ func NewArtistList(selectFunc func(artist *models.Artist)) *ArtistList {
 	a := &ArtistList{
 		selectFunc: selectFunc,
 		artists:    make([]*ArtistCover, 0),
+		previous:   &previous{},
 	}
 	a.ScrollList = twidgets.NewScrollList(a.selectArtist)
 

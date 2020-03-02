@@ -120,6 +120,7 @@ func printArtists(artists []string, maxWidth int) string {
 //ArtisView as a view that contains
 type ArtistView struct {
 	*twidgets.Banner
+	*previous
 	list        *twidgets.ScrollList
 	listFocused bool
 	selectFunc  func(album *models.Album)
@@ -176,6 +177,7 @@ func (a *ArtistView) SetAlbums(albums []*models.Album) {
 func NewArtistView(selectAlbum func(album *models.Album)) *ArtistView {
 	a := &ArtistView{
 		Banner:     twidgets.NewBanner(),
+		previous:   &previous{},
 		selectFunc: selectAlbum,
 		artist:     &models.Artist{},
 		name:       tview.NewTextView(),
@@ -204,6 +206,8 @@ func NewArtistView(selectAlbum func(album *models.Album)) *ArtistView {
 		v.SetBackgroundColorActivated(config.Color.ButtonBackgroundSelected)
 		v.SetLabelColorActivated(config.Color.ButtonLabelSelected)
 	}
+
+	a.prevBtn.SetSelectedFunc(a.goBack)
 
 	a.Banner.Selectable = selectables
 

@@ -49,7 +49,7 @@ type Window struct {
 	modal      modal.Modal
 
 	mediaController   interfaces.MediaController
-	mediaView         tview.Primitive
+	mediaView         Previous
 	mediaViewSelected bool
 
 	hasModal  bool
@@ -64,8 +64,11 @@ func NewWindow(mc interfaces.MediaController) Window {
 	}
 
 	w.artistList = NewArtistList(w.selectArtist)
+	w.artistList.SetBackCallback(w.goBack)
 	w.artist = NewArtistView(w.selectAlbum)
+	w.artist.SetBackCallback(w.goBack)
 	w.album = NewAlbumview(w.playSong, w.playSongs)
+	w.album.SetBackCallback(w.goBack)
 	w.mediaNav = NewMediaNavigation(w.selectMedia)
 	w.navBar = twidgets.NewNavBar(config.Color.NavBar.ToWidgetsNavBar(), w.navBarHandler)
 
@@ -80,6 +83,7 @@ func NewWindow(mc interfaces.MediaController) Window {
 	w.help = modal.NewHelp(w.closeHelp)
 	w.help.SetDoneFunc(w.wrapCloseModal(w.help))
 	w.queue = NewQueue()
+	w.queue.SetBackCallback(w.goBack)
 	w.mediaController.SetQueueChangedCallback(func(songs []*models.Song) {
 		w.app.QueueUpdate(func() {
 			w.queue.SetSongs(songs)
@@ -128,12 +132,22 @@ func (w *Window) setLayout() {
 	//w.setViewWidget(w.artistList)
 }
 
-func (w *Window) setViewWidget(p tview.Primitive) {
+// go back to previous primitive
+func (w *Window) goBack(p Previous) {
+	w.setViewWidget(p, false)
+}
+
+// set central widget. If updatePrevious, set update previous primitive's last primitive
+func (w *Window) setViewWidget(p Previous, updatePrevious bool) {
+	last := w.mediaView
 	w.lastFocus = w.app.GetFocus()
 	w.layout.Grid().RemoveItem(w.mediaView)
 	w.layout.Grid().AddItem(p, 1, 2, 8, 8, 15, 10, false)
 	w.app.SetFocus(p)
 	w.mediaView = p
+	if updatePrevious {
+		p.SetLast(last)
+	}
 }
 
 func (w *Window) eventHandler(event *tcell.EventKey) *tcell.EventKey {
@@ -219,7 +233,7 @@ func (w *Window) navBarCtrl(key tcell.Key) bool {
 		w.help.SetStats(stats)
 		w.showModal(w.help, 25, 50, true)
 	case navBar.Queue:
-		w.setViewWidget(w.queue)
+		w.setViewWidget(w.queue, true)
 	case navBar.History:
 		w.showModal(w.history, 20, 60, true)
 		items := w.mediaController.GetHistory(100)
@@ -345,7 +359,7 @@ func (w *Window) selectMedia(m MediaSelect) {
 			w.artist.Clear()
 			w.artist.SetArtist(artist)
 			w.artist.SetAlbums(albums)
-			w.setViewWidget(w.artist)
+			w.setViewWidget(w.artist, true)
 		}
 	case MediaFavoriteArtists:
 		if w.mediaView == w.artistList {
@@ -360,7 +374,7 @@ func (w *Window) selectMedia(m MediaSelect) {
 
 			w.mediaNav.SetCount(MediaFavoriteArtists, len(artists))
 			w.artistList.AddArtists(artists)
-			w.setViewWidget(w.artistList)
+			w.setViewWidget(w.artistList, true)
 		}
 	}
 }
@@ -373,7 +387,7 @@ func (w *Window) selectArtist(artist *models.Artist) {
 		artist.AlbumCount = len(albums)
 		w.artist.SetArtist(artist)
 		w.artist.SetAlbums(albums)
-		w.setViewWidget(w.artist)
+		w.setViewWidget(w.artist, true)
 	}
 }
 
@@ -387,7 +401,8 @@ func (w *Window) selectAlbum(album *models.Album) {
 		}
 
 		w.album.SetAlbum(album, songs)
-		w.setViewWidget(w.album)
+		w.album.SetLast(w.mediaView)
+		w.setViewWidget(w.album, true)
 	}
 }
 

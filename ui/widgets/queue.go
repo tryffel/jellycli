@@ -29,6 +29,7 @@ import (
 // Queue shows a list of songs similar to album
 type Queue struct {
 	*twidgets.Banner
+	*previous
 	list        *twidgets.ScrollList
 	songs       []*albumSong
 	listFocused bool
@@ -45,8 +46,9 @@ type Queue struct {
 //NewQueue initializes new album view
 func NewQueue() *Queue {
 	q := &Queue{
-		Banner: twidgets.NewBanner(),
-		list:   twidgets.NewScrollList(nil),
+		Banner:   twidgets.NewBanner(),
+		list:     twidgets.NewScrollList(nil),
+		previous: &previous{},
 
 		description: tview.NewTextView(),
 		prevBtn:     newButton("Back"),
@@ -82,6 +84,8 @@ func NewQueue() *Queue {
 		btn.SetBackgroundColor(config.Color.ButtonBackground)
 		btn.SetBackgroundColorActivated(config.Color.ButtonBackgroundSelected)
 	}
+
+	q.prevBtn.SetSelectedFunc(q.goBack)
 	q.Banner.Selectable = selectables
 	q.description.SetBackgroundColor(config.Color.Background)
 	q.description.SetTextColor(config.Color.Text)

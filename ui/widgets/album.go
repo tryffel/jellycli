@@ -194,6 +194,7 @@ func newAlbumSong(s *models.Song, showDiscNum bool, overrideIndex int) *albumSon
 // AlbumView shows user a header (album name, info, buttons) and list of songs
 type AlbumView struct {
 	*twidgets.Banner
+	*previous
 	list        *twidgets.ScrollList
 	songs       []*albumSong
 	artist      *models.Artist
@@ -214,6 +215,7 @@ type AlbumView struct {
 func NewAlbumview(playSong func(song *models.Song), playSongs func(songs []*models.Song)) *AlbumView {
 	a := &AlbumView{
 		Banner:        twidgets.NewBanner(),
+		previous:      &previous{},
 		list:          twidgets.NewScrollList(nil),
 		playSongFunc:  playSong,
 		playSongsFunc: playSongs,
@@ -256,6 +258,9 @@ func NewAlbumview(playSong func(song *models.Song), playSongs func(songs []*mode
 		btn.SetBackgroundColor(config.Color.ButtonBackground)
 		btn.SetBackgroundColorActivated(config.Color.ButtonBackgroundSelected)
 	}
+
+	a.prevBtn.SetSelectedFunc(a.goBack)
+
 	a.Banner.Selectable = selectables
 	a.description.SetBackgroundColor(config.Color.Background)
 	a.description.SetTextColor(config.Color.Text)

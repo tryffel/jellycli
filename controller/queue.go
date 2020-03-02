@@ -127,6 +127,7 @@ func (q *queue) notifyUpdates() {
 func (q *queue) songComplete() {
 	q.lock.Lock()
 	defer q.lock.Unlock()
+	defer q.notifyUpdates()
 	if len(q.items) == 0 {
 		return
 	}

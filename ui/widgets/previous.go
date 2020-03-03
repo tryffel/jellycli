@@ -49,7 +49,7 @@ func (p *previous) SetBackCallback(cb func(p Previous)) {
 
 // call back callback if it's set
 func (p *previous) goBack() {
-	if p.callback != nil {
+	if p.callback != nil && p.last != nil {
 		p.callback(p.last)
 
 	}

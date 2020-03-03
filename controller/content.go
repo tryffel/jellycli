@@ -175,6 +175,10 @@ func (c *Content) QueueDuration() int {
 	return c.queue.QueueDuration()
 }
 
+func (c *Content) SetHistoryChangedCallback(cb func(songs []*models.Song)) {
+	c.queue.SetHistoryChangedCallback(cb)
+}
+
 func (c *Content) AddSongs(songs []*models.Song) {
 	c.chanItemsAdded <- songs
 }

@@ -37,7 +37,7 @@ type Window struct {
 	mediaNav *MediaNavigation
 	help     *modal.Help
 	queue    *Queue
-	history  *modal.Queue
+	history  *Queue
 
 	artist     *ArtistView
 	album      *AlbumView
@@ -90,10 +90,17 @@ func NewWindow(mc interfaces.MediaController) Window {
 		})
 	})
 
-	w.layout.Grid().SetBackgroundColor(config.Color.Background)
+	w.history = NewQueue()
+	w.history.SetHistoryMode(true)
+	w.history.SetBackCallback(w.goBack)
 
-	w.history = modal.NewQueue(modal.QueueModeHistory)
-	w.history.SetDoneFunc(w.wrapCloseModal(w.history))
+	w.mediaController.SetHistoryChangedCallback(func(songs []*models.Song) {
+		w.app.QueueUpdate(func() {
+			w.history.SetSongs(songs)
+		})
+	})
+
+	w.layout.Grid().SetBackgroundColor(config.Color.Background)
 
 	w.mediaController.AddStatusCallback(w.statusCb)
 
@@ -235,13 +242,12 @@ func (w *Window) navBarCtrl(key tcell.Key) bool {
 	case navBar.Queue:
 		w.setViewWidget(w.queue, true)
 	case navBar.History:
-		w.showModal(w.history, 20, 60, true)
+		w.setViewWidget(w.history, true)
 		items := w.mediaController.GetHistory(100)
 		duration := 0
 		for _, v := range items {
 			duration += v.Duration
 		}
-		w.history.SetData(items, duration)
 	default:
 		return false
 	}

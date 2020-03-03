@@ -26,7 +26,8 @@ import (
 	"tryffel.net/go/twidgets"
 )
 
-// Queue shows a list of songs similar to album
+// Queue shows a list of songs similar to album.
+// A history view is queue with reverse order and some little tweaks.
 type Queue struct {
 	*twidgets.Banner
 	*previous
@@ -41,6 +42,8 @@ type Queue struct {
 	prevBtn     *button
 	clearBtn    *button
 	prevFunc    func()
+
+	historyMode bool
 }
 
 //NewQueue initializes new album view
@@ -92,6 +95,11 @@ func NewQueue() *Queue {
 	return q
 }
 
+func (q *Queue) SetHistoryMode(enabled bool) {
+	q.historyMode = enabled
+
+}
+
 // AddSong adds song to queue. If index is 0, add to beginning, if -1, add to end
 func (q *Queue) AddSong(song *models.Song, index int) {
 	var s *albumSong
@@ -125,15 +133,16 @@ func (q *Queue) Clear() {
 
 func (q *Queue) printDescription() {
 	var text string
-	if len(q.songs) == 0 {
-		text = "Queue"
+	if q.historyMode {
+		text = "History"
 	} else {
-		duration := 0
-		for _, v := range q.songs {
-			duration += v.song.Duration
-		}
-		text = fmt.Sprintf("Queue: %d items\n%s", len(q.songs), util.SecToStringApproximate(duration))
+		text = "Queue"
 	}
+	duration := 0
+	for _, v := range q.songs {
+		duration += v.song.Duration
+	}
+	text += fmt.Sprintf(": %d items\n%s", len(q.songs), util.SecToStringApproximate(duration))
 	q.description.SetText(text)
 }
 

@@ -49,6 +49,9 @@ type QueueController interface {
 	SetQueueChangedCallback(func(content []*models.Song))
 	//RemoveQueueChangedCallback removes queue changed callback
 	RemoveQueueChangedCallback()
+
+	// SetHistoryChangedCallback sets a function that gets called every time history items update
+	SetHistoryChangedCallback(func(songs []*models.Song))
 }
 
 //PlaybackController controls media playback. Current status is sent to StatusCallback, if set.

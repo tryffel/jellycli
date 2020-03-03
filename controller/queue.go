@@ -23,17 +23,18 @@ import (
 )
 
 type queue struct {
-	lock     sync.RWMutex
-	items    []*models.Song
-	history  []*models.Song
-	updateCb func([]*models.Song)
+	lock               sync.RWMutex
+	items              []*models.Song
+	history            []*models.Song
+	queueUpdatedFunc   func([]*models.Song)
+	historyUpdatedFunc func([]*models.Song)
 }
 
 func newQueue() *queue {
 	q := &queue{
-		items:    []*models.Song{},
-		history:  []*models.Song{},
-		updateCb: nil,
+		items:            []*models.Song{},
+		history:          []*models.Song{},
+		queueUpdatedFunc: nil,
 	}
 	return q
 }
@@ -47,7 +48,7 @@ func (q *queue) GetQueue() []*models.Song {
 func (q *queue) ClearQueue() {
 	q.lock.Lock()
 	defer q.lock.Unlock()
-	defer q.notifyUpdates()
+	defer q.notifyQueueUpdated()
 	q.items = []*models.Song{}
 }
 
@@ -64,7 +65,7 @@ func (q *queue) QueueDuration() int {
 func (q *queue) AddSongs(songs []*models.Song) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
-	defer q.notifyUpdates()
+	defer q.notifyQueueUpdated()
 	q.items = append(q.items, songs...)
 	logrus.Debug("Adding songs to queue, current size: ", len(q.items))
 }
@@ -72,7 +73,7 @@ func (q *queue) AddSongs(songs []*models.Song) {
 func (q *queue) Reorder(currentIndex, newIndex int) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
-	defer q.notifyUpdates()
+	defer q.notifyQueueUpdated()
 	//TODO: Fix ordering songs
 	if currentIndex < 0 || newIndex < 0 {
 		return
@@ -110,24 +111,35 @@ func (q *queue) GetHistory(n int) []*models.Song {
 }
 
 func (q *queue) SetQueueChangedCallback(cb func(content []*models.Song)) {
-	q.updateCb = cb
+	q.queueUpdatedFunc = cb
 }
 
 func (q *queue) RemoveQueueChangedCallback() {
-	q.updateCb = nil
+	q.queueUpdatedFunc = nil
 }
 
-func (q *queue) notifyUpdates() {
-	if q.updateCb == nil {
+func (q *queue) SetHistoryChangedCallback(cb func([]*models.Song)) {
+	q.historyUpdatedFunc = cb
+}
+
+func (q *queue) notifyQueueUpdated() {
+	if q.queueUpdatedFunc == nil {
 		return
 	}
-	q.updateCb(q.items)
+	q.queueUpdatedFunc(q.items)
+}
+
+func (q *queue) notifyHistoryUpdated() {
+	if q.historyUpdatedFunc != nil {
+		q.historyUpdatedFunc(q.history)
+	}
 }
 
 func (q *queue) songComplete() {
 	q.lock.Lock()
 	defer q.lock.Unlock()
-	defer q.notifyUpdates()
+	defer q.notifyQueueUpdated()
+	defer q.notifyHistoryUpdated()
 	if len(q.items) == 0 {
 		return
 	}

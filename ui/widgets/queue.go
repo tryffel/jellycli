@@ -63,6 +63,7 @@ func NewQueue() *Queue {
 	q.list.SetInputCapture(q.listHandler)
 	q.list.SetBorder(true)
 	q.list.SetBorderColor(config.Color.Border)
+	q.list.Grid.SetColumns(1, -1)
 
 	q.SetBorder(true)
 	q.SetBorderColor(config.Color.Border)
@@ -92,11 +93,13 @@ func NewQueue() *Queue {
 	q.Banner.Selectable = selectables
 	q.description.SetBackgroundColor(config.Color.Background)
 	q.description.SetTextColor(config.Color.Text)
+	q.printDescription()
 	return q
 }
 
 func (q *Queue) SetHistoryMode(enabled bool) {
 	q.historyMode = enabled
+	q.printDescription()
 
 }
 
@@ -129,6 +132,7 @@ func (q *Queue) SetSongs(songs []*models.Song) {
 func (q *Queue) Clear() {
 	q.list.Clear()
 	q.songs = []*albumSong{}
+	q.printDescription()
 }
 
 func (q *Queue) printDescription() {
@@ -138,11 +142,13 @@ func (q *Queue) printDescription() {
 	} else {
 		text = "Queue"
 	}
-	duration := 0
-	for _, v := range q.songs {
-		duration += v.song.Duration
+	if len(q.songs) > 0 {
+		duration := 0
+		for _, v := range q.songs {
+			duration += v.song.Duration
+		}
+		text += fmt.Sprintf(": %d items\n%s", len(q.songs), util.SecToStringApproximate(duration))
 	}
-	text += fmt.Sprintf(": %d items\n%s", len(q.songs), util.SecToStringApproximate(duration))
 	q.description.SetText(text)
 }
 

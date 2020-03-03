@@ -149,6 +149,7 @@ func (a *albumSong) setText() {
 
 	// print artists if needed
 	if len(a.song.Artists) > 1 {
+		text += "\n"
 		for i, v := range a.song.Artists {
 			if i > 0 {
 				artists += ", "

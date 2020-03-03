@@ -109,7 +109,7 @@ func (a *albumSong) setText() {
 	dL := len(duration)
 	var name string
 	if a.showDiscNum {
-		name = fmt.Sprintf("%d %d. %s", a.index, a.song.Index, a.song.Name)
+		name = fmt.Sprintf("%d %d. %s", a.song.DiscNumber, a.song.Index, a.song.Name)
 	} else {
 		name = fmt.Sprintf("%d. %s", a.index, a.song.Name)
 	}

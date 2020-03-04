@@ -128,15 +128,14 @@ func (a *Api) IsLoggedIn() bool {
 	return a.loggedIn
 }
 
-func (a *Api) ConnectionOk() bool {
+func (a *Api) ConnectionOk() error {
 	name, version, _, err := a.GetServerVersion()
 	if err != nil {
-		logrus.Errorf("No connection to server: %v", err)
-		return false
+		return err
 	}
 
-	logrus.Infof("Connected to %s version %s", name, version)
-	return true
+	logrus.Debugf("Connected to %s version %s", name, version)
+	return nil
 }
 
 func (a *Api) DefaultMusicView() string {

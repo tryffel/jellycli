@@ -200,7 +200,7 @@ func (a *Application) initApi() error {
 	if err != nil {
 		return fmt.Errorf("api init: %v", err)
 	}
-	if !a.api.ConnectionOk() {
+	if err := a.api.ConnectionOk(); err != nil {
 		return fmt.Errorf("no connection to server: %v", err)
 	}
 	return nil

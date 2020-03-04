@@ -42,6 +42,8 @@ type Window struct {
 	artist     *ArtistView
 	album      *AlbumView
 	artistList *ArtistList
+	playlists  *Playlists
+	playlist   *PlaylistView
 
 	gridAxisX  []int
 	gridAxisY  []int
@@ -71,6 +73,10 @@ func NewWindow(mc interfaces.MediaController) Window {
 	w.album.SetBackCallback(w.goBack)
 	w.mediaNav = NewMediaNavigation(w.selectMedia)
 	w.navBar = twidgets.NewNavBar(config.Color.NavBar.ToWidgetsNavBar(), w.navBarHandler)
+
+	w.playlists = NewPlaylists(w.selectPlaylist)
+	w.playlist = NewPlaylistView(w.playSong, w.playSongs)
+	w.playlist.SetBackCallback(w.goBack)
 
 	w.mediaController = mc
 
@@ -382,6 +388,20 @@ func (w *Window) selectMedia(m MediaSelect) {
 			w.artistList.AddArtists(artists)
 			w.setViewWidget(w.artistList, true)
 		}
+	case MediaPlaylists:
+		if w.mediaView == w.artistList {
+			w.app.SetFocus(w.mediaView)
+			return
+		}
+
+		playlists, err := w.mediaController.GetPlaylists()
+		if err != nil {
+			logrus.Errorf("get playlists: %v", err)
+		} else {
+			w.mediaNav.SetCount(MediaPlaylists, len(playlists))
+			w.playlists.SetPlaylists(playlists)
+			w.setViewWidget(w.playlists, true)
+		}
 	}
 }
 
@@ -410,6 +430,17 @@ func (w *Window) selectAlbum(album *models.Album) {
 		w.album.SetLast(w.mediaView)
 		w.setViewWidget(w.album, true)
 	}
+}
+
+func (w *Window) selectPlaylist(playlist *models.Playlist) {
+	err := w.mediaController.GetPlaylistSongs(playlist)
+	if err != nil {
+		logrus.Warningf("did not get playlist songs: %v", err)
+		return
+	}
+
+	w.playlist.SetPlaylist(playlist)
+	w.setViewWidget(w.playlist, true)
 }
 
 func (w *Window) playSong(song *models.Song) {

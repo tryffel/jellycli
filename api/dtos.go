@@ -154,13 +154,27 @@ type collection struct {
 	CollectionType string `json:"CollectionType"`
 }
 
+type playlists struct {
+	Playlists []playlist `json:"Items"`
+}
+
 type playlist struct {
 	Name     string   `json:"Name"`
 	Id       string   `json:"Id"`
 	Genres   []string `json:"Genres"`
 	Duration int      `json:"RunTimeTicks"`
 	Type     string   `json:"Type"`
-	Songs    int      `json:"ChildCound"`
+	Songs    int      `json:"ChildCount"`
+}
+
+func (p *playlist) toPlaylist() *models.Playlist {
+	return &models.Playlist{
+		Id:        models.Id(p.Id),
+		Name:      p.Name,
+		Duration:  p.Duration / ticksToSecond,
+		Songs:     nil,
+		SongCount: p.Songs,
+	}
 }
 
 type view struct {

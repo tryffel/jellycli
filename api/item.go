@@ -310,3 +310,63 @@ func (a *Api) GetFavoriteArtists() ([]*models.Artist, error) {
 	}
 	return artists, nil
 }
+
+// GetPlaylists retrieves all playlists. Each playlists song count is known, but songs must be
+// retrieved separately
+func (a *Api) GetPlaylists() ([]*models.Playlist, error) {
+	params := *a.defaultParams()
+	params["api_key"] = a.token
+	params["parentId"] = a.musicView
+	params["IncludeItemTypes"] = "Playlist"
+	params["Recursive"] = "true"
+	params["Fields"] = "ChildCount"
+
+	data := make([]*models.Playlist, 0)
+
+	resp, err := a.get(fmt.Sprintf("/Users/%s/Items", a.userId), &params)
+	if resp != nil {
+		defer resp.Close()
+	}
+
+	dto := playlists{}
+	err = json.NewDecoder(resp).Decode(&dto)
+
+	if err != nil {
+		return data, fmt.Errorf("parse playlists: %v", err)
+	}
+
+	data = make([]*models.Playlist, len(dto.Playlists))
+	for i, v := range dto.Playlists {
+		data[i] = v.toPlaylist()
+	}
+
+	return data, nil
+}
+
+// GetPlaylistSongs returns songs for playlist id
+func (a *Api) GetPlaylistSongs(playlist models.Id) ([]*models.Song, error) {
+	params := *a.defaultParams()
+	params["api_key"] = a.token
+	params["ParentId"] = playlist.String()
+
+	resp, err := a.get(fmt.Sprintf("/Users/%s/Items", a.userId), &params)
+	if resp != nil {
+		defer resp.Close()
+	}
+	if err != nil {
+		return []*models.Song{}, err
+	}
+
+	dto := songs{}
+	err = json.NewDecoder(resp).Decode(&dto)
+	if err != nil {
+		return []*models.Song{}, fmt.Errorf("decode json: %v", err)
+	}
+
+	songs := make([]*models.Song, len(dto.Songs))
+	for i, v := range dto.Songs {
+		songs[i] = v.toSong()
+	}
+
+	return songs, nil
+}

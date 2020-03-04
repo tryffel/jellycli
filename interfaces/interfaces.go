@@ -89,7 +89,9 @@ type MediaManager interface {
 	GetArtistAlbums(artist models.Id) ([]*models.Album, error)
 
 	GetAlbumSongs(album models.Id) ([]*models.Song, error)
-	GetPlaylists() ([]*models.Album, error)
+	GetPlaylists() ([]*models.Playlist, error)
+	// GetPlaylistSongs fills songs array for playlist. If there's error, songs will not be filled
+	GetPlaylistSongs(playlist *models.Playlist) error
 	GetFavoriteArtists() ([]*models.Artist, error)
 	GetFavoriteAlbums() ([]*models.Album, error)
 

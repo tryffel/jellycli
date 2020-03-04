@@ -97,8 +97,17 @@ func (c *Content) GetAlbumSongs(album models.Id) ([]*models.Song, error) {
 	return c.api.GetAlbumSongs(album)
 }
 
-func (c *Content) GetPlaylists() ([]*models.Album, error) {
-	panic("implement me")
+func (c *Content) GetPlaylists() ([]*models.Playlist, error) {
+	return c.api.GetPlaylists()
+}
+
+func (c *Content) GetPlaylistSongs(playlist *models.Playlist) error {
+	songs, err := c.api.GetPlaylistSongs(playlist.Id)
+	if err != nil {
+		return err
+	}
+	playlist.Songs = songs
+	return nil
 }
 
 func (c *Content) GetFavoriteArtists() ([]*models.Artist, error) {

@@ -84,7 +84,6 @@ func (m *MediaNavigation) markDisabledMethods() {
 		MediaArtists,
 		MediaAlbums,
 		MediaSongs,
-		MediaPlaylists,
 		MediaFavoriteAlbums,
 	}
 

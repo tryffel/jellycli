@@ -23,8 +23,9 @@ import (
 )
 
 const (
-	AppName = "Jellycli"
-	Version = "0.1.0"
+	AppName      = "Jellycli"
+	AppNameLower = "jellycli"
+	Version      = "0.1.0"
 
 	LogLevel = logrus.WarnLevel
 )

@@ -37,6 +37,9 @@ import (
 	"tryffel.net/go/jellycli/ui"
 )
 
+// does config file need to be saved
+var configChanged = false
+
 func main() {
 
 	app, err := NewApplication()
@@ -60,7 +63,7 @@ func main() {
 
 // Application is the root struct for interactive player
 type Application struct {
-	secrets     config.Secret
+	conf        *config.Config
 	api         *api.Api
 	gui         *ui.Gui
 	player      *player.Player
@@ -104,6 +107,13 @@ func NewApplication() (*Application, error) {
 	if err != nil {
 		logrus.Fatalf("api error: %v", err)
 		os.Exit(1)
+	}
+
+	if configChanged {
+		err = config.SaveConfig(a.conf)
+		if err != nil {
+			logrus.Fatalf("save config file: %v", err)
+		}
 	}
 
 	err = a.initApplication()
@@ -171,32 +181,34 @@ func (a *Application) stopOnSignal() {
 
 func (a *Application) initConfig() error {
 	var err error
-	a.secrets, err = config.NewSecretStore()
-	if err != nil {
-		return fmt.Errorf("wallet failed: %v", err)
-	}
-	return nil
+	a.conf, err = config.ReadConfigFile("")
+	return err
 }
 
 func (a *Application) initApi() error {
 	var err error
-	host, err := a.secrets.EnsureKey("jellyfin_host")
-	if err != nil {
-		return fmt.Errorf("no jellyfin host provided: %v", err)
+	if a.conf.ServerUrl == "" {
+		url, err := config.ReadUserInput("full jellyfin url", false)
+		if err != nil {
+			return fmt.Errorf("get server url: %v", err)
+		}
+		a.conf.ServerUrl = url
+		configChanged = true
 	}
-	a.api, err = api.NewApi(host)
+
+	a.api, err = api.NewApi(a.conf.ServerUrl)
 	if err != nil {
 		return fmt.Errorf("api init: %v", err)
 	}
 	if !a.api.ConnectionOk() {
-		return fmt.Errorf("no connection to server")
+		return fmt.Errorf("no connection to server: %v", err)
 	}
 	return nil
 }
 
 func (a *Application) login() error {
-	token, _ := a.secrets.GetKey("token")
-	if token == "" {
+	if a.conf.Token == "" {
+		configChanged = true
 		username, err := config.ReadUserInput("username", false)
 		if err != nil {
 			return fmt.Errorf("failed read username: %v", err)
@@ -209,60 +221,35 @@ func (a *Application) login() error {
 
 		err = a.api.Login(username, password)
 		if err == nil && a.api.IsLoggedIn() {
-			err = a.secrets.SetKey("token", a.api.Token())
+			a.conf.Token = a.api.Token()
+			a.conf.UserId = a.api.UserId()
+			a.conf.DeviceId = a.api.DeviceId
+			a.conf.ServerId = a.api.ServerId()
+
+			err = config.SaveConfig(a.conf)
 			if err != nil {
-				return fmt.Errorf("failed to store token: %v", err)
+				logrus.Fatalf("save config file: %v", err)
 			}
 
-			err = a.secrets.SetKey("userid", a.api.UserId())
-			if err != nil {
-				return fmt.Errorf("failed to store userid: %v", err)
-			}
-			err = a.secrets.SetKey("deviceid", a.api.DeviceId)
-			if err != nil {
-				return fmt.Errorf("failed to store deviceid: %v", err)
-			}
-			serverId := a.api.ServerId()
-			err = a.secrets.SetKey("serverid", serverId)
-			if err != nil {
-				return fmt.Errorf("failed to store serverid: %v", err)
-			}
 		} else {
 			return fmt.Errorf("login failed")
 		}
 		return nil
 
 	} else {
-		err := a.api.SetToken(token)
+		err := a.api.SetToken(a.conf.Token)
 		if err != nil {
 			return fmt.Errorf("set token: %v", err)
 		}
-		userid, err := a.secrets.GetKey("userid")
-		if err != nil {
-			return err
-		}
-		a.api.SetUserId(userid)
-
-		deviceid, err := a.secrets.GetKey("deviceid")
-		if err != nil {
-			return err
-		}
-		a.api.DeviceId = deviceid
-
-		serverId, err := a.secrets.GetKey("serverid")
-		if err != nil {
-			return err
-		}
-		a.api.SetServerId(serverId)
+		a.api.SetUserId(a.conf.UserId)
+		a.api.DeviceId = a.conf.DeviceId
+		a.api.SetServerId(a.conf.ServerId)
 		return nil
 	}
 }
 
 func (a *Application) initApiView() error {
-	view, err := a.secrets.GetKey("music_view")
-	if err != nil {
-		return err
-	}
+	view := a.conf.MusicView
 	if view != "" {
 		a.api.SetDefaultMusicview(view)
 		return nil
@@ -293,7 +280,8 @@ func (a *Application) initApiView() error {
 					id := ""
 					if num < len(views) && num > 0 {
 						id = views[num].Id.String()
-						err = a.secrets.SetKey("music_view", id)
+						a.conf.MusicView = id
+						configChanged = true
 						a.api.SetDefaultMusicview(id)
 						if err != nil {
 							return err

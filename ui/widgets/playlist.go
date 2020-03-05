@@ -113,6 +113,7 @@ func (p *PlaylistView) SetPlaylist(playlist *models.Playlist) {
 
 	for i, v := range playlist.Songs {
 		p.songs[i] = newAlbumSong(v, false, i+1)
+		p.songs[i].updateTextFunc = p.updateSongText
 		items[i] = p.songs[i]
 	}
 
@@ -167,4 +168,20 @@ func (p *PlaylistView) listHandler(key *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 	return key
+}
+
+func (p *PlaylistView) updateSongText(song *albumSong) {
+	var name string
+	if song.showDiscNum {
+		name = fmt.Sprintf("%d %d. %s", song.song.DiscNumber, song.song.Index, song.song.Name)
+	} else {
+		name = fmt.Sprintf("%d. %s", song.index, song.song.Name)
+	}
+
+	text := song.getAlignedDuration(name)
+	if len(song.song.Artists) > 0 {
+		text += "\n     " + song.song.Artists[0].Name
+
+	}
+	song.SetText(text)
 }

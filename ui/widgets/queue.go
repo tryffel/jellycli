@@ -122,6 +122,7 @@ func (q *Queue) SetSongs(songs []*models.Song) {
 	for i, v := range songs {
 		s := newAlbumSong(v, false, i+1)
 		q.songs[i] = s
+		q.songs[i].updateTextFunc = q.updateSongText
 		items[i] = s
 	}
 	q.list.AddItems(items...)
@@ -158,4 +159,20 @@ func (q *Queue) listHandler(key *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 	return key
+}
+
+func (q *Queue) updateSongText(song *albumSong) {
+	var name string
+	if song.showDiscNum {
+		name = fmt.Sprintf("%d %d. %s", song.song.DiscNumber, song.song.Index, song.song.Name)
+	} else {
+		name = fmt.Sprintf("%d. %s", song.index, song.song.Name)
+	}
+
+	text := song.getAlignedDuration(name)
+	if len(song.song.Artists) > 0 {
+		text += "\n     " + song.song.Artists[0].Name
+
+	}
+	song.SetText(text)
 }

@@ -75,6 +75,9 @@ type albumSong struct {
 	song        *models.Song
 	showDiscNum bool
 	index       int
+
+	// allow overriding text input. If updateTextFunc != nil, use that to update, else use default album text format
+	updateTextFunc func(a *albumSong)
 }
 
 func (a *albumSong) SetSelected(selected twidgets.Selection) {
@@ -104,28 +107,64 @@ func (a *albumSong) setText() {
 	if a.song == nil {
 		return
 	}
-	_, _, w, _ := a.GetRect()
-	duration := util.SecToString(a.song.Duration)
-	dL := len(duration)
-	var name string
-	if a.showDiscNum {
-		name = fmt.Sprintf("%d %d. %s", a.song.DiscNumber, a.song.Index, a.song.Name)
+	if a.updateTextFunc != nil {
+		a.updateTextFunc(a)
 	} else {
-		name = fmt.Sprintf("%d. %s", a.index, a.song.Name)
-	}
-	nameL := uniseg.GraphemeClusterCount(name)
+		_, _, w, _ := a.GetRect()
+		var name string
+		if a.showDiscNum {
+			name = fmt.Sprintf("%d %d. %s", a.song.DiscNumber, a.song.Index, a.song.Name)
+		} else {
+			name = fmt.Sprintf("%d. %s", a.index, a.song.Name)
+		}
 
+		text := a.getAlignedDuration(name)
+
+		space := "      "
+		artists := space
+
+		// print artists if needed
+		if len(a.song.Artists) > 1 {
+			text += "\n"
+			for i, v := range a.song.Artists {
+				if i > 0 {
+					artists += ", "
+				}
+				artists += v.Name
+			}
+			if len(artists) > w {
+				artists = space + fmt.Sprintf("%d artists", len(a.song.Artists))
+			} else {
+				text += artists
+			}
+		} else if len(a.song.Artists) == 1 {
+			if a.song.Artists[0].Id != a.song.AlbumArtist && a.song.AlbumArtist != "" {
+				text += space + a.song.Artists[0].Name
+			}
+		}
+		a.SetText(text)
+	}
+}
+
+// add duration to text with space so that duration is aligned right
+func (a *albumSong) getAlignedDuration(text string) string {
+	_, _, w, _ := a.GetRect()
+	nameLen := uniseg.GraphemeClusterCount(text)
+
+	duration := util.SecToString(a.song.Duration)
+	durationLen := len(duration)
 	// width - duration - name - padding
-	spaces := w - dL - nameL - 2
+	spaces := w - durationLen - nameLen - 2
 	space := ""
 
 	// calculate space needed between name etc and duration
 	if spaces <= 0 {
-		lines := tview.WordWrap(name, w-2)
+		lines := tview.WordWrap(a.song.Name, w-2)
 		if len(lines) >= 1 {
-			name = lines[0] + "… "
+			text = lines[0] + "… "
 		}
 	} else {
+		// add space as needed
 		for {
 			if len(space) == spaces {
 				break
@@ -141,32 +180,8 @@ func (a *albumSong) setText() {
 			}
 		}
 	}
-
-	text := name + space + duration
-
-	space = "      "
-	artists := space
-
-	// print artists if needed
-	if len(a.song.Artists) > 1 {
-		text += "\n"
-		for i, v := range a.song.Artists {
-			if i > 0 {
-				artists += ", "
-			}
-			artists += v.Name
-		}
-		if len(artists) > w {
-			artists = space + fmt.Sprintf("%d artists", len(a.song.Artists))
-		} else {
-			text += artists
-		}
-	} else if len(a.song.Artists) == 1 {
-		if a.song.Artists[0].Id != a.song.AlbumArtist && a.song.AlbumArtist != "" {
-			text += space + a.song.Artists[0].Name
-		}
-	}
-	a.SetText(text)
+	out := text + space + duration
+	return out
 }
 
 // showDiscNum: whether to print disc number.

@@ -147,10 +147,9 @@ func (h *Help) shortcutsPage() string {
 	* Up / Down: J / K, 
 	* Top / Bottom of list: g / G 
 	* Page Up / Down: Ctrl+F / Ctrl+B
-* Switch between panels: Tab
-
-[yellow]Forms[-]:
-* Tab / Shift-Tab moves between form fields
+* Switch between panels: Tab 
+* Select button or item: Enter
+* Close application: Ctrl-C
 
 `
 }

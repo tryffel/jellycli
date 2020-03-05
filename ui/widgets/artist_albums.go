@@ -21,16 +21,10 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 	"tryffel.net/go/jellycli/config"
+	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
 	"tryffel.net/go/jellycli/util"
 	"tryffel.net/go/twidgets"
-)
-
-const (
-	albumCoverHeight   = 5
-	albumCoverWidth    = 20
-	albumCoverPaddingH = 1
-	albumCoverPaddingW = 1
 )
 
 //AlbumCover is a simple cover for album, it shows
@@ -88,6 +82,10 @@ func (a *AlbumCover) SetSelected(selected twidgets.Selection) {
 	}
 }
 
+func (a *AlbumCover) setText(text string) {
+	a.TextView.SetText(text)
+}
+
 //print multiple artists
 func printArtists(artists []string, maxWidth int) string {
 	var out string
@@ -118,38 +116,42 @@ func printArtists(artists []string, maxWidth int) string {
 }
 
 //ArtisView as a view that contains
-type ArtistView struct {
+type AlbumList struct {
 	*twidgets.Banner
 	*previous
-	list        *twidgets.ScrollList
-	listFocused bool
-	selectFunc  func(album *models.Album)
-	albumCovers []*AlbumCover
+	paging        *PageSelector
+	pagingEnabled bool
+	page          interfaces.Paging
+	artistMode    bool
+	list          *twidgets.ScrollList
+	listFocused   bool
+	selectFunc    func(album *models.Album)
+	albumCovers   []*AlbumCover
 
 	artist *models.Artist
 	name   *tview.TextView
 
-	prevBtn    *button
-	infoBtn    *button
-	playBtn    *button
-	similarBtn *button
-	prevFunc   func()
+	prevBtn        *button
+	infoBtn        *button
+	playBtn        *button
+	similarBtn     *button
+	prevFunc       func()
+	selectPageFunc func(paging interfaces.Paging)
 }
 
-func (a *ArtistView) AddAlbum(c *AlbumCover) {
+func (a *AlbumList) AddAlbum(c *AlbumCover) {
 	a.list.AddItem(c)
 	a.albumCovers = append(a.albumCovers, c)
 }
 
-func (a *ArtistView) Clear() {
+func (a *AlbumList) Clear() {
 	a.list.Clear()
-	a.SetArtist(nil)
-	a.artist = nil
+	//a.SetArtist(nil)
 	a.albumCovers = make([]*AlbumCover, 0)
 }
 
-// SetPlaylists sets artist cover
-func (a *ArtistView) SetArtist(artist *models.Artist) {
+// SetPlaylists sets albumList cover
+func (a *AlbumList) SetArtist(artist *models.Artist) {
 	a.artist = artist
 	if artist != nil {
 		a.name.SetText(fmt.Sprintf("%s\nAlbums: %d, Total: %s",
@@ -159,23 +161,81 @@ func (a *ArtistView) SetArtist(artist *models.Artist) {
 	}
 }
 
+func (a *AlbumList) SetText(text string) {
+	a.name.SetText(text)
+}
+
+func (a *AlbumList) SetPage(paging interfaces.Paging) {
+	a.paging.SetPage(paging.CurrentPage)
+	a.paging.SetTotalPages(paging.TotalPages)
+	a.page = paging
+}
+
+// EnableArtistMode enabled single albumList mode. If disabled, albums don't necessarily have same albumList
+// and are formatted differently. This does not update content.
+func (a *AlbumList) EnableArtistMode(enabled bool) {
+	a.artistMode = enabled
+}
+
+func (a *AlbumList) selectPage(n int) {
+	a.paging.SetPage(n)
+	a.page.CurrentPage = n
+	if a.selectPageFunc != nil {
+		a.selectPageFunc(a.page)
+	}
+}
+
 // SetPlaylist sets albums
-func (a *ArtistView) SetAlbums(albums []*models.Album) {
+func (a *AlbumList) SetAlbums(albums []*models.Album) {
 	a.list.Clear()
 	a.albumCovers = make([]*AlbumCover, len(albums))
 
+	offset := 0
+	if a.pagingEnabled {
+		offset = a.page.Offset()
+	}
+
 	items := make([]twidgets.ListItem, len(albums))
 	for i, v := range albums {
-		cover := NewAlbumCover(i+1, v)
+		cover := NewAlbumCover(offset+i+1, v)
 		items[i] = cover
 		a.albumCovers[i] = cover
+		if !a.artistMode {
+			var artist = ""
+			if len(v.AdditionalArtists) > 0 {
+				artist = v.AdditionalArtists[0].Name
+			}
+			text := fmt.Sprintf("%d. %s\n     %s - %d", offset+i+1, v.Name, artist, v.Year)
+			cover.setText(text)
+		}
 	}
 	a.list.AddItems(items...)
 }
 
-//NewArtistView constructs new artist view
-func NewArtistView(selectAlbum func(album *models.Album)) *ArtistView {
-	a := &ArtistView{
+// EnablePaging enables paging and shows page on banner
+func (a *AlbumList) EnablePaging(enabled bool) {
+	if a.pagingEnabled && enabled {
+		return
+	}
+	if !a.pagingEnabled && !enabled {
+		return
+	}
+	a.pagingEnabled = enabled
+	if enabled {
+		selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.paging.Previous, a.paging.Next, a.list}
+		a.Banner.Selectable = selectables
+		a.Banner.Grid.AddItem(a.paging, 3, 4, 1, 3, 1, 10, true)
+	} else {
+		selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.list}
+		a.Banner.Selectable = selectables
+		a.Banner.Grid.RemoveItem(a.paging)
+		a.page.CurrentPage = 0
+	}
+}
+
+//NewAlbumList constructs new albumList view
+func NewAlbumList(selectAlbum func(album *models.Album)) *AlbumList {
+	a := &AlbumList{
 		Banner:     twidgets.NewBanner(),
 		previous:   &previous{},
 		selectFunc: selectAlbum,
@@ -186,6 +246,7 @@ func NewArtistView(selectAlbum func(album *models.Album)) *ArtistView {
 		playBtn:    newButton("Play all"),
 		similarBtn: newButton("Similar"),
 	}
+	a.paging = NewPageSelector(a.selectPage)
 	a.list = twidgets.NewScrollList(a.selectAlbum)
 	a.list.ItemHeight = 3
 
@@ -198,8 +259,8 @@ func NewArtistView(selectAlbum func(album *models.Album)) *ArtistView {
 	a.list.Grid.SetColumns(-1, 5)
 	a.SetBorderColor(config.Color.Border)
 
-	btns := []*button{a.prevBtn, a.playBtn, a.similarBtn}
-	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.similarBtn, a.list}
+	btns := []*button{a.prevBtn, a.playBtn, a.similarBtn, a.paging.Previous, a.paging.Next}
+	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.paging.Previous, a.paging.Next, a.list}
 	for _, v := range btns {
 		v.SetBackgroundColor(config.Color.ButtonBackground)
 		v.SetLabelColor(config.Color.ButtonLabel)
@@ -223,20 +284,22 @@ func NewArtistView(selectAlbum func(album *models.Album)) *ArtistView {
 	a.Grid.AddItem(a.prevBtn, 0, 0, 1, 1, 1, 5, false)
 	a.Grid.AddItem(a.name, 0, 2, 2, 6, 1, 10, false)
 	a.Grid.AddItem(a.playBtn, 3, 2, 1, 1, 1, 10, false)
-	a.Grid.AddItem(a.similarBtn, 3, 4, 1, 1, 1, 10, false)
+	a.Grid.AddItem(a.paging, 3, 4, 1, 3, 1, 10, false)
+	//a.Grid.AddItem(a.similarBtn, 3, 4, 1, 1, 1, 10, false)
 	a.Grid.AddItem(a.list, 4, 0, 1, 8, 6, 20, false)
 
 	a.listFocused = false
+	a.pagingEnabled = true
 	return a
 }
 
-func (a *ArtistView) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+func (a *AlbumList) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 	return func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 		a.Banner.InputHandler()(event, setFocus)
 	}
 }
 
-func (a *ArtistView) selectAlbum(index int) {
+func (a *AlbumList) selectAlbum(index int) {
 	if a.selectFunc != nil {
 		index := a.list.GetSelectedIndex()
 		album := a.albumCovers[index]

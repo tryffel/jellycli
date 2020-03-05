@@ -89,8 +89,8 @@ func (c *Content) GetLatestAlbums() ([]*models.Album, error) {
 	return c.api.GetLatestAlbums()
 }
 
-func (c *Content) GetAlbums() ([]*models.Album, error) {
-	panic("implement me")
+func (c *Content) GetAlbums(paging interfaces.Paging) ([]*models.Album, int, error) {
+	return c.api.GetAlbums(paging)
 }
 
 func (c *Content) GetAlbumSongs(album models.Id) ([]*models.Song, error) {

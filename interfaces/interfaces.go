@@ -86,7 +86,8 @@ type MediaManager interface {
 	SearchAlbums(search string) ([]*models.Album, error)
 	// GetArtists gets artist with given paging. Only PageSize and CurrentPage are used. Total count is returned
 	GetArtists(paging Paging) ([]*models.Artist, int, error)
-	GetAlbums() ([]*models.Album, error)
+	// GetAlbums gets albums with given paging. Only PageSize and CurrentPage are used. Total count is returned
+	GetAlbums(paging Paging) ([]*models.Album, int, error)
 
 	GetArtistAlbums(artist models.Id) ([]*models.Album, error)
 

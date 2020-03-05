@@ -40,7 +40,7 @@ type Window struct {
 	queue    *Queue
 	history  *Queue
 
-	artist     *ArtistView
+	albumList  *AlbumList
 	album      *AlbumView
 	artistList *ArtistList
 	playlists  *Playlists
@@ -70,8 +70,9 @@ func NewWindow(mc interfaces.MediaController) Window {
 	w.artistList = NewArtistList(w.selectArtist)
 	w.artistList.SetBackCallback(w.goBack)
 	w.artistList.selectPageFunc = w.showArtistPage
-	w.artist = NewArtistView(w.selectAlbum)
-	w.artist.SetBackCallback(w.goBack)
+	w.albumList = NewAlbumList(w.selectAlbum)
+	w.albumList.SetBackCallback(w.goBack)
+	w.albumList.selectPageFunc = w.showAlbumPage
 	w.album = NewAlbumview(w.playSong, w.playSongs)
 	w.album.SetBackCallback(w.goBack)
 	w.mediaNav = NewMediaNavigation(w.selectMedia)
@@ -378,10 +379,12 @@ func (w *Window) selectMedia(m MediaSelect) {
 			}
 
 			w.mediaNav.SetCount(MediaLatestMusic, len(albums))
-			w.artist.Clear()
-			w.artist.SetArtist(artist)
-			w.artist.SetAlbums(albums)
-			w.setViewWidget(w.artist, true)
+			w.albumList.Clear()
+			w.albumList.EnablePaging(false)
+			w.albumList.EnableArtistMode(false)
+			w.albumList.SetArtist(artist)
+			w.albumList.SetAlbums(albums)
+			w.setViewWidget(w.albumList, true)
 		}
 	case MediaFavoriteArtists:
 		artists, err := w.mediaController.GetFavoriteArtists()
@@ -440,18 +443,39 @@ func (w *Window) selectMedia(m MediaSelect) {
 		w.artistList.AddArtists(artists)
 		w.setViewWidget(w.artistList, true)
 		w.artistList.SetText(fmt.Sprintf("All artists: %d", paging.TotalItems))
+	case MediaAlbums:
+		paging := interfaces.Paging{
+			CurrentPage: 0,
+			PageSize:    100,
+		}
+		albums, total, err := w.mediaController.GetAlbums(paging)
+		if err != nil {
+			logrus.Errorf("get all albums: %v", err)
+			return
+		}
+		paging.SetTotalItems(total)
+		w.mediaNav.SetCount(MediaAlbums, total)
+
+		w.albumList.SetPage(paging)
+		w.albumList.Clear()
+		w.albumList.EnableArtistMode(false)
+		w.albumList.EnablePaging(true)
+		w.albumList.SetText("Albums")
+		w.albumList.SetAlbums(albums)
+
+		w.setViewWidget(w.albumList, true)
 	}
 }
 
 func (w *Window) selectArtist(artist *models.Artist) {
 	albums, err := w.mediaController.GetArtistAlbums(artist.Id)
 	if err != nil {
-		logrus.Errorf("get artist albums: %v", err)
+		logrus.Errorf("get albumList albums: %v", err)
 	} else {
 		artist.AlbumCount = len(albums)
-		w.artist.SetArtist(artist)
-		w.artist.SetAlbums(albums)
-		w.setViewWidget(w.artist, true)
+		w.albumList.SetArtist(artist)
+		w.albumList.SetAlbums(albums)
+		w.setViewWidget(w.albumList, true)
 	}
 }
 
@@ -494,7 +518,7 @@ func (w *Window) selectSongs(page interfaces.Paging) {
 func (w *Window) showArtistPage(page interfaces.Paging) {
 	artists, _, err := w.mediaController.GetArtists(page)
 	if err != nil {
-		logrus.Errorf("get artist page: %v", err)
+		logrus.Errorf("get albumList page: %v", err)
 		return
 	}
 
@@ -502,6 +526,22 @@ func (w *Window) showArtistPage(page interfaces.Paging) {
 	w.artistList.AddArtists(artists)
 	w.artistList.EnablePaging(true)
 	w.setViewWidget(w.artistList, false)
+}
+
+func (w *Window) showAlbumPage(page interfaces.Paging) {
+	albums, total, err := w.mediaController.GetAlbums(page)
+	if err != nil {
+		logrus.Errorf("get all albums: %v", err)
+		return
+	}
+	page.SetTotalItems(total)
+	w.mediaNav.SetCount(MediaAlbums, total)
+
+	w.albumList.SetPage(page)
+	w.albumList.Clear()
+	w.albumList.EnablePaging(true)
+	w.albumList.SetText("Albums")
+	w.albumList.SetAlbums(albums)
 }
 
 func (w *Window) playSong(song *models.Song) {

@@ -81,7 +81,6 @@ func (m *MediaNavigation) markDisabledMethods() {
 	// colorize methods that are not implemented
 	notImplemented := []MediaSelect{
 		MediaRecent,
-		MediaAlbums,
 		MediaFavoriteAlbums,
 	}
 

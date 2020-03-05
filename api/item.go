@@ -480,3 +480,36 @@ func (a *Api) GetArtists(paging interfaces.Paging) (artistList []*models.Artist,
 	numRecords = dto.TotalArtists
 	return
 }
+
+// GetAlbums returns albums with given paging. It also returns number of all albums
+func (a *Api) GetAlbums(paging interfaces.Paging) (albumList []*models.Album, numRecords int, err error) {
+	params := *a.defaultParams()
+	params["Recursive"] = "true"
+	params["SortBy"] = "SortName"
+	params["SortOrder"] = "Ascending"
+	params["api_key"] = a.token
+	params["Limit"] = strconv.Itoa(paging.PageSize)
+	params["StartIndex"] = strconv.Itoa(paging.Offset())
+	params["IncludeItemTypes"] = "MusicAlbum"
+	resp, err := a.get(fmt.Sprintf("/Users/%s/Items", a.userId), &params)
+	if resp != nil {
+		defer resp.Close()
+	}
+	if err != nil {
+		return
+	}
+
+	dto := albums{}
+	err = json.NewDecoder(resp).Decode(&dto)
+	if err != nil {
+		err = fmt.Errorf("decode json: %v", err)
+		return
+	}
+
+	numRecords = dto.TotalAlbums
+	albumList = make([]*models.Album, len(dto.Albums))
+	for i, v := range dto.Albums {
+		albumList[i] = v.toAlbum()
+	}
+	return
+}

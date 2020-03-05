@@ -206,6 +206,7 @@ func (a *ArtistCover) SetSelected(s twidgets.Selection) {
 	} else if s == twidgets.Deselected {
 		a.SetTextColor(config.Color.Text)
 		a.SetBackgroundColor(config.Color.Background)
-
+	} else if s == twidgets.Blurred {
+		a.SetBackgroundColor(config.Color.TextDisabled)
 	}
 }

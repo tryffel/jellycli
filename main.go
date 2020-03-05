@@ -17,6 +17,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
@@ -41,24 +42,7 @@ import (
 var configChanged = false
 
 func main() {
-
-	app, err := NewApplication()
-	if err != nil {
-		logrus.Fatal(err)
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	startErr := app.Start()
-	if startErr != nil {
-		logrus.Errorf("Failed to start application: %v", startErr)
-	}
-	stopErr := app.Stop()
-	if startErr == nil && stopErr == nil {
-		os.Exit(0)
-	}
-
-	os.Exit(1)
+	run()
 }
 
 // Application is the root struct for interactive player
@@ -75,7 +59,7 @@ type Application struct {
 }
 
 //NewApplication instantiates new player
-func NewApplication() (*Application, error) {
+func NewApplication(configFile string) (*Application, error) {
 	var err error
 	a := &Application{}
 
@@ -85,7 +69,7 @@ func NewApplication() (*Application, error) {
 	writer := io.MultiWriter(a.logfile, os.Stdout)
 	logrus.SetOutput(writer)
 
-	err = a.initConfig()
+	err = a.initConfig(configFile)
 	if err != nil {
 		return a, err
 	}
@@ -179,9 +163,9 @@ func (a *Application) stopOnSignal() {
 	a.Stop()
 }
 
-func (a *Application) initConfig() error {
+func (a *Application) initConfig(configFile string) error {
 	var err error
-	a.conf, err = config.ReadConfigFile("")
+	a.conf, err = config.ReadConfigFile(configFile)
 	return err
 }
 
@@ -359,4 +343,39 @@ func catchSignals() chan os.Signal {
 		syscall.SIGINT,
 		syscall.SIGTERM)
 	return c
+}
+
+func run() {
+	showVersion := flag.Bool("version", false, "Show version")
+	configFile := flag.String("config", "",
+		"Use external configuration file. file must be yaml-formatted")
+	help := flag.Bool("help", false, "Show help page")
+
+	flag.Parse()
+
+	if *showVersion {
+		println(config.AppNameVersion())
+	} else if *help {
+		text := "Jellycli, a terminal music player for Jellyfin\n\nUsage:"
+		println(text)
+		flag.PrintDefaults()
+	} else {
+		app, err := NewApplication(*configFile)
+		if err != nil {
+			logrus.Fatal(err)
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		startErr := app.Start()
+		if startErr != nil {
+			logrus.Errorf("Failed to start application: %v", startErr)
+		}
+		stopErr := app.Stop()
+		if startErr == nil && stopErr == nil {
+			os.Exit(0)
+		}
+
+		os.Exit(1)
+	}
 }

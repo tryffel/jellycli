@@ -17,6 +17,7 @@
 package config
 
 import (
+	"fmt"
 	"github.com/rivo/tview"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -53,6 +54,11 @@ const (
 
 	LatestMusicCount = "50"
 )
+
+// AppNameVersion returns string containing application name and current version
+func AppNameVersion() string {
+	return fmt.Sprintf("%s v%s", AppName, Version)
+}
 
 // LogFile is log file location
 var LogFile string

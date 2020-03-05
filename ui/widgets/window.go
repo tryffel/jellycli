@@ -473,6 +473,9 @@ func (w *Window) selectArtist(artist *models.Artist) {
 		logrus.Errorf("get albumList albums: %v", err)
 	} else {
 		artist.AlbumCount = len(albums)
+		w.albumList.Clear()
+		w.albumList.EnableArtistMode(true)
+		w.albumList.EnablePaging(false)
 		w.albumList.SetArtist(artist)
 		w.albumList.SetAlbums(albums)
 		w.setViewWidget(w.albumList, true)

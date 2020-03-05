@@ -17,6 +17,7 @@
 package widgets
 
 import (
+	"fmt"
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 	"github.com/sirupsen/logrus"
@@ -68,6 +69,7 @@ func NewWindow(mc interfaces.MediaController) Window {
 
 	w.artistList = NewArtistList(w.selectArtist)
 	w.artistList.SetBackCallback(w.goBack)
+	w.artistList.selectPageFunc = w.showArtistPage
 	w.artist = NewArtistView(w.selectAlbum)
 	w.artist.SetBackCallback(w.goBack)
 	w.album = NewAlbumview(w.playSong, w.playSongs)
@@ -382,16 +384,13 @@ func (w *Window) selectMedia(m MediaSelect) {
 			w.setViewWidget(w.artist, true)
 		}
 	case MediaFavoriteArtists:
-		if w.mediaView == w.artistList {
-			w.app.SetFocus(w.mediaView)
-			return
-		}
-
 		artists, err := w.mediaController.GetFavoriteArtists()
 		if err != nil {
 			logrus.Errorf("get favorite artists: %v", err)
 		} else {
-
+			w.artistList.Clear()
+			w.artistList.SetText("Favorite artists")
+			w.artistList.EnablePaging(false)
 			w.mediaNav.SetCount(MediaFavoriteArtists, len(artists))
 			w.artistList.AddArtists(artists)
 			w.setViewWidget(w.artistList, true)
@@ -421,6 +420,26 @@ func (w *Window) selectMedia(m MediaSelect) {
 		w.songs.SetSongs(songs, paging)
 
 		w.setViewWidget(w.songs, true)
+	case MediaArtists:
+		paging := interfaces.Paging{
+			CurrentPage: 0,
+			PageSize:    100,
+		}
+		artists, total, err := w.mediaController.GetArtists(paging)
+		if err != nil {
+			logrus.Errorf("get all artists: %v", err)
+			return
+		}
+		paging.SetTotalItems(total)
+		w.mediaNav.SetCount(MediaArtists, total)
+
+		w.artistList.Clear()
+		w.artistList.EnablePaging(true)
+		w.artistList.SetPage(paging)
+
+		w.artistList.AddArtists(artists)
+		w.setViewWidget(w.artistList, true)
+		w.artistList.SetText(fmt.Sprintf("All artists: %d", paging.TotalItems))
 	}
 }
 
@@ -470,8 +489,19 @@ func (w *Window) selectSongs(page interfaces.Paging) {
 
 	w.songs.SetSongs(songs, page)
 	w.setViewWidget(w.songs, true)
+}
 
-	w.app.Draw()
+func (w *Window) showArtistPage(page interfaces.Paging) {
+	artists, _, err := w.mediaController.GetArtists(page)
+	if err != nil {
+		logrus.Errorf("get artist page: %v", err)
+		return
+	}
+
+	w.artistList.Clear()
+	w.artistList.AddArtists(artists)
+	w.artistList.EnablePaging(true)
+	w.setViewWidget(w.artistList, false)
 }
 
 func (w *Window) playSong(song *models.Song) {

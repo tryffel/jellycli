@@ -148,7 +148,7 @@ func (a *ArtistView) Clear() {
 	a.albumCovers = make([]*AlbumCover, 0)
 }
 
-// SetArtist sets artist cover
+// SetPlaylists sets artist cover
 func (a *ArtistView) SetArtist(artist *models.Artist) {
 	a.artist = artist
 	if artist != nil {
@@ -159,7 +159,7 @@ func (a *ArtistView) SetArtist(artist *models.Artist) {
 	}
 }
 
-// SetAlbum sets albums
+// SetPlaylist sets albums
 func (a *ArtistView) SetAlbums(albums []*models.Album) {
 	a.list.Clear()
 	a.albumCovers = make([]*AlbumCover, len(albums))

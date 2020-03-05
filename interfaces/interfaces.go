@@ -17,6 +17,7 @@
 package interfaces
 
 import (
+	"math"
 	"tryffel.net/go/jellycli/models"
 )
 
@@ -83,7 +84,8 @@ type PlaybackController interface {
 type MediaManager interface {
 	SearchArtists(search string) ([]*models.Artist, error)
 	SearchAlbums(search string) ([]*models.Album, error)
-	GetArtists() ([]*models.Artist, error)
+	// GetArtists gets artist with given paging. Only PageSize and CurrentPage are used. Total count is returned
+	GetArtists(paging Paging) ([]*models.Artist, int, error)
 	GetAlbums() ([]*models.Album, error)
 
 	GetArtistAlbums(artist models.Id) ([]*models.Album, error)
@@ -112,4 +114,15 @@ type Paging struct {
 	TotalPages  int
 	CurrentPage int
 	PageSize    int
+}
+
+// SetTotalItems calculates number of pages for current page size
+func (p *Paging) SetTotalItems(count int) {
+	p.TotalItems = count
+	p.TotalPages = int(math.Ceil(float64(count) / float64(p.PageSize)))
+}
+
+// Offset returns offset
+func (p *Paging) Offset() int {
+	return p.PageSize * p.CurrentPage
 }

@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"math"
 	"strconv"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
@@ -405,10 +404,10 @@ func (a *Api) GetSongsCount() (interfaces.Paging, error) {
 
 	pageSize := 100
 
-	paging.TotalItems = dto.TotalSongs
 	paging.CurrentPage = 0
-	paging.TotalPages = int(math.Ceil(float64(dto.TotalSongs) / float64(pageSize)))
 	paging.PageSize = pageSize
+	paging.SetTotalItems(dto.TotalSongs)
+
 	return paging, nil
 }
 
@@ -446,4 +445,38 @@ func (a *Api) GetSongs(page, pageSize int) ([]*models.Song, error) {
 	}
 
 	return songs, nil
+}
+
+// GetArtists return artists defined by paging and total number of artists
+func (a *Api) GetArtists(paging interfaces.Paging) (artistList []*models.Artist, numRecords int, err error) {
+	params := *a.defaultParams()
+	params["Recursive"] = "true"
+	params["SortBy"] = "SortName"
+	params["SortOrder"] = "Ascending"
+	params["api_key"] = a.token
+	params["Limit"] = strconv.Itoa(paging.PageSize)
+	params["StartIndex"] = strconv.Itoa(paging.Offset())
+	resp, err := a.get("/Artists", &params)
+	if resp != nil {
+		defer resp.Close()
+	}
+
+	if err != nil {
+		return
+	}
+
+	dto := &artists{}
+	err = json.NewDecoder(resp).Decode(&dto)
+	if err != nil {
+		err = fmt.Errorf("decode json: %v", err)
+		return
+	}
+
+	artistList = make([]*models.Artist, len(dto.Artists))
+	for i, v := range dto.Artists {
+		artistList[i] = v.toArtist()
+	}
+
+	numRecords = dto.TotalArtists
+	return
 }

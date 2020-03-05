@@ -81,8 +81,8 @@ func (c *Content) SearchAlbums(search string) ([]*models.Album, error) {
 	panic("implement me")
 }
 
-func (c *Content) GetArtists() ([]*models.Artist, error) {
-	panic("implement me")
+func (c *Content) GetArtists(paging interfaces.Paging) ([]*models.Artist, int, error) {
+	return c.api.GetArtists(paging)
 }
 
 func (c *Content) GetLatestAlbums() ([]*models.Album, error) {

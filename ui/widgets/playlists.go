@@ -112,6 +112,7 @@ func (a *Playlists) SetPlaylists(playlists []*models.Playlist) {
 		a.playlistCovers[i] = cover
 	}
 	a.list.AddItems(items...)
+	a.name.SetText(fmt.Sprintf("Playlists: %d", len(playlists)))
 }
 
 // NewPlaylists constructs new playlist view
@@ -156,6 +157,7 @@ func NewPlaylists(selectPlaylist func(playlist *models.Playlist)) *Playlists {
 	a.Grid.SetBackgroundColor(config.Color.Background)
 	a.name.SetBackgroundColor(config.Color.Background)
 	a.name.SetTextColor(config.Color.Text)
+	a.name.SetText("Playlists")
 
 	a.list.Grid.SetColumns(1, -1)
 

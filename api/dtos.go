@@ -17,7 +17,6 @@
 package api
 
 import (
-	"github.com/sirupsen/logrus"
 	"tryffel.net/go/jellycli/models"
 )
 
@@ -122,10 +121,6 @@ type song struct {
 }
 
 func (s *song) toSong() *models.Song {
-	if s.Type != mediaTypeSong {
-		logrus.Warningf("Converting (%s) to song", s.Type)
-	}
-
 	artists := make([]models.IdName, len(s.Artists))
 	for i, v := range s.Artists {
 		artists[i].Name = v.Name

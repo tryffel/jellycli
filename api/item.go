@@ -20,6 +20,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"math"
+	"strconv"
+	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
 )
 
@@ -366,6 +369,80 @@ func (a *Api) GetPlaylistSongs(playlist models.Id) ([]*models.Song, error) {
 	songs := make([]*models.Song, len(dto.Songs))
 	for i, v := range dto.Songs {
 		songs[i] = v.toSong()
+	}
+
+	return songs, nil
+}
+
+func (a *Api) GetSongsCount() (interfaces.Paging, error) {
+	params := *a.defaultParams()
+	params["IncludeItemTypes"] = "Audio"
+	params["Recursive"] = "true"
+	params["SortBy"] = "Name"
+	params["SortOrder"] = "Ascending"
+	params["api_key"] = a.token
+
+	// we only want total count
+	params["Limit"] = "1"
+
+	resp, err := a.get(fmt.Sprintf("/Users/%s/Items", a.userId), &params)
+	if resp != nil {
+		defer resp.Close()
+	}
+
+	paging := interfaces.Paging{}
+
+	if err != nil {
+		return paging, err
+	}
+
+	dto := songs{}
+
+	err = json.NewDecoder(resp).Decode(&dto)
+	if err != nil {
+		return paging, fmt.Errorf("decode json: %v", err)
+	}
+
+	pageSize := 100
+
+	paging.TotalItems = dto.TotalSongs
+	paging.CurrentPage = 0
+	paging.TotalPages = int(math.Ceil(float64(dto.TotalSongs) / float64(pageSize)))
+	paging.PageSize = pageSize
+	return paging, nil
+}
+
+func (a *Api) GetSongs(page, pageSize int) ([]*models.Song, error) {
+	params := *a.defaultParams()
+	params["IncludeItemTypes"] = "Audio"
+	params["Recursive"] = "true"
+	params["SortBy"] = "Name"
+	params["SortOrder"] = "Ascending"
+	params["api_key"] = a.token
+
+	params["Limit"] = strconv.Itoa(pageSize)
+	params["StartIndex"] = strconv.Itoa((page) * pageSize)
+
+	resp, err := a.get(fmt.Sprintf("/Users/%s/Items", a.userId), &params)
+	if resp != nil {
+		defer resp.Close()
+	}
+
+	if err != nil {
+		return []*models.Song{}, err
+	}
+
+	dto := songs{}
+	err = json.NewDecoder(resp).Decode(&dto)
+	if err != nil {
+		return []*models.Song{}, fmt.Errorf("decode json: %v", err)
+	}
+
+	songs := make([]*models.Song, len(dto.Songs))
+
+	for i, v := range dto.Songs {
+		songs[i] = v.toSong()
+		songs[i].Index = pageSize*pageSize + i + 1
 	}
 
 	return songs, nil

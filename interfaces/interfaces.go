@@ -98,17 +98,18 @@ type MediaManager interface {
 	GetLatestAlbums() ([]*models.Album, error)
 
 	GetStatistics() models.Stats
+
+	// GetAllSongsCount returns paging info about all songs
+	GetAllSongsCount() (Paging, error)
+
+	// GetSongs returns songs from given page, if any.
+	GetSongs(page, pageSize int) ([]*models.Song, error)
 }
 
-type View int
-
-const (
-	ViewAllArtists View = iota
-	ViewAllAlbums
-	ViewAllSongs
-	ViewFavoriteArtists
-	ViewFavoriteAlbums
-	ViewFavoriteSongs
-	ViewPlaylists
-	ViewLatestMusic
-)
+// Paging. First page is 0
+type Paging struct {
+	TotalItems  int
+	TotalPages  int
+	CurrentPage int
+	PageSize    int
+}

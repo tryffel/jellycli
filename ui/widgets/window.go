@@ -44,6 +44,7 @@ type Window struct {
 	artistList *ArtistList
 	playlists  *Playlists
 	playlist   *PlaylistView
+	songs      *SongList
 
 	gridAxisX  []int
 	gridAxisY  []int
@@ -78,6 +79,9 @@ func NewWindow(mc interfaces.MediaController) Window {
 	w.playlist = NewPlaylistView(w.playSong, w.playSongs)
 	w.playlist.SetBackCallback(w.goBack)
 
+	w.songs = NewSongList(w.playSong, w.playSongs)
+	w.songs.SetBackCallback(w.goBack)
+	w.songs.showPage = w.selectSongs
 	w.mediaController = mc
 
 	w.setLayout()
@@ -152,6 +156,10 @@ func (w *Window) goBack(p Previous) {
 
 // set central widget. If updatePrevious, set update previous primitive's last primitive
 func (w *Window) setViewWidget(p Previous, updatePrevious bool) {
+	if p == w.mediaView {
+		return
+	}
+
 	last := w.mediaView
 	w.lastFocus = w.app.GetFocus()
 	w.layout.Grid().RemoveItem(w.mediaView)
@@ -389,11 +397,6 @@ func (w *Window) selectMedia(m MediaSelect) {
 			w.setViewWidget(w.artistList, true)
 		}
 	case MediaPlaylists:
-		if w.mediaView == w.artistList {
-			w.app.SetFocus(w.mediaView)
-			return
-		}
-
 		playlists, err := w.mediaController.GetPlaylists()
 		if err != nil {
 			logrus.Errorf("get playlists: %v", err)
@@ -402,6 +405,22 @@ func (w *Window) selectMedia(m MediaSelect) {
 			w.playlists.SetPlaylists(playlists)
 			w.setViewWidget(w.playlists, true)
 		}
+	case MediaSongs:
+		paging, err := w.mediaController.GetAllSongsCount()
+		if err != nil {
+			logrus.Errorf("get songs count: %v", err)
+			return
+		}
+
+		songs, err := w.mediaController.GetSongs(0, paging.PageSize)
+		if err != nil {
+			logrus.Errorf("get songs: %v", err)
+		}
+
+		w.mediaNav.SetCount(MediaSongs, paging.TotalItems)
+		w.songs.SetSongs(songs, paging)
+
+		w.setViewWidget(w.songs, true)
 	}
 }
 
@@ -441,6 +460,18 @@ func (w *Window) selectPlaylist(playlist *models.Playlist) {
 
 	w.playlist.SetPlaylist(playlist)
 	w.setViewWidget(w.playlist, true)
+}
+
+func (w *Window) selectSongs(page interfaces.Paging) {
+	songs, err := w.mediaController.GetSongs(page.CurrentPage, page.PageSize)
+	if err != nil {
+		logrus.Errorf("get songs: %v", err)
+	}
+
+	w.songs.SetSongs(songs, page)
+	w.setViewWidget(w.songs, true)
+
+	w.app.Draw()
 }
 
 func (w *Window) playSong(song *models.Song) {

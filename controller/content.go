@@ -122,6 +122,14 @@ func (c *Content) GetArtistAlbums(artist models.Id) ([]*models.Album, error) {
 	return c.api.GetArtistAlbums(artist)
 }
 
+func (c *Content) GetAllSongsCount() (interfaces.Paging, error) {
+	return c.api.GetSongsCount()
+}
+
+func (c *Content) GetSongs(page, pageSize int) ([]*models.Song, error) {
+	return c.api.GetSongs(page, pageSize)
+}
+
 func (c *Content) GetStatistics() models.Stats {
 	cache := c.api.GetCacheItems()
 	name, version, _, _ := c.api.GetServerVersion()

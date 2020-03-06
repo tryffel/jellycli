@@ -70,7 +70,7 @@ func (a *Api) makeRequest(method, url string, body *[]byte, params *map[string]s
 	if method == "POST" {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	req.Header.Set("X-Emby-Authorization", a.token)
+	req.Header.Set("X-Emby-Token", a.token)
 
 	if params != nil {
 		q := req.URL.Query()

@@ -24,7 +24,6 @@ import (
 
 func (a *Api) GetViews() ([]*models.View, error) {
 	params := *a.defaultParams()
-	params["api_key"] = a.token
 
 	url := fmt.Sprintf("/Users/%s/Views", a.userId)
 	resp, err := a.get(url, &params)
@@ -47,7 +46,6 @@ func (a *Api) GetViews() ([]*models.View, error) {
 
 func (a *Api) GetLatestAlbums() ([]*models.Album, error) {
 	params := *a.defaultParams()
-	params["api_key"] = a.token
 	params["UserId"] = a.userId
 
 	resp, err := a.get(fmt.Sprintf("/Users/%s/Items/Latest", a.userId), &params)

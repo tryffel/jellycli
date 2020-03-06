@@ -47,7 +47,6 @@ func (a *Api) Search(q string, limit int) (*SearchResult, error) {
 	params["SearchTerm"] = q
 	params["Limit"] = fmt.Sprint(limit)
 	params["IncludeItemTypes"] = "Audio"
-	params["api_key"] = a.token
 
 	body, err := a.get("/Search/Hints", &params)
 	if err != nil {

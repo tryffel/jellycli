@@ -121,7 +121,6 @@ func (a *Api) ReportProgress(state *interfaces.ApiPlaybackState) error {
 	// webui does not accept websocket response for now, so fall back to http posts. No p
 	//if a.socket == nil || state.Event == interfaces.EventStart || state.Event == interfaces.EventStop {
 	params := *a.defaultParams()
-	params["api_key"] = a.token
 	body, err := json.Marshal(&report)
 	if err != nil {
 		return fmt.Errorf("json marshaling failed: %v", err)
@@ -179,7 +178,6 @@ func (a *Api) ReportCapabilities() error {
 	data["SupportsPersistentIdentifier"] = false
 
 	params := *a.defaultParams()
-	params["api_key"] = a.token
 
 	body, err := json.Marshal(data)
 	if err != nil {

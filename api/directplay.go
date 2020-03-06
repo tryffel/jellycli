@@ -44,6 +44,5 @@ func (a *Api) directplayParams() *map[string]string {
 	a.SessionId = randomKey(20)
 	params["PlaySessionId"] = a.SessionId
 	params["AudioCodec"] = "mp3"
-	params["api_key"] = a.token
 	return &params
 }

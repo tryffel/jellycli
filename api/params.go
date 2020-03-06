@@ -22,3 +22,16 @@ func (p *params) setIncludeTypes(itemType mediaItemType) {
 	ptr := p.ptr()
 	ptr["IncludeItemTypes"] = itemType.String()
 }
+
+func (p *params) enableRecursive() {
+	(*p)["Recursive"] = "true"
+}
+
+func (p *params) setParentId(id string) {
+	(*p)["ParentId"] = id
+}
+
+func (p *params) setSorting(name string, order string) {
+	(*p)["SortBy"] = name
+	(*p)["SortOrder"] = order
+}

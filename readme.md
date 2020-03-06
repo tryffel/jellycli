@@ -15,19 +15,17 @@ Terminal client for Jellyfin, mostly for music at the moment.
     * Next track
 
 ## Building:
-**You will need Go 1.13 installed and configured**
+**You will need Go 1.13 or Go 1.14 installed and configured**
+
+**Warning: for the time being, use git clone directly instead of go get.** There is an issue with dependency 
+(rivo/tview) being automatically upgraded and causing deadlocks.
 
 Download & build package
 ```
-go get -u tryffel.net/go/jellycli
-```
-Jellycli-binary should now reside in $GOPATH/bin/jellycli. You can build it manually too:
-```
-go build tryffel.net/go/jellycli
-```
-Run
-```
-$GOPATH/bin/jellycli 
+git clone https://github.com/tryffel/jellycli.git
+cd jellycli
+go build .
+./jellycli
 ```
 
 On first time application asks for Jellyfin host, username, password and default collection for music. 

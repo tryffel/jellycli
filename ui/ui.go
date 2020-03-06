@@ -18,7 +18,6 @@ package ui
 
 import (
 	"tryffel.net/go/jellycli/controller"
-	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/task"
 	"tryffel.net/go/jellycli/ui/widgets"
 )
@@ -59,41 +58,6 @@ func (gui *Gui) loop() {
 		select {
 		case <-gui.StopChan():
 			break
-			//case state := <-gui.player.StateChannel():
-			//	logrus.Info(state)
-			//case <-gui.content.SearchCompleteChan():
-			//	logrus.Info("Got some results yay")
-			//}
 		}
 	}
 }
-
-func (gui *Gui) Control(state interfaces.State, volume int) {
-	switch state {
-	case interfaces.Continue:
-		gui.controller.Continue()
-	case interfaces.Pause:
-		gui.controller.Pause()
-	case interfaces.Stop:
-		gui.controller.StopMedia()
-	case interfaces.SetVolume:
-		gui.controller.SetVolume(volume)
-	}
-}
-
-func (gui *Gui) Search(q string) {
-	//go gui.controller.Search(q)
-}
-
-//func (gui *Gui) GetChildren(parentId string, cb func(item []models.Item)) {
-//	parent := gui.content.GetItem(parentId)
-//	items := gui.content.GetItemMultiple(parent.GetChildren())
-//	cb(items)
-//}
-
-//func (gui *Gui) GetParent(childId string, cb func(item models.Item)) {
-//	child := gui.content.GetItem(childId)
-//	parent := gui.content.GetItem(string(child.GetParent()))
-//	cb(parent)
-
-//}

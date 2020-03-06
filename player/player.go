@@ -126,7 +126,7 @@ func (p *Player) loop() {
 				p.RefreshState()
 				go p.reportStatus(event)
 			} else {
-				logrus.Error("Invalid action, probably incorrect transition")
+				logrus.Errorf("invalid player transition: %s to %s", p.state.State, action.State)
 			}
 		case <-p.chanStreamComplete:
 			p.endStream()

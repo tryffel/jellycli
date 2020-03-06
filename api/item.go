@@ -375,45 +375,8 @@ func (a *Api) GetPlaylistSongs(playlist models.Id) ([]*models.Song, error) {
 	return songs, nil
 }
 
-func (a *Api) GetSongsCount() (interfaces.Paging, error) {
-	params := *a.defaultParams()
-	params["IncludeItemTypes"] = "Audio"
-	params["Recursive"] = "true"
-	params["SortBy"] = "Name"
-	params["SortOrder"] = "Ascending"
-	params["api_key"] = a.token
-
-	// we only want total count
-	params["Limit"] = "1"
-
-	resp, err := a.get(fmt.Sprintf("/Users/%s/Items", a.userId), &params)
-	if resp != nil {
-		defer resp.Close()
-	}
-
-	paging := interfaces.Paging{}
-
-	if err != nil {
-		return paging, err
-	}
-
-	dto := songs{}
-
-	err = json.NewDecoder(resp).Decode(&dto)
-	if err != nil {
-		return paging, fmt.Errorf("decode json: %v", err)
-	}
-
-	pageSize := 100
-
-	paging.CurrentPage = 0
-	paging.PageSize = pageSize
-	paging.SetTotalItems(dto.TotalSongs)
-
-	return paging, nil
-}
-
-func (a *Api) GetSongs(page, pageSize int) ([]*models.Song, error) {
+// GetSongs returns songs by paging, and returns total number of songs
+func (a *Api) GetSongs(page, pageSize int) ([]*models.Song, int, error) {
 	params := *a.defaultParams()
 	params["IncludeItemTypes"] = "Audio"
 	params["Recursive"] = "true"
@@ -430,13 +393,13 @@ func (a *Api) GetSongs(page, pageSize int) ([]*models.Song, error) {
 	}
 
 	if err != nil {
-		return []*models.Song{}, err
+		return []*models.Song{}, 0, err
 	}
 
 	dto := songs{}
 	err = json.NewDecoder(resp).Decode(&dto)
 	if err != nil {
-		return []*models.Song{}, fmt.Errorf("decode json: %v", err)
+		return []*models.Song{}, 0, fmt.Errorf("decode json: %v", err)
 	}
 
 	songs := make([]*models.Song, len(dto.Songs))
@@ -447,7 +410,7 @@ func (a *Api) GetSongs(page, pageSize int) ([]*models.Song, error) {
 		songs[i].Index = pageSize*pageSize + i + 1
 	}
 
-	return songs, nil
+	return songs, dto.TotalSongs, nil
 }
 
 // GetArtists return artists defined by paging and total number of artists

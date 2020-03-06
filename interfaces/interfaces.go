@@ -102,11 +102,8 @@ type MediaManager interface {
 
 	GetStatistics() models.Stats
 
-	// GetAllSongsCount returns paging info about all songs
-	GetAllSongsCount() (Paging, error)
-
-	// GetSongs returns songs from given page, if any.
-	GetSongs(page, pageSize int) ([]*models.Song, error)
+	// GetSongs returns songs by paging. It also returns total number of songs.
+	GetSongs(page, pageSize int) ([]*models.Song, int, error)
 }
 
 // Paging. First page is 0

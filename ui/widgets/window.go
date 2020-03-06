@@ -408,19 +408,19 @@ func (w *Window) selectMedia(m MediaSelect) {
 			w.setViewWidget(w.playlists, true)
 		}
 	case MediaSongs:
-		paging, err := w.mediaController.GetAllSongsCount()
-		if err != nil {
-			logrus.Errorf("get songs count: %v", err)
-			return
+		page := interfaces.Paging{
+			CurrentPage: 0,
+			PageSize:    100,
 		}
 
-		songs, err := w.mediaController.GetSongs(0, paging.PageSize)
+		songs, count, err := w.mediaController.GetSongs(0, page.PageSize)
 		if err != nil {
 			logrus.Errorf("get songs: %v", err)
 		}
 
-		w.mediaNav.SetCount(MediaSongs, paging.TotalItems)
-		w.songs.SetSongs(songs, paging)
+		page.SetTotalItems(count)
+		w.mediaNav.SetCount(MediaSongs, page.TotalItems)
+		w.songs.SetSongs(songs, page)
 
 		w.setViewWidget(w.songs, true)
 	case MediaArtists:
@@ -509,7 +509,7 @@ func (w *Window) selectPlaylist(playlist *models.Playlist) {
 }
 
 func (w *Window) selectSongs(page interfaces.Paging) {
-	songs, err := w.mediaController.GetSongs(page.CurrentPage, page.PageSize)
+	songs, _, err := w.mediaController.GetSongs(page.CurrentPage, page.PageSize)
 	if err != nil {
 		logrus.Errorf("get songs: %v", err)
 	}

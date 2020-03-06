@@ -29,7 +29,7 @@ const (
 	defaultLimit = "100"
 )
 
-func itemType(dto *map[string]interface{}) (models.ItemType, error) {
+func getItemType(dto *map[string]interface{}) (models.ItemType, error) {
 	field := (*dto)["Type"]
 	text, ok := field.(string)
 	if !ok {
@@ -65,7 +65,7 @@ func (a *Api) GetItem(id models.Id) (models.Item, error) {
 		return nil, fmt.Errorf("parse json response: %v", err)
 	}
 
-	itemT, err := itemType(dto)
+	itemT, err := getItemType(dto)
 	if err != nil {
 		return nil, fmt.Errorf("invalid item type: %v", err)
 	}
@@ -339,6 +339,7 @@ func (a *Api) GetPlaylists() ([]*models.Playlist, error) {
 
 	data = make([]*models.Playlist, len(dto.Playlists))
 	for i, v := range dto.Playlists {
+		logInvalidType(&v, "get playlists")
 		data[i] = v.toPlaylist()
 	}
 
@@ -367,6 +368,7 @@ func (a *Api) GetPlaylistSongs(playlist models.Id) ([]*models.Song, error) {
 
 	songs := make([]*models.Song, len(dto.Songs))
 	for i, v := range dto.Songs {
+		logInvalidType(&v, "get playlist songs")
 		songs[i] = v.toSong()
 	}
 
@@ -440,6 +442,7 @@ func (a *Api) GetSongs(page, pageSize int) ([]*models.Song, error) {
 	songs := make([]*models.Song, len(dto.Songs))
 
 	for i, v := range dto.Songs {
+		logInvalidType(&v, "get songs")
 		songs[i] = v.toSong()
 		songs[i].Index = pageSize*pageSize + i + 1
 	}
@@ -474,6 +477,7 @@ func (a *Api) GetArtists(paging interfaces.Paging) (artistList []*models.Artist,
 
 	artistList = make([]*models.Artist, len(dto.Artists))
 	for i, v := range dto.Artists {
+		logInvalidType(&v, "get artists")
 		artistList[i] = v.toArtist()
 	}
 
@@ -509,6 +513,7 @@ func (a *Api) GetAlbums(paging interfaces.Paging) (albumList []*models.Album, nu
 	numRecords = dto.TotalAlbums
 	albumList = make([]*models.Album, len(dto.Albums))
 	for i, v := range dto.Albums {
+		logInvalidType(&v, "get albums")
 		albumList[i] = v.toAlbum()
 	}
 	return

@@ -17,6 +17,8 @@
 package api
 
 import (
+	"fmt"
+	"github.com/sirupsen/logrus"
 	"tryffel.net/go/jellycli/models"
 )
 
@@ -29,6 +31,33 @@ const (
 	folderTypeCollections = "CollectionFolder"
 	fodlerTypeUserView    = "UserView"
 )
+
+// itemType: each item provided by api has Type-field. This interface returns expected type and actual type
+type itemType interface {
+	// what type
+	ExpectType() string
+	GotType() string
+}
+
+// assert type matches expected
+func assertType(item itemType) error {
+	got := item.GotType()
+	expect := item.ExpectType()
+	if got == expect {
+		return nil
+	}
+
+	return fmt.Errorf("expect '%s', got '%s'", expect, got)
+}
+
+// make type assertion and log failures.
+// action is user for logging.
+func logInvalidType(item itemType, action string) {
+	err := assertType(item)
+	if err != nil {
+		logrus.Errorf("type error (%s): %v", action, err)
+	}
+}
 
 type nameId struct {
 	Name string `json:"Name"`
@@ -47,6 +76,14 @@ type artist struct {
 	Type          string `json:"Type"`
 	TotalSongs    int    `json:"SongCount"`
 	TotalAlbums   int    `json:"AlbumCount"`
+}
+
+func (a *artist) ExpectType() string {
+	return mediaTypeArtist
+}
+
+func (a *artist) GotType() string {
+	return a.Type
 }
 
 func (a *artist) toArtist() *models.Artist {
@@ -74,6 +111,14 @@ type album struct {
 	Overview  string   `json:"Overview"`
 	Genres    []string `json:"Genres"`
 	ImageTags images   `json:"ImageTags"`
+}
+
+func (a *album) ExpectType() string {
+	return mediaTypeAlbum
+}
+
+func (a *album) GotType() string {
+	return a.Type
 }
 
 func (a *album) toAlbum() *models.Album {
@@ -120,6 +165,14 @@ type song struct {
 	Artists        []nameId `json:"ArtistItems"`
 }
 
+func (s *song) ExpectType() string {
+	return mediaTypeSong
+}
+
+func (s *song) GotType() string {
+	return s.Type
+}
+
 func (s *song) toSong() *models.Song {
 	artists := make([]models.IdName, len(s.Artists))
 	for i, v := range s.Artists {
@@ -160,6 +213,14 @@ type playlist struct {
 	Duration int      `json:"RunTimeTicks"`
 	Type     string   `json:"Type"`
 	Songs    int      `json:"ChildCount"`
+}
+
+func (p *playlist) ExpectType() string {
+	return mediaTypePlaylist
+}
+
+func (p *playlist) GotType() string {
+	return p.Type
 }
 
 func (p *playlist) toPlaylist() *models.Playlist {

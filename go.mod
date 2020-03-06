@@ -3,7 +3,6 @@ module tryffel.net/go/jellycli
 go 1.13
 
 require (
-	github.com/99designs/keyring v1.1.2
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/faiface/beep v1.0.1
 	github.com/gdamore/tcell v1.3.0

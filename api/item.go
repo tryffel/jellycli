@@ -36,11 +36,11 @@ func getItemType(dto *map[string]interface{}) (models.ItemType, error) {
 		return "", fmt.Errorf("invalid type: %v", text)
 	}
 	switch text {
-	case mediaTypeArtist:
+	case mediaTypeArtist.String():
 		return models.TypeArtist, nil
-	case mediaTypeAlbum:
+	case mediaTypeAlbum.String():
 		return models.TypeAlbum, nil
-	case mediaTypeSong:
+	case mediaTypeSong.String():
 		return models.TypeSong, nil
 	default:
 		return "", fmt.Errorf("unknown type: %s", text)
@@ -129,9 +129,9 @@ func (a *Api) GetArtist(id models.Id) (models.Artist, error) {
 
 	ar := models.Artist{}
 
-	params := *a.defaultParams()
+	params := a.defaultParams()
 
-	resp, err := a.get(fmt.Sprintf("/Users/%s/Items/%s", a.userId, id), &params)
+	resp, err := a.get(fmt.Sprintf("/Users/%s/Items/%s", a.userId, id), params)
 	if err != nil {
 		return ar, fmt.Errorf("get artist: %v", err)
 	}
@@ -169,7 +169,7 @@ func (a *Api) GetArtist(id models.Id) (models.Artist, error) {
 //GetArtistAlbums retrieves albums for given artist.
 func (a *Api) GetArtistAlbums(id models.Id) ([]*models.Album, error) {
 	params := *a.defaultParams()
-	params["IncludeItemTypes"] = "MusicAlbum"
+	params.setIncludeTypes(mediaTypeAlbum)
 	params["Recursive"] = "true"
 	//TODO: use also ContributingAlbumArtistIds
 	params["AlbumArtistIds"] = id.String()
@@ -312,7 +312,7 @@ func (a *Api) GetFavoriteArtists() ([]*models.Artist, error) {
 func (a *Api) GetPlaylists() ([]*models.Playlist, error) {
 	params := *a.defaultParams()
 	params["parentId"] = a.musicView
-	params["IncludeItemTypes"] = "Playlist"
+	params.setIncludeTypes(mediaTypePlaylist)
 	params["Recursive"] = "true"
 	params["Fields"] = "ChildCount"
 
@@ -370,7 +370,7 @@ func (a *Api) GetPlaylistSongs(playlist models.Id) ([]*models.Song, error) {
 // GetSongs returns songs by paging, and returns total number of songs
 func (a *Api) GetSongs(page, pageSize int) ([]*models.Song, int, error) {
 	params := *a.defaultParams()
-	params["IncludeItemTypes"] = "Audio"
+	params.setIncludeTypes(mediaTypeSong)
 	params["Recursive"] = "true"
 	params["SortBy"] = "Name"
 	params["SortOrder"] = "Ascending"
@@ -410,8 +410,7 @@ func (a *Api) GetArtists(paging interfaces.Paging) (artistList []*models.Artist,
 	params["Recursive"] = "true"
 	params["SortBy"] = "SortName"
 	params["SortOrder"] = "Ascending"
-	params["Limit"] = strconv.Itoa(paging.PageSize)
-	params["StartIndex"] = strconv.Itoa(paging.Offset())
+	params.setPaging(paging)
 	resp, err := a.get("/Artists", &params)
 	if resp != nil {
 		defer resp.Close()
@@ -444,9 +443,8 @@ func (a *Api) GetAlbums(paging interfaces.Paging) (albumList []*models.Album, nu
 	params["Recursive"] = "true"
 	params["SortBy"] = "SortName"
 	params["SortOrder"] = "Ascending"
-	params["Limit"] = strconv.Itoa(paging.PageSize)
-	params["StartIndex"] = strconv.Itoa(paging.Offset())
-	params["IncludeItemTypes"] = "MusicAlbum"
+	params.setPaging(paging)
+	params.setIncludeTypes(mediaTypeAlbum)
 	resp, err := a.get(fmt.Sprintf("/Users/%s/Items", a.userId), &params)
 	if resp != nil {
 		defer resp.Close()

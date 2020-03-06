@@ -22,21 +22,27 @@ import (
 	"tryffel.net/go/jellycli/models"
 )
 
+type mediaItemType string
+
+func (m mediaItemType) String() string {
+	return string(m)
+}
+
 const (
-	mediaTypeAlbum        = "MusicAlbum"
-	mediaTypeArtist       = "MusicArtist"
-	mediaTypeSong         = "Audio"
-	mediaTypePlaylist     = "Playlist"
-	folderTypePlaylists   = "PlaylistsFolder"
-	folderTypeCollections = "CollectionFolder"
-	fodlerTypeUserView    = "UserView"
+	mediaTypeAlbum        mediaItemType = "MusicAlbum"
+	mediaTypeArtist       mediaItemType = "MusicArtist"
+	mediaTypeSong         mediaItemType = "Audio"
+	mediaTypePlaylist     mediaItemType = "Playlist"
+	folderTypePlaylists   mediaItemType = "PlaylistsFolder"
+	folderTypeCollections mediaItemType = "CollectionFolder"
+	fodlerTypeUserView    mediaItemType = "UserView"
 )
 
 // itemType: each item provided by api has Type-field. This interface returns expected type and actual type
 type itemType interface {
 	// what type
-	ExpectType() string
-	GotType() string
+	ExpectType() mediaItemType
+	GotType() mediaItemType
 }
 
 // assert type matches expected
@@ -78,12 +84,12 @@ type artist struct {
 	TotalAlbums   int    `json:"AlbumCount"`
 }
 
-func (a *artist) ExpectType() string {
+func (a *artist) ExpectType() mediaItemType {
 	return mediaTypeArtist
 }
 
-func (a *artist) GotType() string {
-	return a.Type
+func (a *artist) GotType() mediaItemType {
+	return mediaItemType(a.Type)
 }
 
 func (a *artist) toArtist() *models.Artist {
@@ -113,12 +119,12 @@ type album struct {
 	ImageTags images   `json:"ImageTags"`
 }
 
-func (a *album) ExpectType() string {
+func (a *album) ExpectType() mediaItemType {
 	return mediaTypeAlbum
 }
 
-func (a *album) GotType() string {
-	return a.Type
+func (a *album) GotType() mediaItemType {
+	return mediaItemType(a.Type)
 }
 
 func (a *album) toAlbum() *models.Album {
@@ -165,12 +171,12 @@ type song struct {
 	Artists        []nameId `json:"ArtistItems"`
 }
 
-func (s *song) ExpectType() string {
+func (s *song) ExpectType() mediaItemType {
 	return mediaTypeSong
 }
 
-func (s *song) GotType() string {
-	return s.Type
+func (s *song) GotType() mediaItemType {
+	return mediaItemType(s.Type)
 }
 
 func (s *song) toSong() *models.Song {
@@ -215,12 +221,12 @@ type playlist struct {
 	Songs    int      `json:"ChildCount"`
 }
 
-func (p *playlist) ExpectType() string {
+func (p *playlist) ExpectType() mediaItemType {
 	return mediaTypePlaylist
 }
 
-func (p *playlist) GotType() string {
-	return p.Type
+func (p *playlist) GotType() mediaItemType {
+	return mediaItemType(p.Type)
 }
 
 func (p *playlist) toPlaylist() *models.Playlist {

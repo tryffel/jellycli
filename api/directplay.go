@@ -32,17 +32,16 @@ func (a *Api) GetSongDirect(id string, codec string) (io.ReadCloser, error) {
 	return body, nil
 }
 
-func (a *Api) directplayParams() *map[string]string {
-	params := *(&map[string]string{})
-	params["UserId"] = a.userId
-	params["DeviceId"] = a.DeviceId
-	params["MaxStreamingBitrate"] = "140000000"
-	params["Container"] = "mp3"
-	params["AudioSamplingRate"] = fmt.Sprint(config.AudioSamplingRate)
+func (a *Api) directplayParams() *params {
+	params := a.defaultParams()
+	ptr := params.ptr()
+	ptr["MaxStreamingBitrate"] = "140000000"
+	ptr["Container"] = "mp3"
+	ptr["AudioSamplingRate"] = fmt.Sprint(config.AudioSamplingRate)
 
 	// Every new request requires new playsession
 	a.SessionId = randomKey(20)
-	params["PlaySessionId"] = a.SessionId
-	params["AudioCodec"] = "mp3"
-	return &params
+	ptr["PlaySessionId"] = a.SessionId
+	ptr["AudioCodec"] = "mp3"
+	return params
 }

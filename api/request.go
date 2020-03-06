@@ -35,25 +35,25 @@ const (
 	errForbidden            = "forbidden"
 )
 
-func (a *Api) defaultParams() *map[string]string {
-	params := *(&map[string]string{})
+func (a *Api) defaultParams() *params {
+	params := *(&params{})
 	params["UserId"] = a.userId
 	params["DeviceId"] = a.DeviceId
 	return &params
 }
 
-func (a *Api) get(url string, params *map[string]string) (io.ReadCloser, error) {
+func (a *Api) get(url string, params *params) (io.ReadCloser, error) {
 	return a.makeRequest("GET", url, nil, params)
 }
 
-func (a *Api) post(url string, body *[]byte, params *map[string]string) (io.ReadCloser, error) {
+func (a *Api) post(url string, body *[]byte, params *params) (io.ReadCloser, error) {
 	return a.makeRequest("POST", url, body, params)
 }
 
 //Construct request
 // Set authorization header and build url query
 // Make request, parse response code and raise error if needed. Else return response body
-func (a *Api) makeRequest(method, url string, body *[]byte, params *map[string]string) (io.ReadCloser, error) {
+func (a *Api) makeRequest(method, url string, body *[]byte, params *params) (io.ReadCloser, error) {
 	var reader *bytes.Buffer
 	var req *http.Request
 	var err error

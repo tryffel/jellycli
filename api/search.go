@@ -46,7 +46,7 @@ func (a *Api) Search(q string, limit int) (*SearchResult, error) {
 	delete(params, "DeviceId")
 	params["SearchTerm"] = q
 	params["Limit"] = fmt.Sprint(limit)
-	params["IncludeItemTypes"] = "Audio"
+	params.setIncludeTypes(mediaTypeSong)
 
 	body, err := a.get("/Search/Hints", &params)
 	if err != nil {

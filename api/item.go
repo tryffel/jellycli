@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"io"
 	"strconv"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
@@ -414,11 +415,29 @@ func (a *Api) GetArtists(paging interfaces.Paging) (artistList []*models.Artist,
 	if resp != nil {
 		defer resp.Close()
 	}
-
 	if err != nil {
 		return
 	}
 
+	return a.parseArtists(resp)
+}
+
+func (a *Api) GetAlbumArtists(paging interfaces.Paging) (artistList []*models.Artist, numRecords int, err error) {
+	params := *a.defaultParams()
+	params.enableRecursive()
+	params.setSorting("SortName", "Ascending")
+	params.setPaging(paging)
+	resp, err := a.get("/Artists/AlbumArtists", &params)
+	if resp != nil {
+		defer resp.Close()
+	}
+	if err != nil {
+		return
+	}
+	return a.parseArtists(resp)
+}
+
+func (a *Api) parseArtists(resp io.Reader) (artistList []*models.Artist, numRecords int, err error) {
 	dto := &artists{}
 	err = json.NewDecoder(resp).Decode(&dto)
 	if err != nil {

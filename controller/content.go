@@ -85,6 +85,10 @@ func (c *Content) GetArtists(paging interfaces.Paging) ([]*models.Artist, int, e
 	return c.api.GetArtists(paging)
 }
 
+func (c *Content) GetAlbumArtists(paging interfaces.Paging) ([]*models.Artist, int, error) {
+	return c.api.GetAlbumArtists(paging)
+}
+
 func (c *Content) GetLatestAlbums() ([]*models.Album, error) {
 	return c.api.GetLatestAlbums()
 }

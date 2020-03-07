@@ -29,6 +29,7 @@ const (
 	MediaLatestMusic MediaSelect = iota
 	MediaRecent
 	MediaArtists
+	MediaAlbumArtists
 	MediaAlbums
 	MediaSongs
 	MediaPlaylists
@@ -40,6 +41,7 @@ var mediaSelections = map[MediaSelect]string{
 	MediaLatestMusic:     "Latest Music",
 	MediaRecent:          "Recently played",
 	MediaArtists:         "Artists",
+	MediaAlbumArtists:    "Album Artists",
 	MediaAlbums:          "Albums",
 	MediaSongs:           "Songs",
 	MediaPlaylists:       "Playlists",

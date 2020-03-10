@@ -16,7 +16,8 @@ Terminal client for Jellyfin, mostly for music at the moment.
 ## Building:
 **You will need Go 1.13 or Go 1.14 installed and configured**
 
-* On linux you need to have alsalib-dev installed.
+* For additional audio libraries required, see [Hajimehoshi/oto](https://github.com/hajimehoshi/oto). 
+On linux you need libasound2-dev.
 * Currently jellycli has issues with Windows and is unable to start properly.
 
 **Warning: for the time being, use git clone directly instead of go get.** There is an issue with dependency 

@@ -104,6 +104,7 @@ type AudioStatus struct {
 	SongPast AudioTick
 	Volume   AudioVolume
 	Muted    bool
+	Paused   bool
 }
 
 func (a *AudioStatus) Clear() {

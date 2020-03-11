@@ -214,11 +214,7 @@ func (w *Window) mediaCtrl(event *tcell.EventKey) bool {
 	key := event.Key()
 	switch key {
 	case ctrls.PlayPause:
-		if w.status.state.State == interfaces.AudioStatePaused {
-			go w.mediaPlayer.Continue()
-		} else if w.status.state.State == interfaces.AudioStatePlaying {
-			go w.mediaPlayer.Pause()
-		}
+		w.mediaPlayer.PlayPause()
 	case ctrls.VolumeDown:
 		volume := w.status.state.Volume.Add(-5)
 		go w.mediaPlayer.SetVolume(volume)

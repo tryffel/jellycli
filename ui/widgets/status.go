@@ -177,7 +177,7 @@ func (s *Status) Draw(screen tcell.Screen) {
 	songPast = " " + songPast + " "
 	var songDuration = " 0:00 "
 	if s.state.Song != nil {
-		songDuration := util.SecToString(s.state.Song.Duration)
+		songDuration = util.SecToString(s.state.Song.Duration)
 		songDuration = " " + songDuration + " "
 	}
 
@@ -293,20 +293,18 @@ func (s *Status) buttonCb(name string) {
 func (s *Status) UpdateState(state interfaces.AudioStatus, song *models.SongInfo) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	s.state = state
 	s.song = song
-	s.progress.SetMaximum(s.state.SongPast.Seconds())
-
-	if s.state.State != state.State {
-		s.DrawButtons()
+	if state.Song != nil {
+		s.progress.SetMaximum(state.Song.Duration)
 	}
 	s.state = state
+	s.DrawButtons()
 }
 
 func (s *Status) DrawButtons() {
-	if s.state.State == interfaces.AudioStatePlaying {
-		s.btnPlay.SetLabel(btnPause)
-	} else if s.state.State == interfaces.AudioStatePaused {
+	if s.state.Paused {
 		s.btnPlay.SetLabel(btnPlay)
+	} else {
+		s.btnPlay.SetLabel(btnPause)
 	}
 }

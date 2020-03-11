@@ -211,7 +211,7 @@ func (p *Player) audioCallback(status interfaces.AudioStatus) {
 		IsPaused:       false,
 		IsMuted:        status.Muted,
 		PlaylistLength: 0,
-		Position:       status.SongPast.MicroSeconds(),
+		Position:       status.SongPast.Seconds(),
 		Volume:         int(status.Volume),
 	}
 
@@ -224,21 +224,16 @@ func (p *Player) audioCallback(status interfaces.AudioStatus) {
 		apiStatus.Event = interfaces.EventVolumeChange
 	case interfaces.AudioActionTimeUpdate:
 		apiStatus.Event = interfaces.EventTimeUpdate
-	case interfaces.AudioActionPlayPause:
-		if status.State == interfaces.AudioStatePlaying {
-			apiStatus.Event = interfaces.EventUnpause
-		} else if status.State == interfaces.AudioStatePaused {
-			apiStatus.Event = interfaces.EventPause
-		} else {
-			logrus.Errorf("invalid audio status: action %v, state %v", status.Action, status.State)
-		}
 	default:
 		apiStatus.Event = interfaces.EventTimeUpdate
 		logrus.Warningf("cannot map audio state to api event: %v", status.Action)
 	}
 
+	apiStatus.IsPaused = status.Paused
+
 	if status.Song != nil {
 		apiStatus.ItemId = status.Song.Id.String()
+		apiStatus.PlaylistLength = status.Song.Duration
 	}
 	f := func() {
 		err := p.api.ReportProgress(apiStatus)

@@ -73,6 +73,7 @@ func newAudio() (*Audio, error) {
 	}
 	a.ctrl.Streamer = a.mixer
 	a.volume.Streamer = a.ctrl
+	a.status.Volume = 50
 
 	// Speaker
 	err := speaker.Init(config.AudioSamplingRate, config.AudioSamplingRate/1000*
@@ -94,7 +95,6 @@ func (a *Audio) getStatus() interfaces.AudioStatus {
 func (a *Audio) PlayPause() {
 	speaker.Lock()
 	defer a.flushStatus()
-	defer speaker.Unlock()
 	if a.ctrl == nil {
 		return
 	}
@@ -105,6 +105,8 @@ func (a *Audio) PlayPause() {
 		logrus.Info("Continue")
 	}
 	a.ctrl.Paused = state
+	a.status.Paused = state
+	speaker.Unlock()
 }
 
 // Pause pauses audio. If audio is already paused, do nothing.
@@ -112,11 +114,11 @@ func (a *Audio) Pause() {
 	logrus.Info("Pause audio")
 	speaker.Lock()
 	defer a.flushStatus()
-	defer speaker.Unlock()
 	if a.ctrl == nil {
 		return
 	}
 	a.ctrl.Paused = true
+	speaker.Unlock()
 }
 
 // Continue continues paused audio. If audio is already playing, do nothing.
@@ -124,11 +126,11 @@ func (a *Audio) Continue() {
 	logrus.Info("Continue audio")
 	speaker.Lock()
 	defer a.flushStatus()
-	defer speaker.Unlock()
 	if a.ctrl == nil {
 		return
 	}
 	a.ctrl.Paused = false
+	speaker.Unlock()
 }
 
 // StopMedia stops music. If there is no audio to play, do nothing.
@@ -168,7 +170,6 @@ func (a *Audio) SetVolume(volume interfaces.AudioVolume) {
 	logrus.Debugf("Set volume to %d %s -> %.2f Db", volume, "%", decibels)
 	speaker.Lock()
 	defer a.flushStatus()
-	defer speaker.Unlock()
 	if decibels <= config.AudioMinVolumedB {
 		a.volume.Silent = true
 		a.volume.Volume = config.AudioMinVolumedB
@@ -178,7 +179,10 @@ func (a *Audio) SetVolume(volume interfaces.AudioVolume) {
 	} else {
 		a.volume.Silent = false
 		a.volume.Volume = decibels
+		a.status.Volume = volume
 	}
+	speaker.Unlock()
+	a.flushStatus()
 }
 
 // SetMute mutes and un-mutes audio
@@ -189,12 +193,12 @@ func (a *Audio) SetMute(muted bool) {
 		logrus.Info("Unmute audio")
 	}
 	speaker.Lock()
-	defer speaker.Unlock()
 	if a.ctrl == nil {
 		return
 	}
 	a.ctrl.Paused = false
 	a.volume.Silent = muted
+	speaker.Unlock()
 }
 
 func (a *Audio) streamCompleted() {
@@ -247,6 +251,7 @@ func (a *Audio) closeOldStream() error {
 func (a *Audio) updateStatus() {
 	past := a.getPastTicks()
 	a.status.SongPast = past
+	a.status.Action = interfaces.AudioActionTimeUpdate
 	a.flushStatus()
 }
 
@@ -300,6 +305,8 @@ func (a *Audio) playSongFromReader(metadata songMetadata) error {
 	a.status.Album = metadata.album
 	a.status.Artist = metadata.artist
 	a.status.AlbumImageUrl = metadata.albumImageUrl
+	a.status.State = interfaces.AudioStatePlaying
+	a.status.Action = interfaces.AudioActionPlay
 	speaker.Unlock()
 	return err
 }
@@ -322,5 +329,5 @@ func (a *Audio) getPastTicks() interfaces.AudioTick {
 		return 0
 	}
 	left := a.streamer.Position() / config.AudioSamplingRate
-	return interfaces.AudioTick(time.Millisecond * time.Duration(left))
+	return interfaces.AudioTick((time.Second * time.Duration(left)).Milliseconds())
 }

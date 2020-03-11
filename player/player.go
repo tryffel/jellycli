@@ -108,6 +108,7 @@ func (p *Player) loop() {
 		case <-p.songComplete:
 			// stream / song complete, get next song
 			logrus.Debug("song complete")
+			p.Queue.songComplete()
 			p.downloadSong()
 		case status := <-p.audioUpdated:
 			logrus.Infof("got audio status: %v", status)
@@ -182,7 +183,11 @@ func (p *Player) downloadSong() {
 
 // Next plays next song from queue. Override Audio next to ensure there is track to play and download it
 func (p *Player) Next() {
-	p.Audio.Next()
+	if len(p.Queue.GetQueue()) > 1 {
+		p.Stop()
+		p.Queue.songComplete()
+		go p.downloadSong()
+	}
 }
 
 // Previous plays previous track. Override Audio previous to ensure there is track to play and download it
@@ -196,7 +201,7 @@ func (p *Player) audioCallback(status interfaces.AudioStatus) {
 	lastTime := p.lastApiReport
 	p.lock.RUnlock()
 
-	if time.Now().Sub(lastTime) < time.Millisecond*9500 {
+	if time.Now().Sub(lastTime) < time.Millisecond*9500 && status.Action == interfaces.AudioActionTimeUpdate {
 		// jellyfin server instructs to update every 10 sec
 		return
 	}
@@ -224,6 +229,12 @@ func (p *Player) audioCallback(status interfaces.AudioStatus) {
 		apiStatus.Event = interfaces.EventVolumeChange
 	case interfaces.AudioActionTimeUpdate:
 		apiStatus.Event = interfaces.EventTimeUpdate
+	case interfaces.AudioActionPlayPause:
+		if status.Paused {
+			apiStatus.Event = interfaces.EventPause
+		} else {
+			apiStatus.Event = interfaces.EventUnpause
+		}
 	default:
 		apiStatus.Event = interfaces.EventTimeUpdate
 		logrus.Warningf("cannot map audio state to api event: %v", status.Action)

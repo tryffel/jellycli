@@ -136,7 +136,6 @@ func (q *Queue) notifyHistoryUpdated() {
 
 func (q *Queue) songComplete() {
 	q.lock.Lock()
-	defer q.lock.Unlock()
 	defer q.notifyQueueUpdated()
 	defer q.notifyHistoryUpdated()
 	if len(q.items) == 0 {
@@ -149,6 +148,7 @@ func (q *Queue) songComplete() {
 	} else {
 		q.history = append([]*models.Song{song}, q.history...)
 	}
+	q.lock.Unlock()
 }
 
 func (q *Queue) empty() bool {

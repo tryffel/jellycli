@@ -106,7 +106,9 @@ func (a *Audio) PlayPause() {
 	}
 	a.ctrl.Paused = state
 	a.status.Paused = state
+	a.status.Action = interfaces.AudioActionPlayPause
 	speaker.Unlock()
+	a.flushStatus()
 }
 
 // Pause pauses audio. If audio is already paused, do nothing.
@@ -118,7 +120,10 @@ func (a *Audio) Pause() {
 		return
 	}
 	a.ctrl.Paused = true
+	a.status.Paused = true
+	a.status.Action = interfaces.AudioActionPlayPause
 	speaker.Unlock()
+	a.flushStatus()
 }
 
 // Continue continues paused audio. If audio is already playing, do nothing.
@@ -130,17 +135,23 @@ func (a *Audio) Continue() {
 		return
 	}
 	a.ctrl.Paused = false
+	a.status.Paused = false
+	a.status.Action = interfaces.AudioActionPlayPause
 	speaker.Unlock()
+	a.flushStatus()
 }
 
 // StopMedia stops music. If there is no audio to play, do nothing.
 func (a *Audio) StopMedia() {
 	speaker.Lock()
 	a.status.State = interfaces.AudioStateStopped
+	a.status.Action = interfaces.AudioActionStop
 	speaker.Unlock()
 	speaker.Clear()
 
+	speaker.Lock()
 	err := a.closeOldStream()
+	speaker.Unlock()
 	if err != nil {
 		logrus.Errorf("stop: %v", err)
 	}
@@ -149,10 +160,16 @@ func (a *Audio) StopMedia() {
 
 // Next plays next track. If there's no next song to play, do nothing.
 func (a *Audio) Next() {
+	speaker.Lock()
+	a.status.Action = interfaces.AudioActionPrevious
+	speaker.Unlock()
 }
 
 // Previous plays previous track. If previous track does not exist, do nothing.
 func (a *Audio) Previous() {
+	speaker.Lock()
+	a.status.Action = interfaces.AudioActionNext
+	speaker.Unlock()
 }
 
 // Seek seeks given ticks. If there is no audio, do nothing.
@@ -180,6 +197,7 @@ func (a *Audio) SetVolume(volume interfaces.AudioVolume) {
 		a.volume.Silent = false
 		a.volume.Volume = decibels
 		a.status.Volume = volume
+		a.status.Action = interfaces.AudioActionSetVolume
 	}
 	speaker.Unlock()
 	a.flushStatus()
@@ -199,6 +217,7 @@ func (a *Audio) SetMute(muted bool) {
 	a.ctrl.Paused = false
 	a.volume.Silent = muted
 	speaker.Unlock()
+	a.flushStatus()
 }
 
 func (a *Audio) streamCompleted() {
@@ -213,8 +232,7 @@ func (a *Audio) streamCompleted() {
 }
 
 func (a *Audio) closeOldStream() error {
-	speaker.Lock()
-	defer speaker.Unlock()
+	// don't use locking here, since speaker calls streamCompleted, which calls this to close reader
 	var err error
 	var streamErr error
 	if a.streamer != nil {

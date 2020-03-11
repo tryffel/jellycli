@@ -109,7 +109,7 @@ func (a *Application) Start() error {
 		return fmt.Errorf("connect to server: %v", err)
 	}
 
-	a.api.SetPlayer(a.player.Audio)
+	a.api.SetPlayer(a.player)
 
 	tasks := []task.Tasker{a.player, a.api}
 

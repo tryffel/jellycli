@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package controller
+package player
 
 import (
 	"reflect"
@@ -60,7 +60,7 @@ func Test_queue_GetQueue(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q := &queue{
+			q := &Queue{
 				items: tt.songs,
 			}
 			if got := q.GetQueue(); !reflect.DeepEqual(got, tt.songs) {
@@ -123,7 +123,7 @@ func Test_queue_Reorder(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q := &queue{
+			q := &Queue{
 				items: make([]*models.Song, len(songs)),
 			}
 			copy(q.items, songs)
@@ -158,7 +158,7 @@ func Test_queue_songComplete(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q := &queue{
+			q := &Queue{
 				items:   tt.songs,
 				history: []*models.Song{},
 			}
@@ -205,7 +205,7 @@ func Test_queue_AddSongs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q := &queue{
+			q := &Queue{
 				items: tt.songs,
 			}
 			q.AddSongs(tt.add)
@@ -242,7 +242,7 @@ func Test_queue_QueueDuration(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q := &queue{
+			q := &Queue{
 				items: tt.songs,
 			}
 			if got := q.QueueDuration(); got != tt.want {

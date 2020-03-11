@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package controller
+package player
 
 import (
 	"github.com/sirupsen/logrus"
@@ -22,7 +22,8 @@ import (
 	"tryffel.net/go/jellycli/models"
 )
 
-type queue struct {
+// Queue implements interfaces.QueueController
+type Queue struct {
 	lock               sync.RWMutex
 	items              []*models.Song
 	history            []*models.Song
@@ -30,8 +31,8 @@ type queue struct {
 	historyUpdatedFunc func([]*models.Song)
 }
 
-func newQueue() *queue {
-	q := &queue{
+func newQueue() *Queue {
+	q := &Queue{
 		items:            []*models.Song{},
 		history:          []*models.Song{},
 		queueUpdatedFunc: nil,
@@ -39,20 +40,20 @@ func newQueue() *queue {
 	return q
 }
 
-func (q *queue) GetQueue() []*models.Song {
+func (q *Queue) GetQueue() []*models.Song {
 	q.lock.RLock()
 	defer q.lock.RUnlock()
 	return q.items
 }
 
-func (q *queue) ClearQueue() {
+func (q *Queue) ClearQueue() {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 	defer q.notifyQueueUpdated()
 	q.items = []*models.Song{}
 }
 
-func (q *queue) QueueDuration() int {
+func (q *Queue) QueueDuration() int {
 	q.lock.RLock()
 	defer q.lock.RUnlock()
 	duration := 0
@@ -62,7 +63,7 @@ func (q *queue) QueueDuration() int {
 	return duration
 }
 
-func (q *queue) AddSongs(songs []*models.Song) {
+func (q *Queue) AddSongs(songs []*models.Song) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 	defer q.notifyQueueUpdated()
@@ -70,7 +71,7 @@ func (q *queue) AddSongs(songs []*models.Song) {
 	logrus.Debug("Adding songs to queue, current size: ", len(q.items))
 }
 
-func (q *queue) Reorder(currentIndex, newIndex int) {
+func (q *Queue) Reorder(currentIndex, newIndex int) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 	defer q.notifyQueueUpdated()
@@ -101,7 +102,7 @@ func (q *queue) Reorder(currentIndex, newIndex int) {
 	q.items = temp
 }
 
-func (q *queue) GetHistory(n int) []*models.Song {
+func (q *Queue) GetHistory(n int) []*models.Song {
 	q.lock.RLock()
 	defer q.lock.RUnlock()
 	if n > len(q.history) {
@@ -110,32 +111,32 @@ func (q *queue) GetHistory(n int) []*models.Song {
 	return q.history[:n]
 }
 
-func (q *queue) SetQueueChangedCallback(cb func(content []*models.Song)) {
+func (q *Queue) SetQueueChangedCallback(cb func(content []*models.Song)) {
 	q.queueUpdatedFunc = cb
 }
 
-func (q *queue) RemoveQueueChangedCallback() {
+func (q *Queue) RemoveQueueChangedCallback() {
 	q.queueUpdatedFunc = nil
 }
 
-func (q *queue) SetHistoryChangedCallback(cb func([]*models.Song)) {
+func (q *Queue) SetHistoryChangedCallback(cb func([]*models.Song)) {
 	q.historyUpdatedFunc = cb
 }
 
-func (q *queue) notifyQueueUpdated() {
+func (q *Queue) notifyQueueUpdated() {
 	if q.queueUpdatedFunc == nil {
 		return
 	}
 	q.queueUpdatedFunc(q.items)
 }
 
-func (q *queue) notifyHistoryUpdated() {
+func (q *Queue) notifyHistoryUpdated() {
 	if q.historyUpdatedFunc != nil {
 		q.historyUpdatedFunc(q.history)
 	}
 }
 
-func (q *queue) songComplete() {
+func (q *Queue) songComplete() {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 	defer q.notifyQueueUpdated()
@@ -152,13 +153,13 @@ func (q *queue) songComplete() {
 	}
 }
 
-func (q *queue) empty() bool {
+func (q *Queue) empty() bool {
 	q.lock.RLock()
 	defer q.lock.RUnlock()
 	return len(q.items) == 0
 }
 
-func (q *queue) currentSong() *models.Song {
+func (q *Queue) currentSong() *models.Song {
 	q.lock.RLock()
 	defer q.lock.RUnlock()
 	if len(q.items) > 0 {

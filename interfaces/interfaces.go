@@ -24,15 +24,15 @@ import (
 //MusicController gathers all necessary interfaces that can control media and queue plus query item metadata
 type MediaController interface {
 	QueueController
-	PlaybackController
-	MediaManager
+	Player
+	ItemController
 }
 
 //QueueController controls queue and history
 // If no queueChangedCallback is set, no queue updates will be returned
 type QueueController interface {
 	//GetQueue gets currently ongoing queue of items with complete info for each song
-	GetQueue() []*models.SongInfo
+	GetQueue() []*models.Song
 	//ClearQueue clears queue. This also calls QueueChangedCallback
 	ClearQueue()
 	//QueueDuration gets number of queue items
@@ -45,7 +45,7 @@ type QueueController interface {
 	//On successful order QueueChangedCallback gets called.
 	Reorder(currentIndex, newIndex int)
 	//GetHistory get's n past songs that has been played.
-	GetHistory(n int) []*models.SongInfo
+	GetHistory(n int) []*models.Song
 	//SetQueueChangedCallback sets function that is called every time queue changes.
 	SetQueueChangedCallback(func(content []*models.Song))
 	//RemoveQueueChangedCallback removes queue changed callback
@@ -55,33 +55,8 @@ type QueueController interface {
 	SetHistoryChangedCallback(func(songs []*models.Song))
 }
 
-//PlaybackController controls media playback. Current status is sent to StatusCallback, if set.
-type PlaybackController interface {
-	//PlayPause toggles pause
-	PlayPause()
-	//Pause pauses media that's currently playing. If none, do nothing.
-	Pause()
-	//Continue continues currently paused media.
-	Continue()
-	//StopMedia stops playing media.
-	StopMedia()
-	//Next plays currently next item in queue. If there's no next song available, this method does nothing.
-	Next()
-	//Previous plays last played song (first in history) if there is one.
-	Previous()
-	//Seek seeks forward given seconds
-	Seek(seconds int)
-	//SeekBackwards seeks backwards given seconds
-	SeekBackwards(seconds int)
-	//AddStatusCallback adds callback that get's called every time status has changed,
-	//including playback progress
-	AddStatusCallback(func(status PlayingState))
-	//SetVolume sets volume to given level in range of [0,100]
-	SetVolume(level int)
-}
-
 //MediaManager manages media: artists, albums, songs
-type MediaManager interface {
+type ItemController interface {
 	SearchArtists(search string) ([]*models.Artist, error)
 	SearchAlbums(search string) ([]*models.Album, error)
 	// GetArtists gets artist with given paging. Only PageSize and CurrentPage are used. Total count is returned

@@ -36,9 +36,9 @@ const (
 	AudioSamplingRate = 44100
 	AudioBufferPeriod = time.Millisecond * 50
 
-	// Volume range, not absolute values
-	AudioMinVolumeDb = -6
-	AudioMaxVolumeDb = 0
+	// Volume range in decibels
+	AudioMinVolumedB = -6
+	AudioMaxVolumedB = 0
 
 	AudioMinVolume = 0
 	AudioMaxVolume = 100

@@ -191,23 +191,6 @@ func (w *Window) navBarHandler(label string) {
 func (w *Window) keyHandler(event *tcell.EventKey) *tcell.Key {
 
 	key := event.Key()
-	/*
-		if key >= tcell.KeyF1 && key <= tcell.KeyF12 && !w.navBarFocused{
-			//Activate navigation bar on function button
-			w.lastFocus = w.app.GetFocus()
-			w.lastFocus.Blur()
-			w.app.SetFocus(w.navBar)
-			w.navBarFocused = true
-		} else if key == tcell.KeyEscape && w.navBarFocused {
-			//Deactivate navigation bar and return to last focus
-			w.navBarFocused = false
-			w.navBar.Blur()
-			w.app.SetFocus(w.lastFocus)
-			w.lastFocus = nil
-			return nil
-		}
-	*/
-
 	if w.mediaCtrl(event) {
 		return nil
 	}
@@ -242,7 +225,6 @@ func (w *Window) mediaCtrl(event *tcell.EventKey) bool {
 	default:
 		return false
 	}
-	//w.status.InputHandler()(event, nil)
 	return true
 }
 
@@ -354,7 +336,6 @@ func (w *Window) statusCb(state interfaces.PlayingState) {
 }
 
 func (w *Window) InitBrowser(items []models.Item) {
-	//w.browser.setData(items)
 	w.app.Draw()
 }
 

@@ -31,7 +31,6 @@ import (
 	"syscall"
 	"tryffel.net/go/jellycli/api"
 	"tryffel.net/go/jellycli/config"
-	"tryffel.net/go/jellycli/controller"
 	mpris2 "tryffel.net/go/jellycli/mpris"
 	"tryffel.net/go/jellycli/player"
 	"tryffel.net/go/jellycli/task"
@@ -51,7 +50,6 @@ type Application struct {
 	api         *api.Api
 	gui         *ui.Gui
 	player      *player.Player
-	content     *controller.Content
 	mpris       *mpris2.MediaController
 	mprisPlayer *mpris2.Player
 	logfile     *os.File
@@ -111,9 +109,9 @@ func (a *Application) Start() error {
 		return fmt.Errorf("connect to server: %v", err)
 	}
 
-	a.api.SetController(a.content)
+	a.api.SetPlayer(a.player.Audio)
 
-	tasks := []task.Tasker{a.player, a.content, a.api}
+	tasks := []task.Task{a.player.Task, a.api.Task}
 
 	go a.stopOnSignal()
 
@@ -130,7 +128,7 @@ func (a *Application) Start() error {
 
 func (a *Application) Stop() error {
 	logrus.Info("Stopping application")
-	tasks := []task.Tasker{a.player, a.content, a.api}
+	tasks := []task.Task{a.player.Task, a.api.Task}
 	var err error
 	var hasError bool
 	for _, v := range tasks {
@@ -286,14 +284,9 @@ func (a *Application) initApplication() error {
 	if err != nil {
 		return fmt.Errorf("create player: %v", err)
 	}
-	a.content, err = controller.NewContent(a.api, a.player)
-	if err != nil {
-		return fmt.Errorf("create content controller: %v", err)
-	}
+	a.gui = ui.NewUi(a.player)
 
-	a.gui = ui.NewUi(a.content)
-
-	a.mpris, err = mpris2.NewController(a.content)
+	a.mpris, err = mpris2.NewController(a.player.Audio)
 	if err != nil {
 		return fmt.Errorf("initialize dbus connection: %v", err)
 	}
@@ -302,7 +295,7 @@ func (a *Application) initApplication() error {
 		MediaController: a.mpris,
 	}
 
-	a.content.AddStatusCallback(a.mprisPlayer.UpdateStatus)
+	a.player.AddStatusCallback(a.mprisPlayer.UpdateStatus)
 
 	return nil
 }

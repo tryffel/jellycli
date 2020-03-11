@@ -16,35 +16,160 @@
 
 package player
 
-import "tryffel.net/go/jellycli/api"
+import (
+	"github.com/sirupsen/logrus"
+	"io"
+	"sync"
+	"time"
+	"tryffel.net/go/jellycli/api"
+	"tryffel.net/go/jellycli/interfaces"
+	"tryffel.net/go/jellycli/models"
+	"tryffel.net/go/jellycli/task"
+)
+
+type songMetadata struct {
+	song          *models.Song
+	album         *models.Album
+	artist        *models.Artist
+	albumImageUrl string
+	albumImageId  string
+	reader        io.ReadCloser
+	format        audioFormat
+}
 
 // Player
 type Player struct {
+	task.Task
 	*Audio
 	*Queue
 	*Items
 
-	songComplete chan bool
+	lock *sync.RWMutex
+
+	downloadingSong bool
+
+	songComplete   chan bool
+	audioUpdated   chan interfaces.AudioStatus
+	songDownloaded chan songMetadata
 
 	api *api.Api
 }
 
 // initialize new player. This also initializes faiface.Speaker, which should be initialized only once.
-func newPlayer(api *api.Api) (*Player, error) {
+func NewPlayer(api *api.Api) (*Player, error) {
 	var err error
 	p := &Player{
-		songComplete: make(chan bool, 3),
+		songComplete:   make(chan bool, 3),
+		audioUpdated:   make(chan interfaces.AudioStatus, 3),
+		songDownloaded: make(chan songMetadata, 3),
+		api:            api,
 	}
+	p.Name = "Player"
+	p.Task.SetLoop(p.loop)
 
 	p.Audio, err = newAudio()
 	p.Queue = newQueue()
+	p.Items = newItems(api)
 	if err != nil {
 		return p, err
 	}
 
+	p.Audio.songCompleteFunc = p.songCompleted
 	return p, nil
 }
 
 func (p *Player) songCompleted() {
 	p.songComplete <- true
+}
+
+//is download pending / ongoing
+func (p *Player) isDownloadingSong() bool {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	return p.downloadingSong
+}
+
+func (p *Player) loop() {
+	// interval to refresh status. This is the interval gui will be updated.
+	ticker := time.NewTicker(time.Second)
+
+	for true {
+		select {
+		case <-p.StopChan():
+			// stop application
+			p.Audio.StopMedia()
+			break
+		case <-p.songComplete:
+			// stream / song complete, get next song
+			logrus.Debug("song complete")
+			p.downloadSong()
+		case status := <-p.audioUpdated:
+			logrus.Infof("got audio status: %v", status)
+		case <-ticker.C:
+			// periodically update status, this will push status to p.audioUpdated
+			p.Audio.updateStatus()
+		case metadata := <-p.songDownloaded:
+			// download complete, send to audio
+			err := p.Audio.playSongFromReader(metadata)
+			if err != nil {
+				logrus.Errorf("play track: %v", err)
+			}
+		}
+	}
+}
+
+// download and play next song asynchronously
+func (p *Player) downloadSong() {
+	if p.isDownloadingSong() || p.Queue.empty() {
+		return
+	}
+	song := p.Queue.GetQueue()[0]
+
+	p.lock.Lock()
+	p.downloadingSong = true
+	p.lock.Unlock()
+
+	reader, err := p.api.GetSongDirect(song.Id.String(), string(audioFormatMp3))
+	if err != nil {
+		logrus.Errorf("download song: %v", err)
+	} else {
+		// fill metadata
+		albumId := song.GetParent()
+		album, err := p.api.GetAlbum(albumId)
+		artist := models.Artist{Name: "unknown artist"}
+		var imageId string
+		var imageUrl string
+		if err != nil {
+			logrus.Error("Failed to get album by id: ", err.Error())
+			album = models.Album{Name: "unknown album"}
+		} else {
+			imageId = album.ImageId
+			imageUrl = p.api.ImageUrl(album.Id.String(), imageId)
+		}
+		a, err := p.api.GetArtist(album.GetParent())
+		if err != nil {
+			logrus.Errorf("Failed to get artist by id: %v", err)
+		} else {
+			artist = a
+			f := func() {
+				metadata := songMetadata{
+					song:          song,
+					album:         &album,
+					artist:        &artist,
+					albumImageUrl: imageUrl,
+					albumImageId:  imageId,
+					reader:        reader,
+					format:        audioFormatMp3,
+				}
+				p.songDownloaded <- metadata
+			}
+			defer f()
+		}
+	}
+
+	p.lock.Lock()
+	p.downloadingSong = false
+	p.lock.Unlock()
+
+	// push song to audio
 }

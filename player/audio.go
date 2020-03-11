@@ -24,17 +24,16 @@ import (
 	"github.com/faiface/beep/mp3"
 	"github.com/faiface/beep/speaker"
 	"github.com/sirupsen/logrus"
-	"io"
 	"time"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
 )
 
-type audioFormat int
+type audioFormat string
 
 const (
-	audioFormatMp3 audioFormat = iota
-	audioFormatFlac
+	audioFormatMp3  audioFormat = "mp3"
+	audioFormatFlac audioFormat = "flac"
 )
 
 // Audio manages playing song and implements interfaces.Player
@@ -132,8 +131,18 @@ func (a *Audio) Continue() {
 	a.ctrl.Paused = false
 }
 
-// Stop stops music. If there is no audio to play, do nothing.
-func (a *Audio) Stop() {
+// StopMedia stops music. If there is no audio to play, do nothing.
+func (a *Audio) StopMedia() {
+	speaker.Lock()
+	a.status.State = interfaces.AudioStateStopped
+	speaker.Unlock()
+	speaker.Clear()
+
+	err := a.closeOldStream()
+	if err != nil {
+		logrus.Errorf("stop: %v", err)
+	}
+	a.flushStatus()
 }
 
 // Next plays next track. If there's no next song to play, do nothing.
@@ -190,25 +199,55 @@ func (a *Audio) SetMute(muted bool) {
 
 func (a *Audio) streamCompleted() {
 	logrus.Debug("audio stream complete")
+	err := a.closeOldStream()
+	if err != nil {
+		logrus.Errorf("complete stream: %v", err)
+	}
+	if a.songCompleteFunc != nil {
+		a.songCompleteFunc()
+	}
+}
+
+func (a *Audio) closeOldStream() error {
+	speaker.Lock()
+	defer speaker.Unlock()
+	var err error
+	var streamErr error
 	if a.streamer != nil {
-		streamErr := a.streamer.Err()
+		streamErr = a.streamer.Err()
 		if streamErr != nil {
-			logrus.Errorf("streamer error: %v", streamErr)
+			streamErr = fmt.Errorf("streamer error: %v", streamErr)
 		}
-		err := a.streamer.Close()
+		err = a.streamer.Close()
 		if err != nil {
-			logrus.Errorf("close streamer: %v", err)
+			err = fmt.Errorf("close streamer: %v", err)
 		} else {
 
 		}
 		a.streamer = nil
 	} else {
-		logrus.Errorf("audio stream completed but streamer is nil")
+		err = fmt.Errorf("audio stream completed but streamer is nil")
 	}
+	if err == nil && a.streamer == nil {
+		return nil
+	}
+	if err != nil && streamErr != nil {
+		return fmt.Errorf("%v, %v", err, streamErr)
+	}
+	if err != nil {
+		return err
+	}
+	if streamErr != nil {
+		return streamErr
+	}
+	return nil
+}
 
-	if a.songCompleteFunc != nil {
-		a.songCompleteFunc()
-	}
+// gather latest status and flush it to callbacks
+func (a *Audio) updateStatus() {
+	past := a.getPastTicks()
+	a.status.SongPast = past
+	a.flushStatus()
 }
 
 func (a *Audio) flushStatus() {
@@ -218,17 +257,17 @@ func (a *Audio) flushStatus() {
 }
 
 // play song from io reader. Only song/album/artist/imageurl are used from status.
-func (a *Audio) playSongFromReader(status interfaces.AudioStatus, reader io.ReadCloser, format audioFormat) error {
+func (a *Audio) playSongFromReader(metadata songMetadata) error {
 	// decode
 	var streamer beep.StreamSeekCloser
 	var err error
-	switch format {
+	switch metadata.format {
 	case audioFormatMp3:
-		streamer, _, err = mp3.Decode(reader)
+		streamer, _, err = mp3.Decode(metadata.reader)
 	case audioFormatFlac:
-		streamer, _, err = flac.Decode(reader)
+		streamer, _, err = flac.Decode(metadata.reader)
 	default:
-		return fmt.Errorf("unknown audio format: %d", format)
+		return fmt.Errorf("unknown audio format: %s", metadata.format)
 	}
 	if err != nil {
 		return fmt.Errorf("decode audio stream: %v", err)
@@ -257,10 +296,10 @@ func (a *Audio) playSongFromReader(status interfaces.AudioStatus, reader io.Read
 	speaker.Play(a.volume)
 	speaker.Lock()
 
-	a.status.Song = status.Song
-	a.status.Album = status.Album
-	a.status.Artist = status.Artist
-	a.status.AlbumImageUrl = status.AlbumImageUrl
+	a.status.Song = metadata.song
+	a.status.Album = metadata.album
+	a.status.Artist = metadata.artist
+	a.status.AlbumImageUrl = metadata.albumImageUrl
 	speaker.Unlock()
 	return err
 }

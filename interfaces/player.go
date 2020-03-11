@@ -55,8 +55,8 @@ const (
 // AudioTick is millisecond
 type AudioTick int
 
-func (a AudioTick) Seconds() float32 {
-	return float32(a) / 1000
+func (a AudioTick) Seconds() int {
+	return int(a / 1000)
 }
 
 func (a AudioTick) MilliSeconds() int {
@@ -102,7 +102,7 @@ type AudioStatus struct {
 	AlbumImageUrl string
 
 	SongPast AudioTick
-	Volume   int
+	Volume   AudioVolume
 	Muted    bool
 }
 
@@ -125,7 +125,7 @@ type Player interface {
 	//Continue continues currently paused media.
 	Continue()
 	//StopMedia stops playing media.
-	Stop()
+	StopMedia()
 	//Next plays currently next item in queue. If there's no next song available, this method does nothing.
 	Next()
 	//Previous plays last played song (first in history) if there is one.

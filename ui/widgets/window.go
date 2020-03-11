@@ -52,18 +52,21 @@ type Window struct {
 	customGrid bool
 	modal      modal.Modal
 
-	mediaController   interfaces.MediaController
 	mediaView         Previous
 	mediaViewSelected bool
+
+	mediaPlayer interfaces.Player
+	mediaItems  interfaces.ItemController
+	mediaQueue  interfaces.QueueController
 
 	hasModal  bool
 	lastFocus tview.Primitive
 }
 
-func NewWindow(mc interfaces.MediaController) Window {
+func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.QueueController) Window {
 	w := Window{
 		app:    tview.NewApplication(),
-		status: newStatus(mc),
+		status: newStatus(p),
 		layout: twidgets.NewModalLayout(),
 	}
 
@@ -85,7 +88,9 @@ func NewWindow(mc interfaces.MediaController) Window {
 	w.songs = NewSongList(w.playSong, w.playSongs)
 	w.songs.SetBackCallback(w.goBack)
 	w.songs.showPage = w.selectSongs
-	w.mediaController = mc
+	w.mediaPlayer = p
+	w.mediaItems = i
+	w.mediaQueue = q
 
 	w.setLayout()
 	w.app.SetRoot(w.layout, true)
@@ -97,7 +102,7 @@ func NewWindow(mc interfaces.MediaController) Window {
 	w.help.SetDoneFunc(w.wrapCloseModal(w.help))
 	w.queue = NewQueue()
 	w.queue.SetBackCallback(w.goBack)
-	w.mediaController.SetQueueChangedCallback(func(songs []*models.Song) {
+	w.mediaQueue.SetQueueChangedCallback(func(songs []*models.Song) {
 		w.app.QueueUpdate(func() {
 			w.queue.SetSongs(songs)
 		})
@@ -107,7 +112,7 @@ func NewWindow(mc interfaces.MediaController) Window {
 	w.history.SetHistoryMode(true)
 	w.history.SetBackCallback(w.goBack)
 
-	w.mediaController.SetHistoryChangedCallback(func(songs []*models.Song) {
+	w.mediaQueue.SetHistoryChangedCallback(func(songs []*models.Song) {
 		w.app.QueueUpdate(func() {
 			w.history.SetSongs(songs)
 		})
@@ -115,7 +120,7 @@ func NewWindow(mc interfaces.MediaController) Window {
 
 	w.layout.Grid().SetBackgroundColor(config.Color.Background)
 
-	w.mediaController.AddStatusCallback(w.statusCb)
+	w.mediaPlayer.AddStatusCallback(w.statusCb)
 
 	navBarLabels := []string{"Help", "Queue", "History"}
 
@@ -209,19 +214,19 @@ func (w *Window) mediaCtrl(event *tcell.EventKey) bool {
 	key := event.Key()
 	switch key {
 	case ctrls.PlayPause:
-		if w.status.state.State == interfaces.Pause {
-			go w.mediaController.Continue()
-		} else if w.status.state.State == interfaces.Play {
-			go w.mediaController.Pause()
+		if w.status.state.State == interfaces.AudioStatePaused {
+			go w.mediaPlayer.Continue()
+		} else if w.status.state.State == interfaces.AudioStatePlaying {
+			go w.mediaPlayer.Pause()
 		}
 	case ctrls.VolumeDown:
-		volume := w.status.state.Volume - 5
-		go w.mediaController.SetVolume(volume)
+		volume := w.status.state.Volume.Add(-5)
+		go w.mediaPlayer.SetVolume(volume)
 	case ctrls.VolumeUp:
-		volume := w.status.state.Volume + 5
-		go w.mediaController.SetVolume(volume)
+		volume := w.status.state.Volume.Add(5)
+		go w.mediaPlayer.SetVolume(volume)
 	case ctrls.Next:
-		w.mediaController.Next()
+		w.mediaPlayer.Next()
 	default:
 		return false
 	}
@@ -235,14 +240,14 @@ func (w *Window) navBarCtrl(key tcell.Key) bool {
 	case navBar.Quit:
 		w.app.Stop()
 	case navBar.Help:
-		stats := w.mediaController.GetStatistics()
+		stats := w.mediaItems.GetStatistics()
 		w.help.SetStats(stats)
 		w.showModal(w.help, 25, 50, true)
 	case navBar.Queue:
 		w.setViewWidget(w.queue, true)
 	case navBar.History:
 		w.setViewWidget(w.history, true)
-		items := w.mediaController.GetHistory(100)
+		items := w.mediaQueue.GetHistory(100)
 		duration := 0
 		for _, v := range items {
 			duration += v.Duration
@@ -330,7 +335,7 @@ func (w *Window) showModal(modal modal.Modal, height, width uint, lockSize bool)
 	}
 }
 
-func (w *Window) statusCb(state interfaces.PlayingState) {
+func (w *Window) statusCb(state interfaces.AudioStatus) {
 	w.status.UpdateState(state, nil)
 	w.app.QueueUpdateDraw(func() {})
 }
@@ -342,7 +347,7 @@ func (w *Window) InitBrowser(items []models.Item) {
 func (w *Window) selectMedia(m MediaSelect) {
 	switch m {
 	case MediaLatestMusic:
-		albums, err := w.mediaController.GetLatestAlbums()
+		albums, err := w.mediaItems.GetLatestAlbums()
 		if err != nil {
 			logrus.Errorf("get favorite artists: %v", err)
 		} else {
@@ -368,7 +373,7 @@ func (w *Window) selectMedia(m MediaSelect) {
 			w.setViewWidget(w.albumList, true)
 		}
 	case MediaFavoriteArtists:
-		artists, err := w.mediaController.GetFavoriteArtists()
+		artists, err := w.mediaItems.GetFavoriteArtists()
 		if err != nil {
 			logrus.Errorf("get favorite artists: %v", err)
 		} else {
@@ -380,7 +385,7 @@ func (w *Window) selectMedia(m MediaSelect) {
 			w.setViewWidget(w.artistList, true)
 		}
 	case MediaPlaylists:
-		playlists, err := w.mediaController.GetPlaylists()
+		playlists, err := w.mediaItems.GetPlaylists()
 		if err != nil {
 			logrus.Errorf("get playlists: %v", err)
 		} else {
@@ -394,7 +399,7 @@ func (w *Window) selectMedia(m MediaSelect) {
 			PageSize:    100,
 		}
 
-		songs, count, err := w.mediaController.GetSongs(0, page.PageSize)
+		songs, count, err := w.mediaItems.GetSongs(0, page.PageSize)
 		if err != nil {
 			logrus.Errorf("get songs: %v", err)
 		}
@@ -415,10 +420,10 @@ func (w *Window) selectMedia(m MediaSelect) {
 		var title string
 		if m == MediaArtists {
 			title = "All artists"
-			artists, total, err = w.mediaController.GetArtists(paging)
+			artists, total, err = w.mediaItems.GetArtists(paging)
 		} else if m == MediaAlbumArtists {
 			title = "All album artists"
-			artists, total, err = w.mediaController.GetAlbumArtists(paging)
+			artists, total, err = w.mediaItems.GetAlbumArtists(paging)
 		}
 		if err != nil {
 			logrus.Errorf("get all artists: %v", err)
@@ -439,7 +444,7 @@ func (w *Window) selectMedia(m MediaSelect) {
 			CurrentPage: 0,
 			PageSize:    100,
 		}
-		albums, total, err := w.mediaController.GetAlbums(paging)
+		albums, total, err := w.mediaItems.GetAlbums(paging)
 		if err != nil {
 			logrus.Errorf("get all albums: %v", err)
 			return
@@ -459,7 +464,7 @@ func (w *Window) selectMedia(m MediaSelect) {
 }
 
 func (w *Window) selectArtist(artist *models.Artist) {
-	albums, err := w.mediaController.GetArtistAlbums(artist.Id)
+	albums, err := w.mediaItems.GetArtistAlbums(artist.Id)
 	if err != nil {
 		logrus.Errorf("get albumList albums: %v", err)
 	} else {
@@ -474,7 +479,7 @@ func (w *Window) selectArtist(artist *models.Artist) {
 }
 
 func (w *Window) selectAlbum(album *models.Album) {
-	songs, err := w.mediaController.GetAlbumSongs(album.Id)
+	songs, err := w.mediaItems.GetAlbumSongs(album.Id)
 	if err != nil {
 		logrus.Errorf("get album songs: %v", err)
 	} else {
@@ -489,7 +494,7 @@ func (w *Window) selectAlbum(album *models.Album) {
 }
 
 func (w *Window) selectPlaylist(playlist *models.Playlist) {
-	err := w.mediaController.GetPlaylistSongs(playlist)
+	err := w.mediaItems.GetPlaylistSongs(playlist)
 	if err != nil {
 		logrus.Warningf("did not get playlist songs: %v", err)
 		return
@@ -500,7 +505,7 @@ func (w *Window) selectPlaylist(playlist *models.Playlist) {
 }
 
 func (w *Window) selectSongs(page interfaces.Paging) {
-	songs, _, err := w.mediaController.GetSongs(page.CurrentPage, page.PageSize)
+	songs, _, err := w.mediaItems.GetSongs(page.CurrentPage, page.PageSize)
 	if err != nil {
 		logrus.Errorf("get songs: %v", err)
 	}
@@ -510,7 +515,7 @@ func (w *Window) selectSongs(page interfaces.Paging) {
 }
 
 func (w *Window) showArtistPage(page interfaces.Paging) {
-	artists, _, err := w.mediaController.GetArtists(page)
+	artists, _, err := w.mediaItems.GetArtists(page)
 	if err != nil {
 		logrus.Errorf("get albumList page: %v", err)
 		return
@@ -523,7 +528,7 @@ func (w *Window) showArtistPage(page interfaces.Paging) {
 }
 
 func (w *Window) showAlbumPage(page interfaces.Paging) {
-	albums, total, err := w.mediaController.GetAlbums(page)
+	albums, total, err := w.mediaItems.GetAlbums(page)
 	if err != nil {
 		logrus.Errorf("get all albums: %v", err)
 		return
@@ -543,5 +548,5 @@ func (w *Window) playSong(song *models.Song) {
 }
 
 func (w *Window) playSongs(songs []*models.Song) {
-	w.mediaController.AddSongs(songs)
+	w.mediaQueue.AddSongs(songs)
 }

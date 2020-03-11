@@ -60,11 +60,11 @@ func (i *Items) GetArtistAlbums(artist models.Id) ([]*models.Album, error) {
 }
 
 func (i *Items) GetAlbumSongs(album models.Id) ([]*models.Song, error) {
-	return i.GetAlbumSongs(album)
+	return i.api.GetAlbumSongs(album)
 }
 
 func (i *Items) GetPlaylists() ([]*models.Playlist, error) {
-	return i.GetPlaylists()
+	return i.api.GetPlaylists()
 }
 
 func (i *Items) GetPlaylistSongs(playlist *models.Playlist) error {

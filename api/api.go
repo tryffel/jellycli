@@ -55,7 +55,7 @@ type Api struct {
 	loggedIn  bool
 	musicView string
 
-	controller interfaces.MediaController
+	player interfaces.Player
 
 	socketLock  sync.RWMutex
 	socket      *websocket.Conn
@@ -86,8 +86,8 @@ func NewApi(host string) (*Api, error) {
 	return a, nil
 }
 
-func (a *Api) SetController(c interfaces.MediaController) {
-	a.controller = c
+func (a *Api) SetPlayer(p interfaces.Player) {
+	a.player = p
 }
 
 func (a *Api) Host() string {

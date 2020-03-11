@@ -32,7 +32,7 @@ import (
 // https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html
 type Player struct {
 	*MediaController
-	lastState interfaces.PlayingState
+	lastState interfaces.AudioStatus
 }
 
 // TrackID is the Unique track identifier.
@@ -78,15 +78,15 @@ const (
 )
 
 //UpdateStatus updates status to dbus
-func (p *Player) UpdateStatus(state interfaces.PlayingState) {
+func (p *Player) UpdateStatus(state interfaces.AudioStatus) {
 	p.lastState = state
 	var playStatus PlaybackStatus
 	switch state.State {
-	case interfaces.Play:
+	case interfaces.AudioStatePlaying:
 		playStatus = PlaybackStatusPlaying
-	case interfaces.Pause:
+	case interfaces.AudioStatePaused:
 		playStatus = PlaybackStatusPaused
-	case interfaces.Stop:
+	case interfaces.AudioStateStopped:
 		playStatus = PlaybackStatusStopped
 	}
 	object := objectName("Player")
@@ -95,7 +95,7 @@ func (p *Player) UpdateStatus(state interfaces.PlayingState) {
 	var data = MetadataMap{}
 
 	if state.Song != nil {
-		pos = int64(state.CurrentSongPast * 1000 * 1000)
+		pos = int64(state.SongPast.MicroSeconds())
 		data = mapFromStatus(state)
 
 	}
@@ -135,7 +135,8 @@ func (p *Player) OnVolume(c *prop.Change) *dbus.Error {
 		val = 0
 	}
 	//return transform(p.mpd.SetVolume(val))
-	p.controller.SetVolume(val)
+	volume := interfaces.AudioVolume(val)
+	p.controller.SetVolume(volume)
 	return nil
 }
 
@@ -211,9 +212,9 @@ func (p *Player) Stop() *dbus.Error {
 // If playback is stopped, starts playback.
 // https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html#Method:PlayPause
 func (p *Player) PlayPause() *dbus.Error {
-	if p.lastState.State == interfaces.Play {
+	if p.lastState.State == interfaces.AudioStatePlaying {
 		p.controller.Pause()
-	} else if p.lastState.State == interfaces.Pause {
+	} else if p.lastState.State == interfaces.AudioStatePaused {
 		p.controller.Continue()
 	}
 	return nil

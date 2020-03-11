@@ -46,10 +46,8 @@ type QueueController interface {
 	Reorder(currentIndex, newIndex int)
 	//GetHistory get's n past songs that has been played.
 	GetHistory(n int) []*models.Song
-	//SetQueueChangedCallback sets function that is called every time queue changes.
-	SetQueueChangedCallback(func(content []*models.Song))
-	//RemoveQueueChangedCallback removes queue changed callback
-	RemoveQueueChangedCallback()
+	//AddQueueChangedCallback sets function that is called every time queue changes.
+	AddQueueChangedCallback(func(content []*models.Song))
 
 	// SetHistoryChangedCallback sets a function that gets called every time history items update
 	SetHistoryChangedCallback(func(songs []*models.Song))

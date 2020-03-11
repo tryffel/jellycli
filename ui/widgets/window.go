@@ -102,7 +102,7 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 	w.help.SetDoneFunc(w.wrapCloseModal(w.help))
 	w.queue = NewQueue()
 	w.queue.SetBackCallback(w.goBack)
-	w.mediaQueue.SetQueueChangedCallback(func(songs []*models.Song) {
+	w.mediaQueue.AddQueueChangedCallback(func(songs []*models.Song) {
 		w.app.QueueUpdate(func() {
 			w.queue.SetSongs(songs)
 		})

@@ -27,7 +27,7 @@ type Queue struct {
 	lock               sync.RWMutex
 	items              []*models.Song
 	history            []*models.Song
-	queueUpdatedFunc   func([]*models.Song)
+	queueUpdatedFunc   []func([]*models.Song)
 	historyUpdatedFunc func([]*models.Song)
 }
 
@@ -35,7 +35,7 @@ func newQueue() *Queue {
 	q := &Queue{
 		items:            []*models.Song{},
 		history:          []*models.Song{},
-		queueUpdatedFunc: nil,
+		queueUpdatedFunc: make([]func([]*models.Song), 0),
 	}
 	return q
 }
@@ -111,12 +111,8 @@ func (q *Queue) GetHistory(n int) []*models.Song {
 	return q.history[:n]
 }
 
-func (q *Queue) SetQueueChangedCallback(cb func(content []*models.Song)) {
-	q.queueUpdatedFunc = cb
-}
-
-func (q *Queue) RemoveQueueChangedCallback() {
-	q.queueUpdatedFunc = nil
+func (q *Queue) AddQueueChangedCallback(cb func(content []*models.Song)) {
+	q.queueUpdatedFunc = append(q.queueUpdatedFunc, cb)
 }
 
 func (q *Queue) SetHistoryChangedCallback(cb func([]*models.Song)) {
@@ -127,7 +123,9 @@ func (q *Queue) notifyQueueUpdated() {
 	if q.queueUpdatedFunc == nil {
 		return
 	}
-	q.queueUpdatedFunc(q.items)
+	for _, v := range q.queueUpdatedFunc {
+		v(q.items)
+	}
 }
 
 func (q *Queue) notifyHistoryUpdated() {

@@ -32,7 +32,7 @@ func NewUi(player *player2.Player) *Gui {
 	u := &Gui{
 		player: player,
 	}
-	u.window = widgets.NewWindow(player.Audio, player.Items, player.Queue)
+	u.window = widgets.NewWindow(player, player, player)
 	u.Name = "Gui"
 	u.SetLoop(u.loop)
 	return u

@@ -53,12 +53,15 @@ type Player struct {
 	songDownloaded chan songMetadata
 
 	api *api.Api
+
+	lastApiReport time.Time
 }
 
 // initialize new player. This also initializes faiface.Speaker, which should be initialized only once.
 func NewPlayer(api *api.Api) (*Player, error) {
 	var err error
 	p := &Player{
+		lock:           &sync.RWMutex{},
 		songComplete:   make(chan bool, 3),
 		audioUpdated:   make(chan interfaces.AudioStatus, 3),
 		songDownloaded: make(chan songMetadata, 3),
@@ -75,6 +78,9 @@ func NewPlayer(api *api.Api) (*Player, error) {
 	}
 
 	p.Audio.songCompleteFunc = p.songCompleted
+	p.Audio.AddStatusCallback(p.audioCallback)
+
+	p.Queue.AddQueueChangedCallback(p.queueChanged)
 	return p, nil
 }
 
@@ -172,4 +178,81 @@ func (p *Player) downloadSong() {
 	p.lock.Unlock()
 
 	// push song to audio
+}
+
+// Next plays next song from queue. Override Audio next to ensure there is track to play and download it
+func (p *Player) Next() {
+	p.Audio.Next()
+}
+
+// Previous plays previous track. Override Audio previous to ensure there is track to play and download it
+func (p *Player) Previous() {
+	p.Audio.Previous()
+}
+
+// report audio status to server
+func (p *Player) audioCallback(status interfaces.AudioStatus) {
+	p.lock.RLock()
+	lastTime := p.lastApiReport
+	p.lock.RUnlock()
+
+	if time.Now().Sub(lastTime) < time.Millisecond*9500 {
+		// jellyfin server instructs to update every 10 sec
+		return
+	}
+
+	p.lock.Lock()
+	p.lastApiReport = time.Now()
+	p.lock.Unlock()
+
+	apiStatus := &interfaces.ApiPlaybackState{
+		Event:          "",
+		ItemId:         "",
+		IsPaused:       false,
+		IsMuted:        status.Muted,
+		PlaylistLength: 0,
+		Position:       status.SongPast.MicroSeconds(),
+		Volume:         int(status.Volume),
+	}
+
+	switch status.Action {
+	case interfaces.AudioActionPlay:
+		apiStatus.Event = interfaces.EventStart
+	case interfaces.AudioActionNext:
+		apiStatus.Event = interfaces.EventAudioTrackChange
+	case interfaces.AudioActionSetVolume:
+		apiStatus.Event = interfaces.EventVolumeChange
+	case interfaces.AudioActionTimeUpdate:
+		apiStatus.Event = interfaces.EventTimeUpdate
+	case interfaces.AudioActionPlayPause:
+		if status.State == interfaces.AudioStatePlaying {
+			apiStatus.Event = interfaces.EventUnpause
+		} else if status.State == interfaces.AudioStatePaused {
+			apiStatus.Event = interfaces.EventPause
+		} else {
+			logrus.Errorf("invalid audio status: action %v, state %v", status.Action, status.State)
+		}
+	default:
+		apiStatus.Event = interfaces.EventTimeUpdate
+		logrus.Warningf("cannot map audio state to api event: %v", status.Action)
+	}
+
+	if status.Song != nil {
+		apiStatus.ItemId = status.Song.Id.String()
+	}
+	f := func() {
+		err := p.api.ReportProgress(apiStatus)
+		if err != nil {
+			logrus.Errorf("report audio progress to server: %v", err)
+		}
+	}
+	go f()
+}
+
+func (p *Player) queueChanged(queue []*models.Song) {
+	// if player has nothing to play, start download
+	state := p.Audio.getStatus()
+	if state.State == interfaces.AudioStateStopped && len(queue) > 0 {
+		go p.downloadSong()
+	}
 }

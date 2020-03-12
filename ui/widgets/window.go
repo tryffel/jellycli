@@ -223,6 +223,8 @@ func (w *Window) mediaCtrl(event *tcell.EventKey) bool {
 		go w.mediaPlayer.SetVolume(volume)
 	case ctrls.Next:
 		w.mediaPlayer.Next()
+	case ctrls.Previous:
+		w.mediaPlayer.Previous()
 	default:
 		return false
 	}

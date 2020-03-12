@@ -151,6 +151,23 @@ func (q *Queue) songComplete() {
 	q.lock.Unlock()
 }
 
+func (q *Queue) playLastSong() {
+	q.lock.Lock()
+	defer q.notifyQueueUpdated()
+	defer q.notifyHistoryUpdated()
+	if len(q.history) == 0 {
+		return
+	}
+	song := q.history[0]
+	q.items = append([]*models.Song{song}, q.items...)
+	if q.history == nil {
+		q.history = q.history[1:]
+	} else {
+		q.history = q.history[1:]
+	}
+	q.lock.Unlock()
+}
+
 func (q *Queue) empty() bool {
 	q.lock.RLock()
 	defer q.lock.RUnlock()

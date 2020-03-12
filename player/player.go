@@ -109,7 +109,11 @@ func (p *Player) loop() {
 			// stream / song complete, get next song
 			logrus.Debug("song complete")
 			p.Queue.songComplete()
-			p.downloadSong()
+			if len(p.Queue.GetQueue()) == 0 {
+				p.Audio.StopMedia()
+			} else {
+				p.downloadSong()
+			}
 		case status := <-p.audioUpdated:
 			logrus.Infof("got audio status: %v", status)
 		case <-ticker.C:
@@ -184,7 +188,7 @@ func (p *Player) downloadSong() {
 // Next plays next song from queue. Override Audio next to ensure there is track to play and download it
 func (p *Player) Next() {
 	if len(p.Queue.GetQueue()) > 1 {
-		p.Stop()
+		p.StopMedia()
 		p.Queue.songComplete()
 		go p.downloadSong()
 	}
@@ -192,7 +196,12 @@ func (p *Player) Next() {
 
 // Previous plays previous track. Override Audio previous to ensure there is track to play and download it
 func (p *Player) Previous() {
-	p.Audio.Previous()
+	if len(p.Queue.GetHistory(10)) > 0 {
+		p.StopMedia()
+		p.Queue.playLastSong()
+		p.Audio.Previous()
+		go p.downloadSong()
+	}
 }
 
 // report audio status to server
@@ -221,9 +230,13 @@ func (p *Player) audioCallback(status interfaces.AudioStatus) {
 	}
 
 	switch status.Action {
+	case interfaces.AudioActionStop:
+		apiStatus.Event = interfaces.EventStop
 	case interfaces.AudioActionPlay:
 		apiStatus.Event = interfaces.EventStart
 	case interfaces.AudioActionNext:
+		apiStatus.Event = interfaces.EventAudioTrackChange
+	case interfaces.AudioActionPrevious:
 		apiStatus.Event = interfaces.EventAudioTrackChange
 	case interfaces.AudioActionSetVolume:
 		apiStatus.Event = interfaces.EventVolumeChange

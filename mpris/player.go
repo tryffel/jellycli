@@ -84,10 +84,12 @@ func (p *Player) UpdateStatus(state interfaces.AudioStatus) {
 	switch state.State {
 	case interfaces.AudioStatePlaying:
 		playStatus = PlaybackStatusPlaying
-	case interfaces.AudioStatePaused:
-		playStatus = PlaybackStatusPaused
 	case interfaces.AudioStateStopped:
 		playStatus = PlaybackStatusStopped
+	}
+
+	if state.State == interfaces.AudioStatePlaying && state.Paused {
+		playStatus = PlaybackStatusPaused
 	}
 	object := objectName("Player")
 
@@ -97,7 +99,6 @@ func (p *Player) UpdateStatus(state interfaces.AudioStatus) {
 	if state.Song != nil {
 		pos = int64(state.SongPast.MicroSeconds())
 		data = mapFromStatus(state)
-
 	}
 	if err := p.props.Set(object, "Metadata", dbus.MakeVariant(data)); err != nil {
 		logrus.Error(err)
@@ -183,6 +184,7 @@ func (p *Player) Next() *dbus.Error {
 // Previous skips to the previous track in the tracklist.
 // https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html#Method:Previous
 func (p *Player) Previous() *dbus.Error {
+	p.controller.Previous()
 	return nil
 }
 
@@ -212,11 +214,7 @@ func (p *Player) Stop() *dbus.Error {
 // If playback is stopped, starts playback.
 // https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html#Method:PlayPause
 func (p *Player) PlayPause() *dbus.Error {
-	if p.lastState.State == interfaces.AudioStatePlaying {
-		p.controller.Pause()
-	} else if p.lastState.State == interfaces.AudioStatePaused {
-		p.controller.Continue()
-	}
+	p.controller.PlayPause()
 	return nil
 }
 

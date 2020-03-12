@@ -94,7 +94,6 @@ func (a *Audio) getStatus() interfaces.AudioStatus {
 // PlayPause toggles pause.
 func (a *Audio) PlayPause() {
 	speaker.Lock()
-	defer a.flushStatus()
 	if a.ctrl == nil {
 		return
 	}
@@ -108,14 +107,13 @@ func (a *Audio) PlayPause() {
 	a.status.Paused = state
 	a.status.Action = interfaces.AudioActionPlayPause
 	speaker.Unlock()
-	a.flushStatus()
+	go a.flushStatus()
 }
 
 // Pause pauses audio. If audio is already paused, do nothing.
 func (a *Audio) Pause() {
 	logrus.Info("Pause audio")
 	speaker.Lock()
-	defer a.flushStatus()
 	if a.ctrl == nil {
 		return
 	}
@@ -123,14 +121,13 @@ func (a *Audio) Pause() {
 	a.status.Paused = true
 	a.status.Action = interfaces.AudioActionPlayPause
 	speaker.Unlock()
-	a.flushStatus()
+	go a.flushStatus()
 }
 
 // Continue continues paused audio. If audio is already playing, do nothing.
 func (a *Audio) Continue() {
 	logrus.Info("Continue audio")
 	speaker.Lock()
-	defer a.flushStatus()
 	if a.ctrl == nil {
 		return
 	}
@@ -138,7 +135,7 @@ func (a *Audio) Continue() {
 	a.status.Paused = false
 	a.status.Action = interfaces.AudioActionPlayPause
 	speaker.Unlock()
-	a.flushStatus()
+	go a.flushStatus()
 }
 
 // StopMedia stops music. If there is no audio to play, do nothing.
@@ -155,21 +152,23 @@ func (a *Audio) StopMedia() {
 	if err != nil {
 		logrus.Errorf("stop: %v", err)
 	}
-	a.flushStatus()
+	go a.flushStatus()
 }
 
 // Next plays next track. If there's no next song to play, do nothing.
 func (a *Audio) Next() {
 	speaker.Lock()
-	a.status.Action = interfaces.AudioActionPrevious
+	a.status.Action = interfaces.AudioActionNext
 	speaker.Unlock()
+	go a.flushStatus()
 }
 
 // Previous plays previous track. If previous track does not exist, do nothing.
 func (a *Audio) Previous() {
 	speaker.Lock()
-	a.status.Action = interfaces.AudioActionNext
+	a.status.Action = interfaces.AudioActionPrevious
 	speaker.Unlock()
+	go a.flushStatus()
 }
 
 // Seek seeks given ticks. If there is no audio, do nothing.
@@ -186,7 +185,6 @@ func (a *Audio) SetVolume(volume interfaces.AudioVolume) {
 	decibels := float64(volumeTodB(int(volume)))
 	logrus.Debugf("Set volume to %d %s -> %.2f Db", volume, "%", decibels)
 	speaker.Lock()
-	defer a.flushStatus()
 	if decibels <= config.AudioMinVolumedB {
 		a.volume.Silent = true
 		a.volume.Volume = config.AudioMinVolumedB
@@ -200,7 +198,7 @@ func (a *Audio) SetVolume(volume interfaces.AudioVolume) {
 		a.status.Action = interfaces.AudioActionSetVolume
 	}
 	speaker.Unlock()
-	a.flushStatus()
+	go a.flushStatus()
 }
 
 // SetMute mutes and un-mutes audio
@@ -217,7 +215,7 @@ func (a *Audio) SetMute(muted bool) {
 	a.ctrl.Paused = false
 	a.volume.Silent = muted
 	speaker.Unlock()
-	a.flushStatus()
+	go a.flushStatus()
 }
 
 func (a *Audio) streamCompleted() {
@@ -268,14 +266,19 @@ func (a *Audio) closeOldStream() error {
 // gather latest status and flush it to callbacks
 func (a *Audio) updateStatus() {
 	past := a.getPastTicks()
+	speaker.Lock()
 	a.status.SongPast = past
 	a.status.Action = interfaces.AudioActionTimeUpdate
+	speaker.Unlock()
 	a.flushStatus()
 }
 
 func (a *Audio) flushStatus() {
+	speaker.Lock()
+	status := a.status
+	speaker.Unlock()
 	for _, v := range a.statusCallbacks {
-		v(a.status)
+		v(status)
 	}
 }
 
@@ -326,6 +329,7 @@ func (a *Audio) playSongFromReader(metadata songMetadata) error {
 	a.status.State = interfaces.AudioStatePlaying
 	a.status.Action = interfaces.AudioActionPlay
 	speaker.Unlock()
+	a.flushStatus()
 	return err
 }
 

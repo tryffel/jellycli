@@ -37,7 +37,8 @@ type songMetadata struct {
 	format        audioFormat
 }
 
-// Player
+// Player wraps all controllers and implements interfaces.QueueController, interfaces.Player and
+// interfaces.ItemController.
 type Player struct {
 	task.Task
 	*Audio
@@ -84,6 +85,7 @@ func NewPlayer(api *api.Api) (*Player, error) {
 	return p, nil
 }
 
+// notify song has completed
 func (p *Player) songCompleted() {
 	p.songComplete <- true
 }

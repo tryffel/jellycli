@@ -35,10 +35,8 @@ type QueueController interface {
 	GetQueue() []*models.Song
 	//ClearQueue clears queue. This also calls QueueChangedCallback
 	ClearQueue()
-	//QueueDuration gets number of queue items
-	QueueDuration() int
-	//AddItems adds items to the end of queue.
-	//Adding items calls QueueChangedCallback
+	//AddSongs adds songs to the end of queue.
+	//Adding songs calls QueueChangedCallback
 	AddSongs([]*models.Song)
 	//Reorder sets item in index currentIndex to newIndex.
 	//If either currentIndex or NewIndex is not valid, do nothing.
@@ -76,6 +74,7 @@ type ItemController interface {
 
 	GetLatestAlbums() ([]*models.Album, error)
 
+	// GetStatistics returns application statistics
 	GetStatistics() models.Stats
 
 	// GetSongs returns songs by paging. It also returns total number of songs.

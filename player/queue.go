@@ -40,12 +40,14 @@ func newQueue() *Queue {
 	return q
 }
 
+// GetQueue gets currently ongoing queue of items with complete info for each song.
 func (q *Queue) GetQueue() []*models.Song {
 	q.lock.RLock()
 	defer q.lock.RUnlock()
 	return q.items
 }
 
+// ClearQueue clears queue. This also calls QueueChangedCallback.
 func (q *Queue) ClearQueue() {
 	q.lock.Lock()
 	defer q.lock.Unlock()
@@ -53,16 +55,8 @@ func (q *Queue) ClearQueue() {
 	q.items = []*models.Song{}
 }
 
-func (q *Queue) QueueDuration() int {
-	q.lock.RLock()
-	defer q.lock.RUnlock()
-	duration := 0
-	for _, v := range q.items {
-		duration += v.Duration
-	}
-	return duration
-}
-
+// AddSongs adds songs to the end of queue.
+// Adding songs calls QueueChangedCallback.
 func (q *Queue) AddSongs(songs []*models.Song) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
@@ -71,6 +65,9 @@ func (q *Queue) AddSongs(songs []*models.Song) {
 	logrus.Debug("Adding songs to queue, current size: ", len(q.items))
 }
 
+// Reorder sets item in index currentIndex to newIndex.
+// If either currentIndex or NewIndex is not valid, do nothing.
+// On successful order QueueChangedCallback gets called.
 func (q *Queue) Reorder(currentIndex, newIndex int) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
@@ -102,6 +99,7 @@ func (q *Queue) Reorder(currentIndex, newIndex int) {
 	q.items = temp
 }
 
+// GetHistory get's n past songs that has been played.
 func (q *Queue) GetHistory(n int) []*models.Song {
 	q.lock.RLock()
 	defer q.lock.RUnlock()
@@ -111,10 +109,12 @@ func (q *Queue) GetHistory(n int) []*models.Song {
 	return q.history[:n]
 }
 
+// AddQueueChangedCallback adds function that is called every time queue changes.
 func (q *Queue) AddQueueChangedCallback(cb func(content []*models.Song)) {
 	q.queueUpdatedFunc = append(q.queueUpdatedFunc, cb)
 }
 
+// SetHistoryChangedCallback sets a function that gets called every time history items update.
 func (q *Queue) SetHistoryChangedCallback(cb func([]*models.Song)) {
 	q.historyUpdatedFunc = cb
 }
@@ -134,6 +134,7 @@ func (q *Queue) notifyHistoryUpdated() {
 	}
 }
 
+// remove first song from queue and move to history
 func (q *Queue) songComplete() {
 	q.lock.Lock()
 	defer q.notifyQueueUpdated()
@@ -151,6 +152,7 @@ func (q *Queue) songComplete() {
 	q.lock.Unlock()
 }
 
+// remove first item from history and move to queue
 func (q *Queue) playLastSong() {
 	q.lock.Lock()
 	defer q.notifyQueueUpdated()

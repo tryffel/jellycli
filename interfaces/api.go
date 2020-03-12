@@ -30,7 +30,7 @@ const (
 	// Outgoing events
 	EventTimeUpdate          ApiPlaybackEvent = "TimeUpdate"
 	EventPause               ApiPlaybackEvent = "Pause"
-	EventUnpause             ApiPlaybackEvent = "Unnpause"
+	EventUnpause             ApiPlaybackEvent = "Unpause"
 	EventVolumeChange        ApiPlaybackEvent = "VolumeChange"
 	EventRepeatModeChange    ApiPlaybackEvent = "RepeatModeChange"
 	EventAudioTrackChange    ApiPlaybackEvent = "AudioTrackChange"

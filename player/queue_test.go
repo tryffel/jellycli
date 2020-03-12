@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package controller
+package player
 
 import (
 	"reflect"
@@ -60,7 +60,7 @@ func Test_queue_GetQueue(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q := &queue{
+			q := &Queue{
 				items: tt.songs,
 			}
 			if got := q.GetQueue(); !reflect.DeepEqual(got, tt.songs) {
@@ -123,7 +123,7 @@ func Test_queue_Reorder(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q := &queue{
+			q := &Queue{
 				items: make([]*models.Song, len(songs)),
 			}
 			copy(q.items, songs)
@@ -158,7 +158,7 @@ func Test_queue_songComplete(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q := &queue{
+			q := &Queue{
 				items:   tt.songs,
 				history: []*models.Song{},
 			}
@@ -205,7 +205,7 @@ func Test_queue_AddSongs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q := &queue{
+			q := &Queue{
 				items: tt.songs,
 			}
 			q.AddSongs(tt.add)
@@ -219,34 +219,65 @@ func Test_queue_AddSongs(t *testing.T) {
 	}
 }
 
-func Test_queue_QueueDuration(t *testing.T) {
+func TestQueue_playLastSong(t *testing.T) {
 	songs := testSongs()
-
 	tests := []struct {
-		songs []*models.Song
-		name  string
-		want  int
+		name        string
+		songs       []*models.Song
+		queue       []*models.Song
+		history     []*models.Song
+		wantQueue   []*models.Song
+		wantHistory []*models.Song
+		// how many songs
+		previous int
 	}{
 		{
-			songs: songs,
-			want:  611,
+			// simple case
+			songs:       songs,
+			previous:    1,
+			queue:       []*models.Song{songs[0]},
+			history:     []*models.Song{songs[1]},
+			wantQueue:   []*models.Song{songs[1], songs[0]},
+			wantHistory: []*models.Song{},
 		},
 		{
-			songs: nil,
-			want:  0,
+			// more rounds
+			songs:       songs,
+			previous:    4,
+			queue:       []*models.Song{songs[0], songs[1]},
+			history:     []*models.Song{songs[1], songs[2], songs[3], songs[4]},
+			wantQueue:   []*models.Song{songs[4], songs[3], songs[2], songs[1], songs[0], songs[1]},
+			wantHistory: []*models.Song{},
 		},
 		{
-			songs: []*models.Song{{Duration: 1}},
-			want:  1,
+			// not enough songs to play from
+			songs:       songs,
+			previous:    3,
+			queue:       []*models.Song{songs[0], songs[1]},
+			history:     []*models.Song{songs[1]},
+			wantQueue:   []*models.Song{songs[1], songs[0], songs[1]},
+			wantHistory: []*models.Song{},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q := &queue{
-				items: tt.songs,
+			q := &Queue{
+				items:   tt.queue,
+				history: tt.history,
 			}
-			if got := q.QueueDuration(); got != tt.want {
-				t.Errorf("QueueDuration() = %v, want %v", got, tt.want)
+			for i := 0; i < tt.previous; i++ {
+				q.playLastSong()
+			}
+
+			history := q.GetHistory(10)
+			queue := q.GetQueue()
+			if !reflect.DeepEqual(history, tt.wantHistory) {
+				t.Errorf("TestQueue playLastSong history: got %v, want: %v", history, tt.wantHistory)
+			}
+
+			if !reflect.DeepEqual(queue, tt.wantQueue) {
+				t.Errorf("TestQueue playLastSong queue: got %v, want: %v",
+					queue, tt.wantQueue)
 			}
 		})
 	}

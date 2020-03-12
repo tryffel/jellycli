@@ -18,72 +18,128 @@ package interfaces
 
 import "tryffel.net/go/jellycli/models"
 
-//PlayerState holds data about currently playing song if any
-type PlayingState struct {
-	State         State
-	PlayingType   Playtype
+// AudioState is audio player state, playing song, stopped
+type AudioState int
+
+const (
+	// AudioStateStopped, no audio to play
+	AudioStateStopped AudioState = iota
+	// AudioStatePlaying, playing song
+	AudioStatePlaying
+	// AudioStatePaused, playing song paused
+	AudioStatePaused
+)
+
+// AudioAction is an action for audio player, set volume, go to next
+type AudioAction int
+
+const (
+	// AudioActionTimeUpdate means timed update and no actual action has been taken
+	AudioActionTimeUpdate AudioAction = iota
+	// AudioActionStop stops playing or paused player
+	AudioActionStop
+	// AudioActionPlay starts stopped player
+	AudioActionPlay
+	// AudioActionPlayPause toggles play/pause
+	AudioActionPlayPause
+	// AudioActionNext plays next song from queue
+	AudioActionNext
+	// AudioActionPrevious plays previous song from queue
+	AudioActionPrevious
+	// AudioActionSeek seeks song
+	AudioActionSeek
+	// AudioActionSetVolume sets volume
+	AudioActionSetVolume
+)
+
+// AudioTick is alias for millisecond
+type AudioTick int
+
+func (a AudioTick) Seconds() int {
+	return int(a / 1000)
+}
+
+func (a AudioTick) MilliSeconds() int {
+	return int(a)
+}
+
+func (a AudioTick) MicroSeconds() int {
+	return int(a) * 1000
+}
+
+// AudioVolume is volume level in [0,100]
+type AudioVolume int
+
+const (
+	AudioVolumeMax = 100
+	AudioVolumeMin = 0
+)
+
+// InRange returns true if volume is in allowed range
+func (a AudioVolume) InRange() bool {
+	return a >= AudioVolumeMin && a <= AudioVolumeMax
+}
+
+// Add adds value to volume. Negative values are allowed. Always returns volume that's in allowed range.
+func (a AudioVolume) Add(vol int) AudioVolume {
+	result := a + AudioVolume(vol)
+	if result < AudioVolumeMin {
+		return AudioVolumeMin
+	}
+	if result > AudioVolumeMax {
+		return AudioVolumeMax
+	}
+	return result
+}
+
+// AudioStatus contains audio player status
+type AudioStatus struct {
+	State  AudioState
+	Action AudioAction
+
 	Song          *models.Song
 	Album         *models.Album
 	Artist        *models.Artist
 	AlbumImageUrl string
 
-	// Content duration in sec
-	CurrentSongDuration int
-	CurrentSongPast     int
-	PlaylistDuration    int
-	PlaylistLeft        int
-	// Volume [0,100]
-	Volume int
+	SongPast AudioTick
+	Volume   AudioVolume
+	Muted    bool
+	Paused   bool
 }
 
-//remove song info from state
-func (p *PlayingState) Clear() {
-	p.Song = nil
-	p.Album = nil
-	p.Artist = nil
-	p.AlbumImageUrl = ""
-	p.CurrentSongDuration = 0
-	p.CurrentSongPast = 0
+func (a *AudioStatus) Clear() {
+	a.Song = nil
+	a.Album = nil
+	a.Artist = nil
+	a.AlbumImageUrl = ""
+	a.SongPast = 0
+	a.Volume = 0
 }
 
-const (
-	// Player states
-	// StopMedia -> Play -> Pause -> (Continue) -> StopMedia
-	// Play new song
-	Play State = iota
-	// Continue paused song, only a transition mode, never state of the player
-	Continue
-	//SetVolume, only transition mode
-	SetVolume
-	// Pause song
-	Pause
-	// StopMedia playing
-	Stop
-	//EndSong is a transition state to end current song
-	EndSong
-	//SongComplete, only transition mode to notify song has changed
-	SongComplete
-
-	//SongStarted, only transition mode to notify a new song has started
-	SongStarted
-)
-
-const (
-	// Playing single song
-	Song Playtype = 0
-	// Playing album
-	Album Playtype = 1
-	// Playing artists discography
-	Artist Playtype = 2
-	// Playing playlist
-	Playlist Playtype = 3
-	// Last action was ok
-	StatusOk PlayerStatus = 0
-	// Last action resulted in error
-	StatusError PlayerStatus = 0
-)
-
-type Playtype int
-type PlayerStatus int
-
-type State int
+// Player controls media playback. Current status is sent to StatusCallback, if set. Multiple status callbacks
+// can be set.
+type Player interface {
+	//PlayPause toggles pause
+	PlayPause()
+	//Pause pauses media that's currently playing. If none, do nothing.
+	Pause()
+	//Continue continues currently paused media.
+	Continue()
+	//StopMedia stops playing media.
+	StopMedia()
+	//Next plays currently next item in queue. If there's no next song available, this method does nothing.
+	Next()
+	//Previous plays last played song (first in history) if there is one.
+	Previous()
+	//Seek seeks forward given seconds
+	Seek(ticks AudioTick)
+	//SeekBackwards seeks backwards given seconds
+	//AddStatusCallback adds callback that get's called every time status has changed,
+	//including playback progress
+	AddStatusCallback(func(status AudioStatus))
+	//SetVolume sets volume to given level in range of [0,100]
+	SetVolume(volume AudioVolume)
+	// SetMute mutes or un-mutes audio
+	SetMute(muted bool)
+}

@@ -32,7 +32,7 @@ import (
 // https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html
 type Player struct {
 	*MediaController
-	lastState interfaces.PlayingState
+	lastState interfaces.AudioStatus
 }
 
 // TrackID is the Unique track identifier.
@@ -78,16 +78,18 @@ const (
 )
 
 //UpdateStatus updates status to dbus
-func (p *Player) UpdateStatus(state interfaces.PlayingState) {
+func (p *Player) UpdateStatus(state interfaces.AudioStatus) {
 	p.lastState = state
 	var playStatus PlaybackStatus
 	switch state.State {
-	case interfaces.Play:
+	case interfaces.AudioStatePlaying:
 		playStatus = PlaybackStatusPlaying
-	case interfaces.Pause:
-		playStatus = PlaybackStatusPaused
-	case interfaces.Stop:
+	case interfaces.AudioStateStopped:
 		playStatus = PlaybackStatusStopped
+	}
+
+	if state.State == interfaces.AudioStatePlaying && state.Paused {
+		playStatus = PlaybackStatusPaused
 	}
 	object := objectName("Player")
 
@@ -95,9 +97,8 @@ func (p *Player) UpdateStatus(state interfaces.PlayingState) {
 	var data = MetadataMap{}
 
 	if state.Song != nil {
-		pos = int64(state.CurrentSongPast * 1000 * 1000)
+		pos = int64(state.SongPast.MicroSeconds())
 		data = mapFromStatus(state)
-
 	}
 	if err := p.props.Set(object, "Metadata", dbus.MakeVariant(data)); err != nil {
 		logrus.Error(err)
@@ -135,7 +136,8 @@ func (p *Player) OnVolume(c *prop.Change) *dbus.Error {
 		val = 0
 	}
 	//return transform(p.mpd.SetVolume(val))
-	p.controller.SetVolume(val)
+	volume := interfaces.AudioVolume(val)
+	p.controller.SetVolume(volume)
 	return nil
 }
 
@@ -182,6 +184,7 @@ func (p *Player) Next() *dbus.Error {
 // Previous skips to the previous track in the tracklist.
 // https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html#Method:Previous
 func (p *Player) Previous() *dbus.Error {
+	p.controller.Previous()
 	return nil
 }
 
@@ -211,11 +214,7 @@ func (p *Player) Stop() *dbus.Error {
 // If playback is stopped, starts playback.
 // https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html#Method:PlayPause
 func (p *Player) PlayPause() *dbus.Error {
-	if p.lastState.State == interfaces.Play {
-		p.controller.Pause()
-	} else if p.lastState.State == interfaces.Pause {
-		p.controller.Continue()
-	}
+	p.controller.PlayPause()
 	return nil
 }
 

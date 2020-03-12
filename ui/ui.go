@@ -17,22 +17,22 @@
 package ui
 
 import (
-	"tryffel.net/go/jellycli/controller"
+	player2 "tryffel.net/go/jellycli/player"
 	"tryffel.net/go/jellycli/task"
 	"tryffel.net/go/jellycli/ui/widgets"
 )
 
 type Gui struct {
 	task.Task
-	window     widgets.Window
-	controller *controller.Content
+	window widgets.Window
+	player *player2.Player
 }
 
-func NewUi(controller *controller.Content) *Gui {
+func NewUi(player *player2.Player) *Gui {
 	u := &Gui{
-		controller: controller,
+		player: player,
 	}
-	u.window = widgets.NewWindow(controller)
+	u.window = widgets.NewWindow(player, player, player)
 	u.Name = "Gui"
 	u.SetLoop(u.loop)
 	return u
@@ -52,7 +52,7 @@ func (gui *Gui) Stop() error {
 }
 
 func (gui *Gui) loop() {
-	gui.window.InitBrowser(gui.controller.GetDefault())
+	//gui.window.InitBrowser(gui.controller.GetDefault())
 
 	for true {
 		select {

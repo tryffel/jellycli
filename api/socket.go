@@ -27,6 +27,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"tryffel.net/go/jellycli/interfaces"
 )
 
 const (
@@ -123,7 +124,8 @@ func (a *Api) parseInboudMessage(buff *[]byte) error {
 				if err != nil {
 					logrus.Error("Invalid volume parameter")
 				} else {
-					a.controller.SetVolume(volume)
+					volume := interfaces.AudioVolume(volume)
+					a.player.SetVolume(volume)
 				}
 			}
 		} else {
@@ -141,17 +143,17 @@ func (a *Api) parseInboudMessage(buff *[]byte) error {
 }
 
 func (a *Api) pushCommand(cmd string) error {
-	if a.controller == nil {
+	if a.player == nil {
 		return nil
 	}
 
 	switch cmd {
 	case "PlayPause":
-		a.controller.PlayPause()
+		a.player.PlayPause()
 	case "NextTrack":
-		a.controller.Next()
-	case "Stop":
-		a.controller.StopMedia()
+		a.player.Next()
+	case "StopMedia":
+		a.player.StopMedia()
 	default:
 		logrus.Info("Unknown websocket playstate command: ", cmd)
 	}

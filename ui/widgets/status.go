@@ -75,7 +75,7 @@ type Status struct {
 	progress  ProgressBar
 	volume    ProgressBar
 
-	lastState interfaces.State
+	state interfaces.AudioStatus
 
 	controlsFgColor tcell.Color
 	controlsBgColor tcell.Color
@@ -86,17 +86,16 @@ type Status struct {
 	detailsMainColor tcell.Color
 	detailsDimColor  tcell.Color
 
-	state interfaces.PlayingState
-	song  *models.SongInfo
+	song *models.SongInfo
 
-	actionCb func(state interfaces.State, volume int)
+	actionCb func(state interfaces.AudioStatus)
 
-	controller interfaces.MediaController
+	player interfaces.Player
 }
 
-func newStatus(ctrl interfaces.MediaController) *Status {
+func newStatus(ctrl interfaces.Player) *Status {
 	s := &Status{frame: tview.NewBox()}
-	s.controller = ctrl
+	s.player = ctrl
 
 	colors := config.Color.Status
 
@@ -137,21 +136,17 @@ func newStatus(ctrl interfaces.MediaController) *Status {
 	s.progress = NewProgressBar(40, 100)
 	s.volume = NewProgressBar(10, 100)
 
-	state := interfaces.PlayingState{
-		State:               interfaces.Stop,
-		PlayingType:         interfaces.Playlist,
-		Song:                nil,
-		Artist:              nil,
-		Album:               nil,
-		CurrentSongDuration: 0,
-		CurrentSongPast:     0,
-		PlaylistDuration:    0,
-		PlaylistLeft:        0,
-		Volume:              50,
+	state := interfaces.AudioStatus{
+		State:    interfaces.AudioStateStopped,
+		Song:     nil,
+		Artist:   nil,
+		Album:    nil,
+		SongPast: 0,
+		Volume:   50,
+		Muted:    false,
 	}
 
 	s.state = state
-	s.lastState = interfaces.Stop
 
 	s.buttons = []*tview.Button{
 		s.btnPrevious, s.btnBackward, s.btnPlay, s.btnForward, s.btnNext,
@@ -178,12 +173,15 @@ func (s *Status) Draw(screen tcell.Screen) {
 	s.frame.Draw(screen)
 	x, y, w, _ := s.frame.GetInnerRect()
 
-	songPast := util.SecToString(s.state.CurrentSongPast)
+	songPast := util.SecToString(s.state.SongPast.Seconds())
 	songPast = " " + songPast + " "
-	songDuration := util.SecToString(s.state.CurrentSongDuration)
-	songDuration = " " + songDuration + " "
+	var songDuration = " 0:00 "
+	if s.state.Song != nil {
+		songDuration = util.SecToString(s.state.Song.Duration)
+		songDuration = " " + songDuration + " "
+	}
 
-	volume := " Volume " + s.volume.Draw(s.state.Volume)
+	volume := " Volume " + s.volume.Draw(int(s.state.Volume))
 	topRowFree := w - len(songPast) - len(songDuration) - utf8.RuneCountInString(volume) - 5
 
 	s.progress.SetWidth(topRowFree * 10 / 11)
@@ -191,7 +189,7 @@ func (s *Status) Draw(screen tcell.Screen) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	progressBar := s.progress.Draw(s.state.CurrentSongPast)
+	progressBar := s.progress.Draw(s.state.SongPast.Seconds())
 
 	progress := songPast + progressBar + songDuration
 	progressLen := utf8.RuneCountInString(progress)
@@ -250,7 +248,8 @@ func (s *Status) GetFocusable() tview.Focusable {
 }
 
 func (s *Status) WriteStatus(screen tcell.Screen, x, y int) {
-	if s.state.State != interfaces.Stop && (s.state.Song != nil && s.state.Album != nil && s.state.Artist != nil) {
+	if s.state.State != interfaces.AudioStateStopped &&
+		(s.state.Song != nil && s.state.Album != nil && s.state.Artist != nil) {
 		xi := x
 		w, _ := screen.Size()
 		tview.Print(screen, effect(s.state.Song.Name, "b")+" - ", x, y, w, tview.AlignLeft, s.detailsMainColor)
@@ -277,34 +276,35 @@ func (s *Status) buttonCb(name string) {
 	if s.actionCb == nil {
 		return
 	}
+
+	status := interfaces.AudioStatus{}
+
 	switch name {
 	case btnPlay:
-		s.actionCb(interfaces.Play, -1)
+		status.Action = interfaces.AudioActionPlay
 	case btnPause:
-		s.actionCb(interfaces.Pause, -1)
+		status.Action = interfaces.AudioActionPlayPause
 	case btnNext:
-		s.actionCb(interfaces.EndSong, -1)
+		status.Action = interfaces.AudioActionNext
 	}
+	s.actionCb(status)
 }
 
-func (s *Status) UpdateState(state interfaces.PlayingState, song *models.SongInfo) {
+func (s *Status) UpdateState(state interfaces.AudioStatus, song *models.SongInfo) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	s.state = state
 	s.song = song
-	s.progress.SetMaximum(s.state.CurrentSongDuration)
-
-	if s.lastState != state.State {
-		s.DrawButtons()
-		s.lastState = state.State
+	if state.Song != nil {
+		s.progress.SetMaximum(state.Song.Duration)
 	}
-
+	s.state = state
+	s.DrawButtons()
 }
 
 func (s *Status) DrawButtons() {
-	if s.state.State == interfaces.Play {
-		s.btnPlay.SetLabel(btnPause)
-	} else if s.state.State == interfaces.Pause {
+	if s.state.Paused {
 		s.btnPlay.SetLabel(btnPlay)
+	} else {
+		s.btnPlay.SetLabel(btnPause)
 	}
 }

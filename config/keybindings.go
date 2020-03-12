@@ -83,8 +83,8 @@ func DefaultKeyBindings() KeyBindings {
 		},
 		NavigationBar: NavigationBarBindings{
 			Help:    tcell.KeyF1,
-			Queue:   tcell.KeyF4,
-			History: tcell.KeyF5,
+			Queue:   tcell.KeyF2,
+			History: tcell.KeyF3,
 		},
 		Moving: MovingBindings{
 			Up:    tcell.KeyUp,

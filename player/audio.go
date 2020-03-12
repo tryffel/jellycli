@@ -56,7 +56,7 @@ type Audio struct {
 }
 
 // initialize new player. This also initializes faiface.Speaker, which should be initialized only once.
-func newAudio() (*Audio, error) {
+func newAudio() *Audio {
 	a := &Audio{
 		ctrl: &beep.Ctrl{
 			Streamer: nil,
@@ -72,17 +72,22 @@ func newAudio() (*Audio, error) {
 		statusCallbacks: make([]func(status interfaces.AudioStatus), 0),
 	}
 	a.ctrl.Streamer = a.mixer
+	a.ctrl.Paused = false
 	a.volume.Streamer = a.ctrl
+	a.volume.Silent = false
 	a.status.Volume = 50
 
-	// Speaker
+	return a
+
+}
+
+func initAudio() error {
 	err := speaker.Init(config.AudioSamplingRate, config.AudioSamplingRate/1000*
 		int(config.AudioBufferPeriod.Seconds()*1000))
 	if err != nil {
-		return a, fmt.Errorf("init audio: %v", err)
+		return fmt.Errorf("init speaker: %v", err)
 	}
-	return a, nil
-
+	return nil
 }
 
 func (a *Audio) getStatus() interfaces.AudioStatus {
@@ -190,9 +195,11 @@ func (a *Audio) SetVolume(volume interfaces.AudioVolume) {
 	if decibels <= config.AudioMinVolumedB {
 		a.volume.Silent = true
 		a.volume.Volume = config.AudioMinVolumedB
+		a.status.Volume = interfaces.AudioVolumeMin
 	} else if decibels >= config.AudioMaxVolumedB {
 		a.volume.Volume = config.AudioMaxVolumedB
 		a.volume.Silent = false
+		a.status.Volume = interfaces.AudioVolumeMax
 	} else {
 		a.volume.Silent = false
 		a.volume.Volume = decibels
@@ -205,6 +212,7 @@ func (a *Audio) SetVolume(volume interfaces.AudioVolume) {
 
 // SetMute mutes and un-mutes audio
 func (a *Audio) SetMute(muted bool) {
+
 	if muted {
 		logrus.Info("Mute audio")
 	} else {

@@ -17,6 +17,7 @@
 package player
 
 import (
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"io"
 	"sync"
@@ -71,11 +72,16 @@ func NewPlayer(api *api.Api) (*Player, error) {
 	p.Name = "Player"
 	p.Task.SetLoop(p.loop)
 
-	p.Audio, err = newAudio()
+	p.Audio = newAudio()
 	p.Queue = newQueue()
 	p.Items = newItems(api)
 	if err != nil {
 		return p, err
+	}
+
+	err = initAudio()
+	if err != nil {
+		return p, fmt.Errorf("init audio backend: %v", err)
 	}
 
 	p.Audio.songCompleteFunc = p.songCompleted

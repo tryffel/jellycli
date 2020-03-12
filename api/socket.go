@@ -152,6 +152,12 @@ func (a *Api) pushCommand(cmd string) error {
 		a.player.PlayPause()
 	case "NextTrack":
 		a.player.Next()
+	case "PreviousTrack":
+		a.player.Previous()
+	case "Pause":
+		a.player.Pause()
+	case "Unpause":
+		a.player.Continue()
 	case "StopMedia":
 		a.player.StopMedia()
 	default:

@@ -158,6 +158,7 @@ func (q *Queue) playLastSong() {
 	defer q.notifyQueueUpdated()
 	defer q.notifyHistoryUpdated()
 	if len(q.history) == 0 {
+		q.lock.Unlock()
 		return
 	}
 	song := q.history[0]

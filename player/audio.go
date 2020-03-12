@@ -185,6 +185,8 @@ func (a *Audio) SetVolume(volume interfaces.AudioVolume) {
 	decibels := float64(volumeTodB(int(volume)))
 	logrus.Debugf("Set volume to %d %s -> %.2f Db", volume, "%", decibels)
 	speaker.Lock()
+
+	// settings volume to 0 does not mute audio, set silent to true
 	if decibels <= config.AudioMinVolumedB {
 		a.volume.Silent = true
 		a.volume.Volume = config.AudioMinVolumedB
@@ -195,8 +197,8 @@ func (a *Audio) SetVolume(volume interfaces.AudioVolume) {
 		a.volume.Silent = false
 		a.volume.Volume = decibels
 		a.status.Volume = volume
-		a.status.Action = interfaces.AudioActionSetVolume
 	}
+	a.status.Action = interfaces.AudioActionSetVolume
 	speaker.Unlock()
 	go a.flushStatus()
 }
@@ -214,6 +216,7 @@ func (a *Audio) SetMute(muted bool) {
 	}
 	a.ctrl.Paused = false
 	a.volume.Silent = muted
+	a.status.Muted = muted
 	speaker.Unlock()
 	go a.flushStatus()
 }

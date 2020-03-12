@@ -128,7 +128,7 @@ func (a *Application) Start() error {
 
 func (a *Application) Stop() error {
 	logrus.Info("Stopping application")
-	tasks := []task.Task{a.player.Task, a.api.Task}
+	tasks := []task.Tasker{a.player, a.api}
 	var err error
 	var hasError bool
 	for _, v := range tasks {

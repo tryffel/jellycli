@@ -127,7 +127,9 @@ func (a *Api) ReportProgress(state *interfaces.ApiPlaybackState) error {
 	}
 	var resp io.ReadCloser
 	resp, err = a.post(url, &body, &params)
-	resp.Close()
+	if resp != nil {
+		resp.Close()
+	}
 
 	/*
 		} else {

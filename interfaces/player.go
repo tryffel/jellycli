@@ -52,7 +52,7 @@ const (
 	AudioActionSetVolume
 )
 
-// AudioTick is millisecond
+// AudioTick is alias for millisecond
 type AudioTick int
 
 func (a AudioTick) Seconds() int {
@@ -67,6 +67,7 @@ func (a AudioTick) MicroSeconds() int {
 	return int(a) * 1000
 }
 
+// AudioVolume is volume level in [0,100]
 type AudioVolume int
 
 const (

@@ -26,8 +26,6 @@ const (
 	AudioStateStopped AudioState = iota
 	// AudioStatePlaying, playing song
 	AudioStatePlaying
-	// AudioStatePaused, playing song paused
-	AudioStatePaused
 )
 
 // AudioAction is an action for audio player, set volume, go to next

@@ -19,23 +19,49 @@ package config
 import (
 	"bufio"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh/terminal"
 	"os"
+	"path"
 	"strings"
 	"syscall"
 )
 
 type Config struct {
-	ServerUrl string `yaml:"server_url"`
+	Server Server `yaml:"server"`
+	Player Player `yaml:"player"`
+
+	configFile string
+	configDir  string
+}
+
+type Server struct {
+	Url       string `yaml:"server_url"`
 	Username  string `yaml:"username"`
 	Token     string `yaml:"token"`
 	UserId    string `yaml:"user_id"`
 	DeviceId  string `yaml:"device_id"`
 	ServerId  string `yaml:"server_id"`
 	MusicView string `yaml:"music_view"`
+}
 
-	configFile string
-	configDir  string
+type Player struct {
+	PageSize int    `yaml:"page_size"`
+	LogFile  string `yaml:"log_file"`
+	LogLevel string `yaml:"log_level"`
+}
+
+func (p *Player) fillDefaults() {
+	if p.PageSize <= 0 || p.PageSize > 500 {
+		p.PageSize = 100
+	}
+	if p.LogFile == "" {
+		dir := os.TempDir()
+		p.LogFile = path.Join(dir, AppNameLower+".log")
+	}
+	if p.LogLevel == "" {
+		p.LogLevel = logrus.WarnLevel.String()
+	}
 }
 
 // ReadUserInput reads value from stdin. Name is printed like 'Enter <name>. If mask is true, input is masked.

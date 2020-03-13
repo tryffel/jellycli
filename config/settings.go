@@ -31,6 +31,11 @@ const (
 	LogLevel = logrus.WarnLevel
 )
 
+var (
+	// PageSize controls paging and is read from config file
+	PageSize = 100
+)
+
 // audio configuration
 const (
 	AudioSamplingRate = 44100

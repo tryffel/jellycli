@@ -61,16 +61,19 @@ func NewApplication(configFile string) (*Application, error) {
 	var err error
 	a := &Application{}
 
-	a.logfile = setLogging()
+	err = a.initConfig(configFile)
+	if err != nil {
+		return a, err
+	}
+
+	config.PageSize = a.conf.Player.PageSize
+
+	a.logfile = setLogging(a.conf)
 
 	// write to both log file and stdout for startup, in case there are any errors that prevent gui
 	writer := io.MultiWriter(a.logfile, os.Stdout)
 	logrus.SetOutput(writer)
 
-	err = a.initConfig(configFile)
-	if err != nil {
-		return a, err
-	}
 	logrus.Infof("############# %s v%s ############", config.AppName, config.Version)
 	err = a.initApi()
 	if err != nil {
@@ -169,16 +172,16 @@ func (a *Application) initConfig(configFile string) error {
 
 func (a *Application) initApi() error {
 	var err error
-	if a.conf.ServerUrl == "" {
+	if a.conf.Server.Url == "" {
 		url, err := config.ReadUserInput("full jellyfin url", false)
 		if err != nil {
 			return fmt.Errorf("get server url: %v", err)
 		}
-		a.conf.ServerUrl = url
+		a.conf.Server.Url = url
 		configChanged = true
 	}
 
-	a.api, err = api.NewApi(a.conf.ServerUrl)
+	a.api, err = api.NewApi(a.conf.Server.Url)
 	if err != nil {
 		return fmt.Errorf("api init: %v", err)
 	}
@@ -189,7 +192,7 @@ func (a *Application) initApi() error {
 }
 
 func (a *Application) login() error {
-	if a.conf.Token == "" {
+	if a.conf.Server.Token == "" {
 		configChanged = true
 		username, err := config.ReadUserInput("username", false)
 		if err != nil {
@@ -203,10 +206,10 @@ func (a *Application) login() error {
 
 		err = a.api.Login(username, password)
 		if err == nil && a.api.IsLoggedIn() {
-			a.conf.Token = a.api.Token()
-			a.conf.UserId = a.api.UserId()
-			a.conf.DeviceId = a.api.DeviceId
-			a.conf.ServerId = a.api.ServerId()
+			a.conf.Server.Token = a.api.Token()
+			a.conf.Server.UserId = a.api.UserId()
+			a.conf.Server.DeviceId = a.api.DeviceId
+			a.conf.Server.ServerId = a.api.ServerId()
 
 			err = config.SaveConfig(a.conf)
 			if err != nil {
@@ -219,19 +222,19 @@ func (a *Application) login() error {
 		return nil
 
 	} else {
-		err := a.api.SetToken(a.conf.Token)
+		err := a.api.SetToken(a.conf.Server.Token)
 		if err != nil {
 			return fmt.Errorf("set token: %v", err)
 		}
-		a.api.SetUserId(a.conf.UserId)
-		a.api.DeviceId = a.conf.DeviceId
-		a.api.SetServerId(a.conf.ServerId)
+		a.api.SetUserId(a.conf.Server.UserId)
+		a.api.DeviceId = a.conf.Server.DeviceId
+		a.api.SetServerId(a.conf.Server.ServerId)
 		return nil
 	}
 }
 
 func (a *Application) initApiView() error {
-	view := a.conf.MusicView
+	view := a.conf.Server.MusicView
 	if view != "" {
 		a.api.SetDefaultMusicview(view)
 		return nil
@@ -262,7 +265,7 @@ func (a *Application) initApiView() error {
 					id := ""
 					if num < len(views) && num > 0 {
 						id = views[num].Id.String()
-						a.conf.MusicView = id
+						a.conf.Server.MusicView = id
 						configChanged = true
 						a.api.SetDefaultMusicview(id)
 						if err != nil {
@@ -300,8 +303,14 @@ func (a *Application) initApplication() error {
 	return nil
 }
 
-func setLogging() *os.File {
-	logrus.SetLevel(config.LogLevel)
+func setLogging(conf *config.Config) *os.File {
+	level, err := logrus.ParseLevel(conf.Player.LogLevel)
+	if err != nil {
+		logrus.Errorf("parse log level: %v", err)
+		return nil
+	}
+
+	logrus.SetLevel(level)
 	format := &prefixed.TextFormatter{
 		ForceColors:      false,
 		DisableColors:    true,

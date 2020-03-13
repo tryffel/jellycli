@@ -18,6 +18,7 @@ package interfaces
 
 import (
 	"math"
+	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/models"
 )
 
@@ -87,6 +88,16 @@ type Paging struct {
 	TotalPages  int
 	CurrentPage int
 	PageSize    int
+}
+
+// DefaultPaging returns paging with page 0 and default pagesize
+func DefaultPaging() Paging {
+	return Paging{
+		TotalItems:  0,
+		TotalPages:  0,
+		CurrentPage: 0,
+		PageSize:    config.PageSize,
+	}
 }
 
 // SetTotalItems calculates number of pages for current page size

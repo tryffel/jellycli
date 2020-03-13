@@ -71,6 +71,7 @@ func readConfigFile(file string) (*Config, error) {
 		}
 	}
 
+	conf.Player.fillDefaults()
 	return conf, nil
 }
 

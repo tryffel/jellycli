@@ -126,13 +126,11 @@ func (q *Queue) SetSongs(songs []*models.Song) {
 		s := newAlbumSong(v, false, i+1)
 		q.songs[i] = s
 		q.songs[i].updateTextFunc = q.updateSongText
-		// first item is being played
-		if i == 0 {
-			s.playing = true
-		} else {
-			s.playing = false
-		}
 		items[i] = s
+	}
+	// colorize first item in queue
+	if !q.historyMode && len(q.songs) > 0 {
+		q.songs[0].playing = true
 	}
 	q.list.AddItems(items...)
 	q.printDescription()

@@ -197,6 +197,7 @@ func newAlbumSong(s *models.Song, showDiscNum bool, overrideIndex int) *albumSon
 		TextView:    tview.NewTextView(),
 		song:        s,
 		showDiscNum: showDiscNum,
+		playing:     false,
 	}
 
 	if overrideIndex == -1 {

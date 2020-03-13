@@ -25,6 +25,7 @@ var (
 // GlobalBindings can have only one action since they override all others
 type GlobalBindings struct {
 	PlayPause  tcell.Key
+	Stop       tcell.Key
 	Next       tcell.Key
 	Previous   tcell.Key
 	Forward    tcell.Key
@@ -73,8 +74,9 @@ func DefaultKeyBindings() KeyBindings {
 	k := KeyBindings{
 		Global: GlobalBindings{
 			PlayPause:  tcell.KeyF6,
+			Stop:       tcell.KeyF5,
 			Next:       tcell.KeyF7,
-			Previous:   tcell.KeyF5,
+			Previous:   tcell.KeyF4,
 			Forward:    0,
 			Backward:   0,
 			VolumeUp:   tcell.KeyF10,

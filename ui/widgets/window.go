@@ -213,6 +213,9 @@ func (w *Window) mediaCtrl(event *tcell.EventKey) bool {
 	ctrls := config.KeyBinds.Global
 	key := event.Key()
 	switch key {
+	case ctrls.Stop:
+		w.mediaPlayer.StopMedia()
+		w.mediaQueue.ClearQueue()
 	case ctrls.PlayPause:
 		w.mediaPlayer.PlayPause()
 	case ctrls.VolumeDown:

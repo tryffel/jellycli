@@ -149,12 +149,13 @@ func newStatus(ctrl interfaces.Player) *Status {
 	s.state = state
 
 	s.buttons = []*tview.Button{
-		s.btnPrevious, s.btnBackward, s.btnPlay, s.btnForward, s.btnNext,
+		s.btnPrevious, s.btnBackward, s.btnStop, s.btnPlay, s.btnForward, s.btnNext,
 	}
 
 	s.shortCuts = []string{
 		util.PackKeyBindingName(config.KeyBinds.Global.Previous, 5),
 		util.PackKeyBindingName(config.KeyBinds.Global.Backward, 5),
+		util.PackKeyBindingName(config.KeyBinds.Global.Stop, 5),
 		util.PackKeyBindingName(config.KeyBinds.Global.PlayPause, 5),
 		util.PackKeyBindingName(config.KeyBinds.Global.Forward, 5),
 		util.PackKeyBindingName(config.KeyBinds.Global.Next, 5),
@@ -217,7 +218,7 @@ func (s *Status) Draw(screen tcell.Screen) {
 		v.Draw(screen)
 		btnX += 5
 	}
-	s.WriteStatus(screen, x+27, y)
+	s.WriteStatus(screen, x+32, y)
 }
 
 func (s *Status) GetRect() (int, int, int, int) {
@@ -286,6 +287,8 @@ func (s *Status) buttonCb(name string) {
 		status.Action = interfaces.AudioActionPlayPause
 	case btnNext:
 		status.Action = interfaces.AudioActionNext
+	case btnStop:
+		status.Action = interfaces.AudioActionStop
 	}
 	s.actionCb(status)
 }
@@ -302,7 +305,7 @@ func (s *Status) UpdateState(state interfaces.AudioStatus, song *models.SongInfo
 }
 
 func (s *Status) DrawButtons() {
-	if s.state.Paused {
+	if s.state.Paused || s.state.State == interfaces.AudioStateStopped {
 		s.btnPlay.SetLabel(btnPlay)
 	} else {
 		s.btnPlay.SetLabel(btnPause)

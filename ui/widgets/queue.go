@@ -126,6 +126,12 @@ func (q *Queue) SetSongs(songs []*models.Song) {
 		s := newAlbumSong(v, false, i+1)
 		q.songs[i] = s
 		q.songs[i].updateTextFunc = q.updateSongText
+		// first item is being played
+		if i == 0 {
+			s.playing = true
+		} else {
+			s.playing = false
+		}
 		items[i] = s
 	}
 	q.list.AddItems(items...)
@@ -166,6 +172,10 @@ func (q *Queue) listHandler(key *tcell.EventKey) *tcell.EventKey {
 
 func (q *Queue) updateSongText(song *albumSong) {
 	var name string
+	if song.playing {
+		song.SetTextColor(config.Color.TextSongPlaying)
+	}
+
 	if song.showDiscNum {
 		name = fmt.Sprintf("%d %d. %s", song.song.DiscNumber, song.song.Index, song.song.Name)
 	} else {

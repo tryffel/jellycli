@@ -45,6 +45,7 @@ type AppColor struct {
 	TextDisabled             tcell.Color
 	BackgroundSelected       tcell.Color
 	TextSelected             tcell.Color
+	TextSongPlaying          tcell.Color
 	NavBar                   ColorNavBar
 	Status                   ColorStatus
 	Modal                    ColorModal
@@ -64,6 +65,7 @@ func defaultColors() AppColor {
 		TextDisabled:             TextDisabled,
 		BackgroundSelected:       tcell.Color23,
 		TextSelected:             tcell.Color252,
+		TextSongPlaying:          colorShortcut,
 		NavBar:                   defaultColorNavBar(),
 		Status:                   defaultColorStatus(),
 		Modal:                    defaultColorModal(),

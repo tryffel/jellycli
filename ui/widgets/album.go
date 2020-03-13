@@ -75,6 +75,8 @@ type albumSong struct {
 	song        *models.Song
 	showDiscNum bool
 	index       int
+	// is song being played now
+	playing bool
 
 	// allow overriding text input. If updateTextFunc != nil, use that to update, else use default album text format
 	updateTextFunc func(a *albumSong)
@@ -182,6 +184,10 @@ func (a *albumSong) getAlignedDuration(text string) string {
 	}
 	out := text + space + duration
 	return out
+}
+
+func (a *albumSong) SetPlaying(playing bool) {
+	a.playing = playing
 }
 
 // showDiscNum: whether to print disc number.

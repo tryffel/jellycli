@@ -48,11 +48,15 @@ func (q *Queue) GetQueue() []*models.Song {
 }
 
 // ClearQueue clears queue. This also calls QueueChangedCallback.
-func (q *Queue) ClearQueue() {
+func (q *Queue) ClearQueue(first bool) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 	defer q.notifyQueueUpdated()
-	q.items = []*models.Song{}
+	if first || len(q.items) == 0 {
+		q.items = []*models.Song{}
+	} else {
+		q.items = []*models.Song{q.items[0]}
+	}
 }
 
 // AddSongs adds songs to the end of queue.

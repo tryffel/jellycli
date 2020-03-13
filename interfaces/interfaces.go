@@ -29,13 +29,15 @@ type MediaController interface {
 	ItemController
 }
 
-//QueueController controls queue and history
+// QueueController controls queue and history. Queue shows only upcoming songs and first item in queue is being
+// currently played. When moving to next item in queue, first item is moved to history.
 // If no queueChangedCallback is set, no queue updates will be returned
 type QueueController interface {
 	//GetQueue gets currently ongoing queue of items with complete info for each song
 	GetQueue() []*models.Song
-	//ClearQueue clears queue. This also calls QueueChangedCallback
-	ClearQueue()
+	//ClearQueue clears queue. This also calls QueueChangedCallback. If first = true, clear also first item. Else
+	// leave it as it is.
+	ClearQueue(first bool)
 	//AddSongs adds songs to the end of queue.
 	//Adding songs calls QueueChangedCallback
 	AddSongs([]*models.Song)

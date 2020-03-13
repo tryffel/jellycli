@@ -102,6 +102,7 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 	w.help.SetDoneFunc(w.wrapCloseModal(w.help))
 	w.queue = NewQueue()
 	w.queue.SetBackCallback(w.goBack)
+	w.queue.clearFunc = w.clearQueue
 	w.mediaQueue.AddQueueChangedCallback(func(songs []*models.Song) {
 		w.app.QueueUpdate(func() {
 			w.queue.SetSongs(songs)
@@ -215,7 +216,7 @@ func (w *Window) mediaCtrl(event *tcell.EventKey) bool {
 	switch key {
 	case ctrls.Stop:
 		w.mediaPlayer.StopMedia()
-		w.mediaQueue.ClearQueue()
+		w.mediaQueue.ClearQueue(true)
 	case ctrls.PlayPause:
 		w.mediaPlayer.PlayPause()
 	case ctrls.VolumeDown:
@@ -541,4 +542,8 @@ func (w *Window) playSong(song *models.Song) {
 
 func (w *Window) playSongs(songs []*models.Song) {
 	w.mediaQueue.AddSongs(songs)
+}
+
+func (w *Window) clearQueue() {
+	w.mediaQueue.ClearQueue(false)
 }

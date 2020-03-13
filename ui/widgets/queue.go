@@ -42,6 +42,7 @@ type Queue struct {
 	prevBtn     *button
 	clearBtn    *button
 	prevFunc    func()
+	clearFunc   func()
 
 	historyMode bool
 }
@@ -64,6 +65,8 @@ func NewQueue() *Queue {
 	q.list.SetBorder(true)
 	q.list.SetBorderColor(config.Color.Border)
 	q.list.Grid.SetColumns(1, -1)
+
+	q.clearBtn.SetSelectedFunc(q.clearQueue)
 
 	q.SetBorder(true)
 	q.SetBorderColor(config.Color.Border)
@@ -175,4 +178,11 @@ func (q *Queue) updateSongText(song *albumSong) {
 
 	}
 	song.SetText(text)
+}
+
+// call clearing queue
+func (q *Queue) clearQueue() {
+	if q.clearFunc != nil {
+		q.clearFunc()
+	}
 }

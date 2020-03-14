@@ -19,7 +19,10 @@ package task
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"runtime/debug"
+	"strings"
 	"sync"
+	"tryffel.net/go/jellycli/util"
 )
 
 // Tasker can be run on background
@@ -103,9 +106,29 @@ func (t *Task) init() {
 }
 
 func (t *Task) run() {
+	defer t.recoverPanic()
 	t.loop()
 	t.lock.Lock()
 	t.running = false
 	t.lock.Unlock()
 	logrus.Tracef("Task %s stopped", t.Name)
+}
+
+func (t *Task) recoverPanic() {
+	r := recover()
+	if r != nil {
+		rawStack := string(debug.Stack())
+
+		// remove top two functions from stack, that is, debug.Stack, task.recoverPanic && Panic
+		lines := strings.Split(rawStack, "\n")
+		// goroutine num
+		stack := lines[0]
+
+		prints := lines[7:]
+		for _, v := range prints {
+			stack = stack + "\n" + v
+		}
+
+		util.Exit(logrus.WithField("Stacktrace", stack), fmt.Sprintf("Task '%s' panic: %s\n", t.Name, r))
+	}
 }

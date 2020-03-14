@@ -11,9 +11,9 @@ Terminal client for Jellyfin, mostly for music at the moment.
 * Control from other clients through websocket. Currently implemented:
     * Play / pause / stop
     * Set volume
-    * Next track
+    * Next/previous track
 
-## Building:
+## Building
 **You will need Go 1.13 or Go 1.14 installed and configured**
 
 * For additional audio libraries required, see [Hajimehoshi/oto](https://github.com/hajimehoshi/oto). 
@@ -37,6 +37,10 @@ You can use multiple config files by providing argument:
 ```
 jellycli --config temp.yaml
 ```
+
+Log file is located at '/tmp/jellycli.log' by default. This can be overridden with config file. 
+At the moment jellycli does not inform user about errors but rather just silently logs them.
+For development purposes you should set log-level either to debug or trace.
 
 ## Acknowledgements
 Thanks [natsukagami](https://github.com/natsukagami/mpd-mpris) for implementing Mpris-interface.

@@ -223,6 +223,11 @@ func (p *Player) audioCallback(status interfaces.AudioStatus) {
 		return
 	}
 
+	if status.State == interfaces.AudioStateStopped && status.Action == interfaces.AudioActionTimeUpdate {
+		// don't report TimeUpdate if player is stopped
+		return
+	}
+
 	p.lock.Lock()
 	p.lastApiReport = time.Now()
 	p.lock.Unlock()

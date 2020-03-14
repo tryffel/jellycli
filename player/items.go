@@ -80,8 +80,8 @@ func (i *Items) GetFavoriteArtists() ([]*models.Artist, error) {
 	return i.api.GetFavoriteArtists()
 }
 
-func (i *Items) GetFavoriteAlbums() ([]*models.Album, error) {
-	panic("implement me")
+func (i *Items) GetFavoriteAlbums(paging interfaces.Paging) ([]*models.Album, int, error) {
+	return i.api.GetFavoriteAlbums(paging)
 }
 
 func (i *Items) GetLatestAlbums() ([]*models.Album, error) {

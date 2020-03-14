@@ -73,7 +73,7 @@ type ItemController interface {
 	// GetPlaylistSongs fills songs array for playlist. If there's error, songs will not be filled
 	GetPlaylistSongs(playlist *models.Playlist) error
 	GetFavoriteArtists() ([]*models.Artist, error)
-	GetFavoriteAlbums() ([]*models.Album, error)
+	GetFavoriteAlbums(paging Paging) ([]*models.Album, int, error)
 
 	GetLatestAlbums() ([]*models.Album, error)
 

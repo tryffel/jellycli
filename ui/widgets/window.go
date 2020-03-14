@@ -435,23 +435,37 @@ func (w *Window) selectMedia(m MediaSelect) {
 		w.artistList.AddArtists(artists)
 		w.setViewWidget(w.artistList, true)
 		w.artistList.SetText(fmt.Sprintf("%s: %d", title, paging.TotalItems))
-	case MediaAlbums:
+	case MediaAlbums, MediaFavoriteAlbums:
 		paging := interfaces.DefaultPaging()
-		albums, total, err := w.mediaItems.GetAlbums(paging)
+		var albums []*models.Album
+		var err error
+		var total int
+		var title string
+
+		if m == MediaAlbums {
+			albums, total, err = w.mediaItems.GetAlbums(paging)
+			title = "All Albums"
+			w.albumList.EnablePaging(true)
+		} else if m == MediaFavoriteAlbums {
+			paging.PageSize = 200
+			albums, total, err = w.mediaItems.GetFavoriteAlbums(paging)
+			title = "Favorite albums"
+			w.albumList.EnablePaging(false)
+		}
+
 		if err != nil {
-			logrus.Errorf("get all albums: %v", err)
+			logrus.Errorf("get %s: %v", title, err)
 			return
 		}
 		paging.SetTotalItems(total)
-		w.mediaNav.SetCount(MediaAlbums, total)
+		w.mediaNav.SetCount(m, total)
 
 		w.albumList.SetPage(paging)
 		w.albumList.Clear()
 		w.albumList.EnableArtistMode(false)
-		w.albumList.EnablePaging(true)
-		w.albumList.SetText("Albums")
-		w.albumList.SetAlbums(albums)
 
+		w.albumList.SetText(fmt.Sprintf("%s\nTotal %v", title, paging.TotalItems))
+		w.albumList.SetAlbums(albums)
 		w.setViewWidget(w.albumList, true)
 	}
 }

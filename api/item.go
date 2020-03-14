@@ -109,17 +109,8 @@ func (a *Api) GetArtistAlbums(id models.Id) ([]*models.Album, error) {
 	if err != nil {
 		return nil, fmt.Errorf("get artist albums: %v", err)
 	}
-	dto := albums{}
-	err = json.NewDecoder(resp).Decode(&dto)
 
-	if err != nil {
-		return nil, fmt.Errorf("parse response body: %v", err)
-	}
-
-	albums := make([]*models.Album, len(dto.Albums))
-	for i, v := range dto.Albums {
-		albums[i] = v.toAlbum()
-	}
+	albums, _, err := a.parseAlbums(resp)
 	return albums, nil
 }
 
@@ -235,6 +226,26 @@ func (a *Api) GetFavoriteArtists() ([]*models.Artist, error) {
 		artists[i] = v.toArtist()
 	}
 	return artists, nil
+}
+
+func (a *Api) GetFavoriteAlbums(paging interfaces.Paging) ([]*models.Album, int, error) {
+	params := a.defaultParams()
+	params.enableRecursive()
+	params.setParentId(a.musicView)
+	params.setIncludeTypes(mediaTypeAlbum)
+	params.setPaging(paging)
+	ptr := params.ptr()
+	ptr["Filters"] = "IsFavorite"
+
+	resp, err := a.get(fmt.Sprintf("/Users/%s/Items", a.userId), params)
+	if resp != nil {
+		defer resp.Close()
+	}
+	if err != nil {
+		return nil, 0, err
+	}
+	albums, count, err := a.parseAlbums(resp)
+	return albums, count, err
 }
 
 // GetPlaylists retrieves all playlists. Each playlists song count is known, but songs must be
@@ -383,6 +394,23 @@ func (a *Api) parseArtists(resp io.Reader) (artistList []*models.Artist, numReco
 	return
 }
 
+func (a *Api) parseAlbums(resp io.Reader) (albumList []*models.Album, numRecords int, err error) {
+	dto := albums{}
+	err = json.NewDecoder(resp).Decode(&dto)
+	if err != nil {
+		err = fmt.Errorf("decode json: %v", err)
+		return
+	}
+
+	numRecords = dto.TotalAlbums
+	albumList = make([]*models.Album, len(dto.Albums))
+	for i, v := range dto.Albums {
+		logInvalidType(&v, "get albums")
+		albumList[i] = v.toAlbum()
+	}
+	return
+}
+
 // GetAlbums returns albums with given paging. It also returns number of all albums
 func (a *Api) GetAlbums(paging interfaces.Paging) (albumList []*models.Album, numRecords int, err error) {
 	params := *a.defaultParams()
@@ -398,18 +426,5 @@ func (a *Api) GetAlbums(paging interfaces.Paging) (albumList []*models.Album, nu
 		return
 	}
 
-	dto := albums{}
-	err = json.NewDecoder(resp).Decode(&dto)
-	if err != nil {
-		err = fmt.Errorf("decode json: %v", err)
-		return
-	}
-
-	numRecords = dto.TotalAlbums
-	albumList = make([]*models.Album, len(dto.Albums))
-	for i, v := range dto.Albums {
-		logInvalidType(&v, "get albums")
-		albumList[i] = v.toAlbum()
-	}
-	return
+	return a.parseAlbums(resp)
 }

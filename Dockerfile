@@ -19,13 +19,8 @@ RUN go build . && ./jellycli -help
 # Alpine runtime
 FROM alpine:3.10
 
-RUN apk --no-cache add alsa-lib-dev
-
+RUN apk --no-cache add alsa-lib-dev dbus-x11
 COPY --from=builder /jellycli/jellycli /usr/local/bin
 
-# This is kind of a hack. Creates the default config dir and fakes machine-id
-# since alpine has no systemd.
-RUN mkdir /root/.config/ \
-&& echo "Fake-MachineId-ForNonSystemD" > /etc/machine-id
-
+RUN mkdir /root/.config/
 ENTRYPOINT [ "jellycli" ]

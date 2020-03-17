@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+// Package player contains all logic for jellycli. This includes queue (history) management, low-level audio and
+// audio controls.
 package player
 
 import (

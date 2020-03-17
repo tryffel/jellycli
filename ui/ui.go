@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+// Package ui implements graphical user interface in terminal. It uses widgets layout.
 package ui
 
 import (

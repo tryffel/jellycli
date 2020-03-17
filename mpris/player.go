@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+// Package mpris implements dbus-integration for mpris-interface. It allows any other application to control media
+// players, including jellycli.
 package mpris
 
 import (

@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+// Package config contains application-wide configurations and constants. Parts of configuration are user-editable
+// and per-instance and needs to be persisted. Others are static and meant for tuning the application.
+// It also contains some helper methods to read and write config files and create directories when needed.
 package config
 
 import (

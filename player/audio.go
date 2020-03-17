@@ -329,6 +329,7 @@ func (a *Audio) playSongFromReader(metadata songMetadata) error {
 			err = fmt.Errorf("failed to close old stream: %v", err)
 		}
 	} else {
+		logrus.Warning("No old streamer to close")
 	}
 	speaker.Play(a.volume)
 	speaker.Lock()

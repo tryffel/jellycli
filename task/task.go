@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+// Package task implements background task that satisfies task.Tasker interface.
 package task
 
 import (
@@ -31,7 +32,9 @@ type Tasker interface {
 	Stop() error
 }
 
-// Common fields for task
+// Task is a background task. It can be started and stopped.
+// Before task is able to run, it must have Task.initialized=true and Task.loop set with Task.SetLoop().
+// Task recovers from panics in Task.loop. These panics are logged with stacktrace and then application exits.
 type Task struct {
 	// Name of the task, for logging purposes
 	Name string

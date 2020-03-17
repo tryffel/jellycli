@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+// Package interfaces contains interfaces and structs that multiple packages use and communicate with.
 package interfaces
 
 import (

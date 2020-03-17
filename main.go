@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+// Package main contains jellycli executable and bootstraps application.
+// Jellycli is a terminal application for playing music from Jellyfin server.
 package main
 
 import (

@@ -14,14 +14,5 @@
  * limitations under the License.
  */
 
-package models
-
-// Playlist is a list of songs. It has no artists itself, but songs do have albums and artists.
-type Playlist struct {
-	Id       Id
-	Name     string
-	Duration int
-
-	Songs     []*Song
-	SongCount int
-}
+// Package util contains utilities for application.
+package util

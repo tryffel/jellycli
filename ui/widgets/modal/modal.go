@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+// Package modal contains modal views that are drawn on top of existing layout.
 package modal
 
 import "github.com/rivo/tview"

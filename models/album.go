@@ -16,12 +16,15 @@
 
 package models
 
+// Album has multiple songs. It has one primary artist and multiple additional artists.
 type Album struct {
-	Id                Id
-	Name              string
-	Year              int
-	Duration          int
-	Artist            Id
+	Id       Id
+	Name     string
+	Year     int
+	Duration int
+	// Artist is the primary artist
+	Artist Id
+	// Additional artists. If length is 1, first item is same as primary artist. Else it contains additional artists
 	AdditionalArtists []IdName
 	Songs             []Id
 	//SongCount, how many songs are there in album.

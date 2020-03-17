@@ -16,6 +16,7 @@
 
 package models
 
+// Artist has multiple albums.
 type Artist struct {
 	Id            Id
 	Name          string

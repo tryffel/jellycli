@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+// Package widgets contains all widgets that are used in jellycli. Window is the root widget and controls access
+// to interfaces.Player, interfaces.Queue and interfaces.Items.
 package widgets
 
 import (

@@ -22,6 +22,7 @@ func (i Id) String() string {
 	return string(i)
 }
 
+// Item is any object that has unique id and falls to some category with ItemType.
 type Item interface {
 	GetId() Id
 	GetName() string

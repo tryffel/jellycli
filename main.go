@@ -116,6 +116,7 @@ func (a *Application) Start() error {
 	}
 
 	a.api.SetPlayer(a.player)
+	a.api.SetQueue(a.player)
 
 	tasks := []task.Tasker{a.player, a.api}
 

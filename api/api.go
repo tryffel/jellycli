@@ -58,6 +58,7 @@ type Api struct {
 	musicView string
 
 	player interfaces.Player
+	queue  interfaces.QueueController
 
 	socketLock  sync.RWMutex
 	socket      *websocket.Conn
@@ -90,6 +91,10 @@ func NewApi(host string) (*Api, error) {
 
 func (a *Api) SetPlayer(p interfaces.Player) {
 	a.player = p
+}
+
+func (a *Api) SetQueue(q interfaces.QueueController) {
+	a.queue = q
 }
 
 func (a *Api) Host() string {

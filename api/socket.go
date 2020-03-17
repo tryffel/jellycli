@@ -160,9 +160,10 @@ func (a *Api) pushCommand(cmd string) error {
 		a.player.Continue()
 	case "StopMedia":
 		a.player.StopMedia()
+		a.queue.ClearQueue(true)
 	case "Stop":
 		a.player.StopMedia()
-		//TODO: clear queue
+		a.queue.ClearQueue(true)
 	default:
 		logrus.Info("Unknown websocket playstate command: ", cmd)
 	}

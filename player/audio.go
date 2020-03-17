@@ -251,7 +251,7 @@ func (a *Audio) closeOldStream() error {
 		if err != nil {
 			err = fmt.Errorf("close streamer: %v", err)
 		} else {
-
+			logrus.Debug("closed old streamer")
 		}
 		a.streamer = nil
 	} else {

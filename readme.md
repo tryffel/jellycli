@@ -1,5 +1,8 @@
 # Jellycli
 
+[![Godoc Reference](https://img.shields.io/badge/godoc-reference-blue.svg)](https://pkg.go.dev/tryffel.net/go/jellycli)
+[![Go Report Card](https://goreportcard.com/badge/tryffel.net/go/jellycli)](https://goreportcard.com/report/tryffel.net/go/jellycli)
+
 Terminal client for Jellyfin, mostly for music at the moment.
 
 ![Screenshot](screenshot.png)

@@ -101,6 +101,7 @@ func (i *Items) GetStatistics() models.Stats {
 		ServerVersion: version,
 		WebSocket:     i.api.WebsocketOk(),
 		LogFile:       config.LogFile,
+		ConfigFile:    config.ConfigFile,
 	}
 
 	return stats

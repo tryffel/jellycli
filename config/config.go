@@ -38,6 +38,10 @@ type Config struct {
 	configDir  string
 }
 
+func (c *Config) ConfigFile() string {
+	return c.configFile
+}
+
 type Server struct {
 	Url       string `yaml:"server_url"`
 	Username  string `yaml:"username"`

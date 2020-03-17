@@ -32,6 +32,9 @@ type Stats struct {
 	WebSocket bool
 	//LogFile contains log file location
 	LogFile string
+
+	// ConfigFile contains config file location
+	ConfigFile string
 }
 
 // HeapString returns heap usage in human-readable format

@@ -68,6 +68,9 @@ func AppNameVersion() string {
 // LogFile is log file location
 var LogFile string
 
+// ConfigFile is absolute location for configuration file
+var ConfigFile string
+
 var GridBordersShow = true
 var GridBordersColor = Color.Border
 

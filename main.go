@@ -68,6 +68,7 @@ func NewApplication(configFile string) (*Application, error) {
 		return a, err
 	}
 
+	config.ConfigFile = a.conf.ConfigFile()
 	config.PageSize = a.conf.Player.PageSize
 
 	a.logfile = setLogging(a.conf)

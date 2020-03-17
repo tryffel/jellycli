@@ -23,13 +23,6 @@ import (
 	"tryffel.net/go/jellycli/models"
 )
 
-//MusicController gathers all necessary interfaces that can control media and queue plus query item metadata
-type MediaController interface {
-	QueueController
-	Player
-	ItemController
-}
-
 // QueueController controls queue and history. Queue shows only upcoming songs and first item in queue is being
 // currently played. When moving to next item in queue, first item is moved to history.
 // If no queueChangedCallback is set, no queue updates will be returned

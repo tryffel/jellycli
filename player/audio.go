@@ -76,9 +76,7 @@ func newAudio() *Audio {
 	a.volume.Streamer = a.ctrl
 	a.volume.Silent = false
 	a.status.Volume = 50
-
 	return a
-
 }
 
 func initAudio() error {

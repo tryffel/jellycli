@@ -5,10 +5,10 @@ Terminal client for Jellyfin, mostly for music at the moment.
 ![Screenshot](screenshot.png)
 
 ## Features
-* Play artists, songs, albums, playlists, favorite artists
-* Add songs to queue
+* Play artists, songs, albums, playlists, favorite artists, favorite albums
+* Add songs to queue, clear queue
 * Control (and view) play state through Dbus integration
-* Control from other clients through websocket. Currently implemented:
+* Remote control over Jellyfin server. Currently implemented:
     * Play / pause / stop
     * Set volume
     * Next/previous track
@@ -32,7 +32,8 @@ go build .
 ```
 
 On first time application asks for Jellyfin host, username, password and default collection for music. 
-All this is stored in configuration file at ~/.config/jellycli/jellycli.yaml.
+All this is stored in configuration file at ~/.config/jellycli/jellycli.yaml. 
+Configuration file location is visible in help page. 
 You can use multiple config files by providing argument:
 ```
 jellycli --config temp.yaml

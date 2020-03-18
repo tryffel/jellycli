@@ -105,9 +105,12 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 	w.queue = NewQueue()
 	w.queue.SetBackCallback(w.goBack)
 	w.queue.clearFunc = w.clearQueue
+	w.queue.controller = w.mediaQueue
 	w.mediaQueue.AddQueueChangedCallback(func(songs []*models.Song) {
-		w.app.QueueUpdate(func() {
+		w.app.QueueUpdateDraw(func() {
+			index := w.queue.list.GetSelectedIndex()
 			w.queue.SetSongs(songs)
+			w.queue.list.SetSelected(index)
 		})
 	})
 
@@ -115,7 +118,7 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 	w.history.SetBackCallback(w.goBack)
 
 	w.mediaQueue.SetHistoryChangedCallback(func(songs []*models.Song) {
-		w.app.QueueUpdate(func() {
+		w.app.QueueUpdateDraw(func() {
 			w.history.SetSongs(songs)
 		})
 	})

@@ -151,6 +151,12 @@ func (h *Help) shortcutsPage() string {
 * Select button or item: Enter
 * Close application: Ctrl-C
 
+[yellow]Queue[-]:
+* Delete song: Del
+* Move up song: Ctrl-K
+* Move down song: Ctrl-J
+* Clear queue with 'clear'. This does not remove current song
+
 `
 }
 

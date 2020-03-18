@@ -75,7 +75,7 @@ func Test_queue_Reorder(t *testing.T) {
 
 	type ordering struct {
 		from int
-		to   int
+		down bool
 	}
 
 	tests := []struct {
@@ -85,41 +85,80 @@ func Test_queue_Reorder(t *testing.T) {
 		orderings []ordering
 	}{
 		{
-			name:  "first-to-last",
+			name:  "first-to-right",
 			songs: songs,
 			want: []*models.Song{
-				songs[1], songs[2], songs[3], songs[4], songs[5], songs[6],
-				songs[7], songs[8], songs[0],
+				songs[1], songs[0], songs[2], songs[3], songs[4], songs[5], songs[6],
+				songs[7], songs[8],
 			},
 			orderings: []ordering{
-				{0, 8},
+				{0, false},
 			},
 		},
 		{
-			name:  "last-to-first",
+			// no edit
+			name:  "first-to-left",
 			songs: songs,
-			want: []*models.Song{
-				songs[8], songs[0], songs[1], songs[2], songs[3], songs[4],
-				songs[5], songs[6], songs[7],
-			},
+			want:  songs,
 			orderings: []ordering{
-				{8, 0},
+				{0, true},
 			},
 		},
-		/*
-			{
-				name:  "first-to-n, n-to-first",
-				songs: songs,
-				want: []*models.Song{
-					songs[5], songs[1], songs[2], songs[3], songs[4],
-					songs[0], songs[6], songs[7], songs[8],
-				},
-				orderings: []ordering{
-					{0, 5},
-					{4, 0},
-				},
+		{
+			name:  "2nd-to-3rd",
+			songs: songs,
+			want: []*models.Song{
+				songs[0], songs[2], songs[1], songs[3], songs[4], songs[5], songs[6],
+				songs[7], songs[8],
 			},
-		*/
+			orderings: []ordering{
+				{1, false},
+			},
+		},
+		{
+			name:  "4nd-to-3rd",
+			songs: songs,
+			want: []*models.Song{
+				songs[0], songs[1], songs[3], songs[2], songs[4], songs[5], songs[6],
+				songs[7], songs[8],
+			},
+			orderings: []ordering{
+				{3, true},
+			},
+		},
+		{
+			name:  "last-left",
+			songs: songs,
+			want: []*models.Song{
+				songs[0], songs[1], songs[2], songs[3], songs[4], songs[5], songs[6],
+				songs[8], songs[7],
+			},
+			orderings: []ordering{
+				{8, true},
+			},
+		},
+		{
+			name:  "last-right",
+			songs: songs,
+			want: []*models.Song{
+				songs[0], songs[1], songs[2], songs[3], songs[4], songs[5], songs[6],
+				songs[7], songs[8],
+			},
+			orderings: []ordering{
+				{8, false},
+			},
+		},
+		{
+			name:  "negative",
+			songs: songs,
+			want: []*models.Song{
+				songs[0], songs[1], songs[2], songs[3], songs[4], songs[5], songs[6],
+				songs[7], songs[8],
+			},
+			orderings: []ordering{
+				{-1, false},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -128,7 +167,7 @@ func Test_queue_Reorder(t *testing.T) {
 			}
 			copy(q.items, songs)
 			for _, v := range tt.orderings {
-				q.Reorder(v.from, v.to)
+				q.Reorder(v.from, v.down)
 			}
 			if got := q.GetQueue(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Reorder() = %v, want %v", got, tt.want)

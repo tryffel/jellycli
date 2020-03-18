@@ -290,3 +290,17 @@ func (p *Player) queueChanged(queue []*models.Song) {
 		go p.downloadSong()
 	}
 }
+
+func (p *Player) Reorder(index int, left bool) bool {
+	// do not allow ongoing song to be reordered
+	if p.status.State == interfaces.AudioStatePlaying {
+		if index == 0 {
+			return false
+		}
+		if index == 1 && left {
+			return false
+		}
+	}
+
+	return p.Queue.Reorder(index, left)
+}

@@ -38,11 +38,17 @@ type QueueController interface {
 	//Reorder sets item in index currentIndex to newIndex.
 	//If either currentIndex or NewIndex is not valid, do nothing.
 	//On successful order QueueChangedCallback gets called.
-	Reorder(currentIndex, newIndex int)
+
+	// Reorder shifts item in current index to left or right (earlier / later) by one depending on left.
+	// If down, play it earlier, else play it later. Returns true if reorder was made.
+	Reorder(currentIndex int, down bool) bool
 	//GetHistory get's n past songs that has been played.
 	GetHistory(n int) []*models.Song
 	//AddQueueChangedCallback sets function that is called every time queue changes.
 	AddQueueChangedCallback(func(content []*models.Song))
+
+	// RemoveSongs remove song in given index. First index is 0.
+	RemoveSong(index int)
 
 	// SetHistoryChangedCallback sets a function that gets called every time history items update
 	SetHistoryChangedCallback(func(songs []*models.Song))

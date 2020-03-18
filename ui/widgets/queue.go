@@ -21,6 +21,7 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 	"tryffel.net/go/jellycli/config"
+	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
 	"tryffel.net/go/jellycli/util"
 	"tryffel.net/go/twidgets"
@@ -37,6 +38,8 @@ type Queue struct {
 
 	playSongFunc  func(song *models.Song)
 	playSongsFunc func(songs []*models.Song)
+
+	controller interfaces.QueueController
 
 	description *tview.TextView
 	prevBtn     *button
@@ -136,7 +139,7 @@ func (q *Queue) Clear() {
 }
 
 func (q *Queue) printDescription() {
-	text := "History"
+	text := "Queue"
 	if len(q.songs) > 0 {
 		duration := 0
 		for _, v := range q.songs {
@@ -148,9 +151,24 @@ func (q *Queue) printDescription() {
 }
 
 func (q *Queue) listHandler(key *tcell.EventKey) *tcell.EventKey {
-	if key.Key() == tcell.KeyEnter {
-		//index := q.list.GetSelectedIndex()
+	switch key.Key() {
+	case tcell.KeyEnter:
 		return nil
+	case tcell.KeyCtrlJ:
+		if q.controller != nil {
+			index := q.list.GetSelectedIndex()
+			_ = q.controller.Reorder(index, false)
+		}
+	case tcell.KeyCtrlK:
+		if q.controller != nil {
+			index := q.list.GetSelectedIndex()
+			_ = q.controller.Reorder(index, true)
+		}
+	case tcell.KeyDEL:
+		if q.controller != nil {
+			index := q.list.GetSelectedIndex()
+			q.controller.RemoveSong(index)
+		}
 	}
 	return key
 }

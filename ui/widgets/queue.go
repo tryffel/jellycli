@@ -43,8 +43,6 @@ type Queue struct {
 	clearBtn    *button
 	prevFunc    func()
 	clearFunc   func()
-
-	historyMode bool
 }
 
 //NewQueue initializes new album view
@@ -100,12 +98,6 @@ func NewQueue() *Queue {
 	return q
 }
 
-func (q *Queue) SetHistoryMode(enabled bool) {
-	q.historyMode = enabled
-	q.printDescription()
-
-}
-
 // AddSong adds song to queue. If index is 0, add to beginning, if -1, add to end
 func (q *Queue) AddSong(song *models.Song, index int) {
 	var s *albumSong
@@ -129,7 +121,7 @@ func (q *Queue) SetSongs(songs []*models.Song) {
 		items[i] = s
 	}
 	// colorize first item in queue
-	if !q.historyMode && len(q.songs) > 0 {
+	if len(q.songs) > 0 {
 		q.songs[0].playing = true
 	}
 	q.list.AddItems(items...)
@@ -144,12 +136,7 @@ func (q *Queue) Clear() {
 }
 
 func (q *Queue) printDescription() {
-	var text string
-	if q.historyMode {
-		text = "History"
-	} else {
-		text = "Queue"
-	}
+	text := "History"
 	if len(q.songs) > 0 {
 		duration := 0
 		for _, v := range q.songs {

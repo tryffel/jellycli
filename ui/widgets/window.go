@@ -40,7 +40,7 @@ type Window struct {
 	mediaNav *MediaNavigation
 	help     *modal.Help
 	queue    *Queue
-	history  *Queue
+	history  *History
 
 	albumList  *AlbumList
 	album      *AlbumView
@@ -111,8 +111,7 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 		})
 	})
 
-	w.history = NewQueue()
-	w.history.SetHistoryMode(true)
+	w.history = NewHistory()
 	w.history.SetBackCallback(w.goBack)
 
 	w.mediaQueue.SetHistoryChangedCallback(func(songs []*models.Song) {

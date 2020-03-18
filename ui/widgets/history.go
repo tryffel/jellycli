@@ -29,6 +29,7 @@ type History struct {
 
 func NewHistory() *History {
 	h := &History{NewQueue()}
+	h.printDescription()
 	return h
 }
 

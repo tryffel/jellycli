@@ -395,6 +395,7 @@ func (w *Window) selectMedia(m MediaSelect) {
 			w.mediaNav.SetCount(MediaLatestMusic, len(albums))
 			w.albumList.Clear()
 			w.albumList.EnablePaging(false)
+			w.albumList.EnableSimilar(true)
 			w.albumList.EnableArtistMode(false)
 			w.albumList.SetArtist(artist)
 			w.albumList.SetAlbums(albums)
@@ -488,6 +489,7 @@ func (w *Window) selectMedia(m MediaSelect) {
 
 		w.albumList.SetPage(paging)
 		w.albumList.Clear()
+		w.albumList.EnableSimilar(false)
 		w.albumList.EnableArtistMode(false)
 
 		w.albumList.SetText(fmt.Sprintf("%s\nTotal %v", title, paging.TotalItems))
@@ -575,6 +577,7 @@ func (w *Window) showAlbumPage(page interfaces.Paging) {
 	w.albumList.SetPage(page)
 	w.albumList.Clear()
 	w.albumList.EnablePaging(true)
+	w.albumList.EnableSimilar(true)
 	w.albumList.SetText("Albums")
 	w.albumList.SetAlbums(albums)
 }
@@ -611,6 +614,8 @@ func (w *Window) showSimilarAlbums(album *models.Album) {
 		logrus.Errorf("get similar artists: %v", err)
 	} else if len(albums) > 0 {
 		w.similarAlbums.Clear()
+		w.similarAlbums.EnableSimilar(false)
+		w.similarAlbums.EnablePaging(false)
 		w.similarAlbums.SetAlbums(albums)
 		w.similarAlbums.SetText(fmt.Sprintf("Similar albums: %d", len(albums)))
 		w.setViewWidget(w.similarAlbums, true)

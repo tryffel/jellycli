@@ -227,12 +227,8 @@ func (a *AlbumList) EnablePaging(enabled bool) {
 }
 
 func (a *AlbumList) EnableSimilar(enabled bool) {
-	old := a.pagingEnabled
 	a.similarEnabled = enabled
-
-	if old != enabled {
-		a.setButtons()
-	}
+	a.setButtons()
 }
 
 func (a *AlbumList) setButtons() {

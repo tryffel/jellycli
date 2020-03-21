@@ -88,6 +88,14 @@ func (i *Items) GetLatestAlbums() ([]*models.Album, error) {
 	return i.api.GetLatestAlbums()
 }
 
+func (i *Items) GetSimilarArtists(artist models.Id) ([]*models.Artist, error) {
+	return i.api.GetSimilarArtists(artist)
+}
+
+func (i *Items) GetSimilarAlbums(album models.Id) ([]*models.Album, error) {
+	return i.api.GetSimilarAlbums(album)
+}
+
 func (i *Items) GetStatistics() models.Stats {
 	cache := i.api.GetCacheItems()
 	name, version, _, _ := i.api.GetServerVersion()

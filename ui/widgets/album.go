@@ -229,9 +229,10 @@ type AlbumView struct {
 
 	description *tview.TextView
 	prevBtn     *button
-	infobtn     *button
+	similarBtn  *button
 	playBtn     *button
 	prevFunc    func()
+	similarFunc func(album *models.Album)
 }
 
 //NewAlbumView initializes new album view
@@ -245,7 +246,7 @@ func NewAlbumview(playSong func(song *models.Song), playSongs func(songs []*mode
 
 		description: tview.NewTextView(),
 		prevBtn:     newButton("Back"),
-		infobtn:     newButton("Info"),
+		similarBtn:  newButton("Similar"),
 		playBtn:     newButton("Play all"),
 	}
 
@@ -270,11 +271,11 @@ func NewAlbumview(playSong func(song *models.Song), playSongs func(songs []*mode
 	a.Banner.Grid.AddItem(a.prevBtn, 0, 0, 1, 1, 1, 5, false)
 	a.Banner.Grid.AddItem(a.description, 0, 2, 2, 6, 1, 10, false)
 	a.Banner.Grid.AddItem(a.playBtn, 3, 2, 1, 1, 1, 10, true)
-	a.Banner.Grid.AddItem(a.infobtn, 3, 4, 1, 1, 1, 10, false)
+	a.Banner.Grid.AddItem(a.similarBtn, 3, 4, 1, 1, 1, 10, false)
 	a.Banner.Grid.AddItem(a.list, 4, 0, 1, 8, 4, 10, false)
 
-	btns := []*button{a.prevBtn, a.playBtn, a.infobtn}
-	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.infobtn, a.list}
+	btns := []*button{a.prevBtn, a.playBtn, a.similarBtn}
+	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.similarBtn, a.list}
 	for _, btn := range btns {
 		btn.SetLabelColor(config.Color.ButtonLabel)
 		btn.SetLabelColorActivated(config.Color.ButtonLabelSelected)
@@ -283,6 +284,7 @@ func NewAlbumview(playSong func(song *models.Song), playSongs func(songs []*mode
 	}
 
 	a.prevBtn.SetSelectedFunc(a.goBack)
+	a.similarBtn.SetSelectedFunc(a.showSimilar)
 
 	a.Banner.Selectable = selectables
 	a.description.SetBackgroundColor(config.Color.Background)
@@ -381,4 +383,10 @@ func (a *AlbumView) listHandler(key *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 	return key
+}
+
+func (a *AlbumView) showSimilar() {
+	if a.similarFunc != nil {
+		a.similarFunc(a.album)
+	}
 }

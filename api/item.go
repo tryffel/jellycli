@@ -428,3 +428,38 @@ func (a *Api) GetAlbums(paging interfaces.Paging) (albumList []*models.Album, nu
 
 	return a.parseAlbums(resp)
 }
+
+func (a *Api) GetSimilarArtists(artist models.Id) ([]*models.Artist, error) {
+	params := *a.defaultParams()
+	params.enableRecursive()
+	params.setSorting("SortName", "Ascending")
+	params.setLimit(50)
+	resp, err := a.get(fmt.Sprintf("/Items/%s/Similar", artist.String()), &params)
+	if resp != nil {
+		defer resp.Close()
+	}
+	if err != nil {
+		return []*models.Artist{}, err
+	}
+
+	artists, _, err := a.parseArtists(resp)
+	return artists, err
+}
+
+func (a *Api) GetSimilarAlbums(album models.Id) ([]*models.Album, error) {
+	params := *a.defaultParams()
+	params.enableRecursive()
+	params.setSorting("SortName", "Ascending")
+	params.setLimit(50)
+	resp, err := a.get(fmt.Sprintf("/Items/%s/Similar", album.String()), &params)
+	if resp != nil {
+		defer resp.Close()
+	}
+	if err != nil {
+		return []*models.Album{}, err
+	}
+
+	albums, _, err := a.parseAlbums(resp)
+	return albums, err
+
+}

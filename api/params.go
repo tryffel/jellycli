@@ -18,6 +18,10 @@ func (p *params) setPaging(paging interfaces.Paging) {
 	ptr["StartIndex"] = strconv.Itoa(paging.Offset())
 }
 
+func (p *params) setLimit(n int) {
+	(*p)["Limit"] = strconv.Itoa(n)
+}
+
 func (p *params) setIncludeTypes(itemType mediaItemType) {
 	ptr := p.ptr()
 	ptr["IncludeItemTypes"] = itemType.String()

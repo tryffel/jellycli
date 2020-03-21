@@ -137,6 +137,8 @@ type AlbumList struct {
 	similarBtn     *button
 	prevFunc       func()
 	selectPageFunc func(paging interfaces.Paging)
+	similarFunc    func(id models.Id)
+	similarEnabled bool
 }
 
 func (a *AlbumList) AddAlbum(c *AlbumCover) {
@@ -221,16 +223,35 @@ func (a *AlbumList) EnablePaging(enabled bool) {
 		return
 	}
 	a.pagingEnabled = enabled
-	if enabled {
-		selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.paging.Previous, a.paging.Next, a.list}
-		a.Banner.Selectable = selectables
-		a.Banner.Grid.AddItem(a.paging, 3, 4, 1, 3, 1, 10, true)
-	} else {
-		selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.list}
-		a.Banner.Selectable = selectables
-		a.Banner.Grid.RemoveItem(a.paging)
-		a.page.CurrentPage = 0
+	a.setButtons()
+}
+
+func (a *AlbumList) EnableSimilar(enabled bool) {
+	old := a.pagingEnabled
+	a.similarEnabled = enabled
+
+	if old != enabled {
+		a.setButtons()
 	}
+}
+
+func (a *AlbumList) setButtons() {
+	a.Banner.Grid.Clear()
+	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn}
+	a.Grid.AddItem(a.prevBtn, 0, 0, 1, 1, 1, 5, false)
+	a.Grid.AddItem(a.name, 0, 2, 2, 6, 1, 10, false)
+	a.Grid.AddItem(a.playBtn, 3, 2, 1, 1, 1, 10, false)
+	if a.pagingEnabled {
+		selectables = append(selectables, a.paging.Previous, a.paging.Next)
+		a.Grid.AddItem(a.paging, 3, 4, 1, 3, 1, 10, false)
+	}
+	if a.similarEnabled {
+		selectables = append(selectables, a.similarBtn)
+		a.Grid.AddItem(a.similarBtn, 3, 6, 1, 1, 1, 10, false)
+	}
+	selectables = append(selectables, a.list)
+	a.Banner.Selectable = selectables
+	a.Grid.AddItem(a.list, 4, 0, 1, 8, 6, 20, false)
 }
 
 //NewAlbumList constructs new albumList view
@@ -260,7 +281,7 @@ func NewAlbumList(selectAlbum func(album *models.Album)) *AlbumList {
 	a.SetBorderColor(config.Color.Border)
 
 	btns := []*button{a.prevBtn, a.playBtn, a.similarBtn, a.paging.Previous, a.paging.Next}
-	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.paging.Previous, a.paging.Next, a.list}
+	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.similarBtn, a.paging.Previous, a.paging.Next, a.list}
 	for _, v := range btns {
 		v.SetBackgroundColor(config.Color.ButtonBackground)
 		v.SetLabelColor(config.Color.ButtonLabel)
@@ -269,6 +290,7 @@ func NewAlbumList(selectAlbum func(album *models.Album)) *AlbumList {
 	}
 
 	a.prevBtn.SetSelectedFunc(a.goBack)
+	a.similarBtn.SetSelectedFunc(a.showSimilar)
 
 	a.Banner.Selectable = selectables
 
@@ -281,15 +303,11 @@ func NewAlbumList(selectAlbum func(album *models.Album)) *AlbumList {
 
 	a.list.Grid.SetColumns(1, -1)
 
-	a.Grid.AddItem(a.prevBtn, 0, 0, 1, 1, 1, 5, false)
-	a.Grid.AddItem(a.name, 0, 2, 2, 6, 1, 10, false)
-	a.Grid.AddItem(a.playBtn, 3, 2, 1, 1, 1, 10, false)
-	a.Grid.AddItem(a.paging, 3, 4, 1, 3, 1, 10, false)
-	//a.Grid.AddItem(a.similarBtn, 3, 4, 1, 1, 1, 10, false)
-	a.Grid.AddItem(a.list, 4, 0, 1, 8, 6, 20, false)
-
 	a.listFocused = false
 	a.pagingEnabled = true
+	a.similarEnabled = true
+
+	a.setButtons()
 	return a
 }
 
@@ -304,5 +322,11 @@ func (a *AlbumList) selectAlbum(index int) {
 		index := a.list.GetSelectedIndex()
 		album := a.albumCovers[index]
 		a.selectFunc(album.album)
+	}
+}
+
+func (a *AlbumList) showSimilar() {
+	if a.similarFunc != nil {
+		a.similarFunc(a.artist.Id)
 	}
 }

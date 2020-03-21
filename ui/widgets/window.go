@@ -39,15 +39,17 @@ type Window struct {
 	status   *Status
 	mediaNav *MediaNavigation
 	help     *modal.Help
+	message  *modal.Message
 	queue    *Queue
 	history  *History
 
-	albumList  *AlbumList
-	album      *AlbumView
-	artistList *ArtistList
-	playlists  *Playlists
-	playlist   *PlaylistView
-	songs      *SongList
+	albumList     *AlbumList
+	similarAlbums *AlbumList
+	album         *AlbumView
+	artistList    *ArtistList
+	playlists     *Playlists
+	playlist      *PlaylistView
+	songs         *SongList
 
 	gridAxisX  []int
 	gridAxisY  []int
@@ -78,8 +80,15 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 	w.albumList = NewAlbumList(w.selectAlbum)
 	w.albumList.SetBackCallback(w.goBack)
 	w.albumList.selectPageFunc = w.showAlbumPage
+	w.albumList.similarFunc = w.showSimilarArtists
+
+	w.similarAlbums = NewAlbumList(w.selectAlbum)
+	w.similarAlbums.SetBackCallback(w.goBack)
+	w.similarAlbums.EnablePaging(false)
+
 	w.album = NewAlbumview(w.playSong, w.playSongs)
 	w.album.SetBackCallback(w.goBack)
+	w.album.similarFunc = w.showSimilarAlbums
 	w.mediaNav = NewMediaNavigation(w.selectMedia)
 	w.navBar = twidgets.NewNavBar(config.Color.NavBar.ToWidgetsNavBar(), w.navBarHandler)
 
@@ -102,6 +111,9 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 	//w.window.SetInputCapture(w.eventHandler)
 	w.help = modal.NewHelp(w.closeHelp)
 	w.help.SetDoneFunc(w.wrapCloseModal(w.help))
+	w.message = modal.NewMessage()
+	w.message.SetDoneFunc(w.closeMessage)
+
 	w.queue = NewQueue()
 	w.queue.SetBackCallback(w.goBack)
 	w.queue.clearFunc = w.clearQueue
@@ -233,6 +245,10 @@ func (w *Window) mediaCtrl(event *tcell.EventKey) bool {
 		w.mediaPlayer.Next()
 	case ctrls.Previous:
 		w.mediaPlayer.Previous()
+	case ctrls.Forward:
+		w.mediaPlayer.Seek(interfaces.AudioTick(3000))
+	case ctrls.Backward:
+		w.mediaPlayer.Seek(interfaces.AudioTick(-3000))
 	default:
 		return false
 	}
@@ -564,4 +580,47 @@ func (w *Window) playSongs(songs []*models.Song) {
 
 func (w *Window) clearQueue() {
 	w.mediaQueue.ClearQueue(false)
+}
+
+func (w *Window) showSimilarArtists(artist models.Id) {
+	artists, err := w.mediaItems.GetSimilarArtists(artist)
+	if err != nil {
+		logrus.Errorf("get similar artists: %v", err)
+	} else if len(artists) > 0 {
+		w.artistList.Clear()
+		w.artistList.AddArtists(artists)
+		w.artistList.SetText(fmt.Sprintf("Similar artists: %d", len(artists)))
+		w.setViewWidget(w.artistList, true)
+	} else {
+		w.showMessage("No similar artists", 3, -1, false)
+	}
+}
+
+func (w *Window) showSimilarAlbums(album *models.Album) {
+	albums, err := w.mediaItems.GetSimilarAlbums(album.Id)
+	if err != nil {
+		logrus.Errorf("get similar artists: %v", err)
+	} else if len(albums) > 0 {
+		w.similarAlbums.Clear()
+		w.similarAlbums.SetAlbums(albums)
+		w.similarAlbums.SetText(fmt.Sprintf("Similar albums: %d", len(albums)))
+		w.setViewWidget(w.similarAlbums, true)
+	} else {
+		w.showMessage("No similar albums", 3, -1, false)
+	}
+}
+
+func (w *Window) closeMessage() {
+	w.closeModal(w.message)
+}
+
+func (w *Window) showMessage(msg string, height, width int, lockSize bool) {
+	w.message.SetText(msg)
+	if height == -1 {
+		height = 25
+	}
+	if width == -1 {
+		width = 50
+	}
+	w.showModal(w.message, uint(height), uint(width), lockSize)
 }

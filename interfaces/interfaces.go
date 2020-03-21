@@ -75,6 +75,11 @@ type ItemController interface {
 	GetFavoriteArtists() ([]*models.Artist, error)
 	GetFavoriteAlbums(paging Paging) ([]*models.Album, int, error)
 
+	// GetSimilarArtists returns similar artists for artist id
+	GetSimilarArtists(artist models.Id) ([]*models.Artist, error)
+
+	GetSimilarAlbums(album models.Id) ([]*models.Album, error)
+
 	GetLatestAlbums() ([]*models.Album, error)
 
 	// GetStatistics returns application statistics

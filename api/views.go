@@ -47,6 +47,7 @@ func (a *Api) GetViews() ([]*models.View, error) {
 func (a *Api) GetLatestAlbums() ([]*models.Album, error) {
 	params := *a.defaultParams()
 	params["UserId"] = a.userId
+	params.setParentId(a.musicView)
 
 	resp, err := a.get(fmt.Sprintf("/Users/%s/Items/Latest", a.userId), &params)
 	if err != nil {

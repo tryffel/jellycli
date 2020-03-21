@@ -35,6 +35,7 @@ const (
 	MediaPlaylists
 	MediaFavoriteArtists
 	MediaFavoriteAlbums
+	MediaGenres
 )
 
 var mediaSelections = map[MediaSelect]string{
@@ -47,6 +48,7 @@ var mediaSelections = map[MediaSelect]string{
 	MediaPlaylists:       "Playlists",
 	MediaFavoriteArtists: "Favorite Artists",
 	MediaFavoriteAlbums:  "Favorite Albums",
+	MediaGenres:          "Genres",
 }
 
 //MediaNavigation provides access to artists, albums, playlists

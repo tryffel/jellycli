@@ -87,6 +87,12 @@ type ItemController interface {
 
 	// GetSongs returns songs by paging. It also returns total number of songs.
 	GetSongs(page, pageSize int) ([]*models.Song, int, error)
+
+	// GetGenres returns music genres with paging. Return genres, total genres and possible error
+	GetGenres(paging Paging) ([]*models.IdName, int, error)
+
+	// GetGenreAlbums returns all albums that belong to given genre
+	GetGenreAlbums(genre models.IdName) ([]*models.Album, error)
 }
 
 // Paging. First page is 0

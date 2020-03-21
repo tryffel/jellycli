@@ -96,6 +96,14 @@ func (i *Items) GetSimilarAlbums(album models.Id) ([]*models.Album, error) {
 	return i.api.GetSimilarAlbums(album)
 }
 
+func (i *Items) GetGenres(paging interfaces.Paging) ([]*models.IdName, int, error) {
+	return i.api.GetGenres(paging)
+}
+
+func (i *Items) GetGenreAlbums(genre models.IdName) ([]*models.Album, error) {
+	return i.api.GetGenreAlbums(genre)
+}
+
 func (i *Items) GetStatistics() models.Stats {
 	cache := i.api.GetCacheItems()
 	name, version, _, _ := i.api.GetServerVersion()

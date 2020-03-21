@@ -50,6 +50,7 @@ type Window struct {
 	playlists     *Playlists
 	playlist      *PlaylistView
 	songs         *SongList
+	genres        *GenreList
 
 	gridAxisX  []int
 	gridAxisY  []int
@@ -95,6 +96,11 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 	w.playlists = NewPlaylists(w.selectPlaylist)
 	w.playlist = NewPlaylistView(w.playSong, w.playSongs)
 	w.playlist.SetBackCallback(w.goBack)
+
+	w.genres = NewGenreList()
+	w.genres.SetBackCallback(w.goBack)
+	w.genres.selectFunc = w.selectGenre
+	w.genres.selectPageFunc = w.showGenrePage
 
 	w.songs = NewSongList(w.playSong, w.playSongs)
 	w.songs.SetBackCallback(w.goBack)
@@ -487,6 +493,9 @@ func (w *Window) selectMedia(m MediaSelect) {
 		w.albumList.SetText(fmt.Sprintf("%s\nTotal %v", title, paging.TotalItems))
 		w.albumList.SetAlbums(albums)
 		w.setViewWidget(w.albumList, true)
+	case MediaGenres:
+		paging := interfaces.DefaultPaging()
+		w.showGenrePage(paging)
 	}
 }
 
@@ -623,4 +632,33 @@ func (w *Window) showMessage(msg string, height, width int, lockSize bool) {
 		width = 50
 	}
 	w.showModal(w.message, uint(height), uint(width), lockSize)
+}
+
+func (w *Window) selectGenre(id models.IdName) {
+
+	albums, err := w.mediaItems.GetGenreAlbums(id)
+	if err != nil {
+		logrus.Errorf("get genre albums: %v", err)
+		return
+	}
+
+	w.albumList.Clear()
+	w.albumList.EnablePaging(false)
+	w.albumList.EnableSimilar(false)
+	w.albumList.EnableArtistMode(false)
+	w.albumList.SetAlbums(albums)
+	w.albumList.SetText("Genre " + id.Name)
+	w.setViewWidget(w.albumList, true)
+}
+
+func (w *Window) showGenrePage(paging interfaces.Paging) {
+	genres, n, err := w.mediaItems.GetGenres(paging)
+	if err != nil {
+		logrus.Errorf("get genres: %v", err)
+		return
+	}
+	paging.SetTotalItems(n)
+	w.genres.SetPage(paging)
+	w.genres.setGenres(genres)
+	w.setViewWidget(w.genres, true)
 }

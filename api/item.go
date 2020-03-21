@@ -463,3 +463,59 @@ func (a *Api) GetSimilarAlbums(album models.Id) ([]*models.Album, error) {
 	return albums, err
 
 }
+
+func (a *Api) GetGenres(paging interfaces.Paging) ([]*models.IdName, int, error) {
+	params := a.defaultParams()
+	params.enableRecursive()
+	params.setSorting("SortName", "Ascending")
+	params.setPaging(paging)
+	params.setParentId(a.musicView)
+
+	resp, err := a.get("/Genres", params)
+	if resp != nil {
+		defer resp.Close()
+	}
+
+	if err != nil {
+		return []*models.IdName{}, 0, err
+	}
+
+	body := struct {
+		Items []nameId
+		Count int `json:"TotalRecordCount"`
+	}{}
+
+	ids := make([]*models.IdName, 0)
+	err = json.NewDecoder(resp).Decode(&body)
+	if err != nil {
+		return ids, 0, fmt.Errorf("decode json: %v", err)
+	}
+
+	ids = make([]*models.IdName, len(body.Items))
+	for i, v := range body.Items {
+		ids[i] = &models.IdName{Id: models.Id(v.Id), Name: v.Name}
+	}
+
+	return ids, body.Count, nil
+}
+
+func (a *Api) GetGenreAlbums(genre models.IdName) ([]*models.Album, error) {
+	params := a.defaultParams()
+	params.enableRecursive()
+	params.setSorting("SortName", "Ascending")
+	params.setParentId(a.musicView)
+	(*params)["GenreIds"] = genre.Id.String()
+	params.setIncludeTypes(mediaTypeAlbum)
+
+	resp, err := a.get(fmt.Sprintf("/Users/%s/Items", a.userId), params)
+	if resp != nil {
+		defer resp.Close()
+	}
+
+	if err != nil {
+		return []*models.Album{}, err
+	}
+
+	albums, _, err := a.parseAlbums(resp)
+	return albums, err
+}

@@ -19,29 +19,54 @@ package api
 import (
 	"fmt"
 	"io"
+	"net/http"
 	"tryffel.net/go/jellycli/config"
+	"tryffel.net/go/jellycli/interfaces"
 )
 
-func (a *Api) GetSongDirect(id string, codec string) (io.ReadCloser, error) {
-	params := a.directplayParams()
-	body, err := a.get("/Audio/"+id+"/stream.mp3", params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get file: %v", err)
-	}
-
-	return body, nil
-}
-
-func (a *Api) directplayParams() *params {
+func (a *Api) GetSongUniversal(id string) (rc io.ReadCloser, format interfaces.AudioFormat, err error) {
+	format = interfaces.AudioFormatNil
 	params := a.defaultParams()
 	ptr := params.ptr()
 	ptr["MaxStreamingBitrate"] = "140000000"
-	ptr["Container"] = "mp3"
 	ptr["AudioSamplingRate"] = fmt.Sprint(config.AudioSamplingRate)
-
+	formats := ""
+	for i, v := range interfaces.SupportedAudioFormats {
+		if i > 0 {
+			formats += ","
+		}
+		formats += v.String()
+	}
+	ptr["Container"] = formats
 	// Every new request requires new playsession
 	a.SessionId = randomKey(20)
 	ptr["PlaySessionId"] = a.SessionId
 	ptr["AudioCodec"] = "mp3"
-	return params
+	resp, err := a.makeRequest(http.MethodGet, "/Audio/"+id+"/universal", nil, params)
+	if err != nil {
+		err = fmt.Errorf("download file: %v", err)
+		return
+	}
+
+	format, err = mimeToAudioFormat(resp.Header.Get("Content-Type"))
+	rc = resp.Body
+	return
+}
+
+func mimeToAudioFormat(mimeType string) (format interfaces.AudioFormat, err error) {
+	format = interfaces.AudioFormatNil
+	switch mimeType {
+	case "audio/mpeg":
+		format = interfaces.AudioFormatMp3
+	case "audio/flac":
+		format = interfaces.AudioFormatFlac
+	case "audio/ogg":
+		format = interfaces.AudioFormatOgg
+	case "audio/wav":
+		format = interfaces.AudioFormatWav
+
+	default:
+		err = fmt.Errorf("unidentified audio format: %s", mimeType)
+	}
+	return
 }

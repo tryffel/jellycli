@@ -23,6 +23,8 @@ import (
 	"github.com/faiface/beep/flac"
 	"github.com/faiface/beep/mp3"
 	"github.com/faiface/beep/speaker"
+	"github.com/faiface/beep/vorbis"
+	"github.com/faiface/beep/wav"
 	"github.com/sirupsen/logrus"
 	"time"
 	"tryffel.net/go/jellycli/config"
@@ -297,10 +299,14 @@ func (a *Audio) playSongFromReader(metadata songMetadata) error {
 	var streamer beep.StreamSeekCloser
 	var err error
 	switch metadata.format {
-	case audioFormatMp3:
+	case interfaces.AudioFormatMp3:
 		streamer, _, err = mp3.Decode(metadata.reader)
-	case audioFormatFlac:
+	case interfaces.AudioFormatFlac:
 		streamer, _, err = flac.Decode(metadata.reader)
+	case interfaces.AudioFormatWav:
+		streamer, _, err = wav.Decode(metadata.reader)
+	case interfaces.AudioFormatOgg:
+		streamer, _, err = vorbis.Decode(metadata.reader)
 	default:
 		return fmt.Errorf("unknown audio format: %s", metadata.format)
 	}
@@ -309,7 +315,7 @@ func (a *Audio) playSongFromReader(metadata songMetadata) error {
 	}
 
 	// play
-	logrus.Debug("Setting new streamer")
+	logrus.Debug("Setting new streamer from ", metadata.format.String())
 	if streamer == nil {
 		return fmt.Errorf("empty streamer")
 	}

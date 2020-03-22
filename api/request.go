@@ -43,17 +43,25 @@ func (a *Api) defaultParams() *params {
 }
 
 func (a *Api) get(url string, params *params) (io.ReadCloser, error) {
-	return a.makeRequest("GET", url, nil, params)
+	resp, err := a.makeRequest("GET", url, nil, params)
+	if resp != nil {
+		return resp.Body, err
+	}
+	return nil, err
 }
 
 func (a *Api) post(url string, body *[]byte, params *params) (io.ReadCloser, error) {
-	return a.makeRequest("POST", url, body, params)
+	resp, err := a.makeRequest("POST", url, body, params)
+	if resp != nil {
+		return resp.Body, err
+	}
+	return nil, err
 }
 
 //Construct request
 // Set authorization header and build url query
 // Make request, parse response code and raise error if needed. Else return response body
-func (a *Api) makeRequest(method, url string, body *[]byte, params *params) (io.ReadCloser, error) {
+func (a *Api) makeRequest(method, url string, body *[]byte, params *params) (*http.Response, error) {
 	var reader *bytes.Buffer
 	var req *http.Request
 	var err error
@@ -65,7 +73,7 @@ func (a *Api) makeRequest(method, url string, body *[]byte, params *params) (io.
 	}
 
 	if err != nil {
-		return http.Response{}.Body, fmt.Errorf("failed to make request: %v", err)
+		return &http.Response{}, fmt.Errorf("failed to make request: %v", err)
 	}
 	if method == "POST" {
 		req.Header.Set("Content-Type", "application/json")
@@ -88,7 +96,7 @@ func (a *Api) makeRequest(method, url string, body *[]byte, params *params) (io.
 	logrus.Debugf("%s %s: %d (%d ms)", req.Method, req.URL.Path, resp.StatusCode, took.Milliseconds())
 
 	if resp.StatusCode == 200 || resp.StatusCode == 204 {
-		return resp.Body, nil
+		return resp, nil
 	}
 	bytes, _ := ioutil.ReadAll(resp.Body)
 	var msg string = "no body"
@@ -110,5 +118,5 @@ func (a *Api) makeRequest(method, url string, body *[]byte, params *params) (io.
 	default:
 		errMsg = errUnexpectedStatusCode
 	}
-	return resp.Body, fmt.Errorf("%s, code: %d, msg: %s", errMsg, resp.StatusCode, msg)
+	return resp, fmt.Errorf("%s, code: %d, msg: %s", errMsg, resp.StatusCode, msg)
 }

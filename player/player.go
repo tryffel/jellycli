@@ -37,7 +37,7 @@ type songMetadata struct {
 	albumImageUrl string
 	albumImageId  string
 	reader        io.ReadCloser
-	format        audioFormat
+	format        interfaces.AudioFormat
 }
 
 // Player wraps all controllers and implements interfaces.QueueController, interfaces.Player and
@@ -150,7 +150,7 @@ func (p *Player) downloadSong() {
 	p.downloadingSong = true
 	p.lock.Unlock()
 
-	reader, err := p.api.GetSongDirect(song.Id.String(), string(audioFormatMp3))
+	reader, format, err := p.api.GetSongUniversal(song.Id.String())
 	if err != nil {
 		logrus.Errorf("download song: %v", err)
 	} else {
@@ -180,7 +180,7 @@ func (p *Player) downloadSong() {
 					albumImageUrl: imageUrl,
 					albumImageId:  imageId,
 					reader:        reader,
-					format:        audioFormatMp3,
+					format:        format,
 				}
 				p.songDownloaded <- metadata
 			}

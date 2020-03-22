@@ -8,14 +8,14 @@ Terminal client for Jellyfin, mostly for music at the moment.
 ![Screenshot](screenshot.png)
 
 ## Features
-* Play artists, songs, albums, playlists, favorite artists, favorite albums
-* Add songs to queue, clear queue
+* View artists, songs, albums, playlists, favorite artists and albums, genres, similar albums and artists
+* Queue: add songs and albums, reorder & delete songs, clear queue
 * Control (and view) play state through Dbus integration
 * Remote control over Jellyfin server. Currently implemented:
     * Play / pause / stop
     * Set volume
     * Next/previous track
-* Supported formats (server transcodes rest to mp3): mp3,ogg,flac,wav
+* Supported formats (server transcodes everything else to mp3): mp3,ogg,flac,wav
 
 ## Building
 **You will need Go 1.13 or Go 1.14 installed and configured**

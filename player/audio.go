@@ -247,7 +247,7 @@ func (a *Audio) closeOldStream() error {
 	if a.streamer != nil {
 		streamErr = a.streamer.Err()
 		if streamErr != nil {
-			streamErr = fmt.Errorf("streamer error: %v", streamErr)
+			logrus.Errorf("streamer error: %v", streamErr)
 		}
 		err = a.streamer.Close()
 		if err != nil {
@@ -259,19 +259,7 @@ func (a *Audio) closeOldStream() error {
 	} else {
 		err = fmt.Errorf("audio stream completed but streamer is nil")
 	}
-	if err == nil && a.streamer == nil {
-		return nil
-	}
-	if err != nil && streamErr != nil {
-		return fmt.Errorf("%v, %v", err, streamErr)
-	}
-	if err != nil {
-		return err
-	}
-	if streamErr != nil {
-		return streamErr
-	}
-	return nil
+	return err
 }
 
 // gather latest status and flush it to callbacks

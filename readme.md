@@ -15,7 +15,9 @@ Terminal client for Jellyfin, mostly for music at the moment.
     * Play / pause / stop
     * Set volume
     * Next/previous track
+    * Control queue
 * Supported formats (server transcodes everything else to mp3): mp3,ogg,flac,wav
+* headless mode (with --no-gui argument)
 
 ## Building
 **You will need Go 1.13 or Go 1.14 installed and configured**

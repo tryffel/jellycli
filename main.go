@@ -41,6 +41,7 @@ import (
 
 // does config file need to be saved
 var configChanged = false
+var showGui = true
 
 func main() {
 	run()
@@ -120,8 +121,6 @@ func (a *Application) Start() error {
 
 	tasks := []task.Tasker{a.player, a.api}
 
-	go a.stopOnSignal()
-
 	for _, v := range tasks {
 		err = v.Start()
 		if err != nil {
@@ -129,8 +128,14 @@ func (a *Application) Start() error {
 		}
 	}
 
-	logrus.SetOutput(a.logfile)
-	return a.gui.Start()
+	if showGui {
+		logrus.SetOutput(a.logfile)
+		go a.stopOnSignal()
+		return a.gui.Start()
+	} else {
+		a.stopOnSignal()
+	}
+	return nil
 }
 
 func (a *Application) Stop() error {
@@ -145,7 +150,9 @@ func (a *Application) Stop() error {
 			hasError = true
 		}
 	}
-	a.gui.Stop()
+	if showGui {
+		a.gui.Stop()
+	}
 
 	if err != nil || hasError {
 		logrus.Errorf("stop application: %v", err)
@@ -356,8 +363,12 @@ func run() {
 	configFile := flag.String("config", "",
 		"Use external configuration file. file must be yaml-formatted")
 	help := flag.Bool("help", false, "Show help page")
-
+	gui := flag.Bool("no-gui", false, "Disable gui")
 	flag.Parse()
+
+	if *gui {
+		showGui = false
+	}
 
 	if *showVersion {
 		println(config.AppNameVersion())

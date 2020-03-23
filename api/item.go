@@ -348,7 +348,6 @@ func (a *Api) GetSongsById(ids []models.Id) ([]*models.Song, error) {
 	params := *a.defaultParams()
 	params.setIncludeTypes(mediaTypeSong)
 	params.enableRecursive()
-	params.setSorting("Name", "Ascending")
 
 	if len(ids) == 0 {
 		return []*models.Song{}, fmt.Errorf("ids cannot be empty")

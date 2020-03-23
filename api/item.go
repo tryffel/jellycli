@@ -344,6 +344,52 @@ func (a *Api) GetSongs(page, pageSize int) ([]*models.Song, int, error) {
 	return songs, dto.TotalSongs, nil
 }
 
+func (a *Api) GetSongsById(ids []models.Id) ([]*models.Song, error) {
+	params := *a.defaultParams()
+	params.setIncludeTypes(mediaTypeSong)
+	params.enableRecursive()
+	params.setSorting("Name", "Ascending")
+
+	if len(ids) == 0 {
+		return []*models.Song{}, fmt.Errorf("ids cannot be empty")
+	}
+
+	idList := ""
+	for i, v := range ids {
+		if i > 0 {
+			idList += ","
+		}
+		idList += v.String()
+	}
+
+	params["Ids"] = idList
+
+	resp, err := a.get(fmt.Sprintf("/Users/%s/Items", a.userId), &params)
+	if resp != nil {
+		defer resp.Close()
+	}
+
+	if err != nil {
+		return []*models.Song{}, err
+	}
+
+	dto := songs{}
+	err = json.NewDecoder(resp).Decode(&dto)
+	if err != nil {
+		return []*models.Song{}, fmt.Errorf("decode json: %v", err)
+	}
+
+	songs := make([]*models.Song, len(dto.Songs))
+
+	for i, v := range dto.Songs {
+		logInvalidType(&v, "get songs")
+		songs[i] = v.toSong()
+		songs[i].Index = i + 1
+	}
+
+	return songs, nil
+}
+
 // GetArtists return artists defined by paging and total number of artists
 func (a *Api) GetArtists(paging interfaces.Paging) (artistList []*models.Artist, numRecords int, err error) {
 	params := *a.defaultParams()

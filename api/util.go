@@ -21,7 +21,10 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"io"
+	"strconv"
+	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
+	"tryffel.net/go/jellycli/models"
 )
 
 const (
@@ -76,6 +79,23 @@ type playbackStarted struct {
 	LiveStreamId        string
 	PlaylistLength      int
 	PlaylistIndex       int
+	Queue               []queueItem `json:"NowPlayingQueue"`
+}
+
+type queueItem struct {
+	Id    string `json:"Id"`
+	Index string `json:"PlaylistItemId"`
+}
+
+func idsToQueue(ids []models.Id) []queueItem {
+	out := []queueItem{}
+	for i, v := range ids {
+		out = append(out, queueItem{
+			Id:    v.String(),
+			Index: "playlistItem" + strconv.Itoa(i),
+		})
+	}
+	return out
 }
 
 type playbackProgress struct {
@@ -102,6 +122,7 @@ func (a *Api) ReportProgress(state *interfaces.ApiPlaybackState) error {
 		PlaySessionId:       a.SessionId,
 		LiveStreamId:        "",
 		PlaylistLength:      state.PlaylistLength * ticksToSecond,
+		Queue:               idsToQueue(state.Queue),
 	}
 
 	if state.Event == interfaces.EventStart {
@@ -168,6 +189,7 @@ func (a *Api) ImageUrl(item, imageTag string) string {
 func (a *Api) ReportCapabilities() error {
 	data := map[string]interface{}{}
 	data["PlayableMediaTypes"] = []string{"Audio"}
+	data["QueueableMediaTypes"] = []string{"Audio"}
 	data["SupportedCommands"] = []string{
 		"VolumeUp",
 		"VolumeDown",
@@ -178,6 +200,10 @@ func (a *Api) ReportCapabilities() error {
 	}
 	data["SupportsMediaControl"] = true
 	data["SupportsPersistentIdentifier"] = false
+	data["ApplicationVersion"] = config.Version
+	data["Client"] = config.AppName
+	data["DeviceName"] = config.AppName
+	data["DeviceId"] = a.DeviceId
 
 	params := *a.defaultParams()
 

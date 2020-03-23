@@ -28,6 +28,7 @@ import (
 	"syscall"
 	"time"
 	"tryffel.net/go/jellycli/interfaces"
+	"tryffel.net/go/jellycli/models"
 )
 
 const (
@@ -127,6 +128,8 @@ func (a *Api) parseInboudMessage(buff *[]byte) error {
 					volume := interfaces.AudioVolume(volume)
 					a.player.SetVolume(volume)
 				}
+			default:
+				logrus.Warning("unknown socket command: ", name)
 			}
 		} else {
 			logrus.Error("unexpected command format from websocket, expected general command args map[string]interface, got", a)
@@ -137,6 +140,25 @@ func (a *Api) parseInboudMessage(buff *[]byte) error {
 		cmd, ok := rawCmd.(string)
 		if ok {
 			err = a.pushCommand(cmd)
+		}
+	} else if cmd == "play" {
+		var items []string
+		if i, ok := msg.Data["ItemIds"].([]interface{}); ok {
+			for _, v := range i {
+				if id, ok := v.(string); ok {
+					items = append(items, id)
+				} else {
+					logrus.Errorf("remote play, item id is not string: %s", v)
+				}
+			}
+		} else {
+			logrus.Error("Received play command, but queue ids are not array. command: ", msg.Data)
+		}
+		command, ok := msg.Data["PlayCommand"].(string)
+		if !ok {
+			logrus.Error("Received play command, but command is not string: ", msg.Data)
+		} else {
+			go a.pushSongsToQueue(items, command)
 		}
 	}
 	return err
@@ -233,4 +255,34 @@ func (a *Api) reconnectSocket() bool {
 	}
 	logrus.Warning("Websocket reconnected")
 	return true
+}
+
+// push songs to queue.
+func (a *Api) pushSongsToQueue(items []string, mode string) {
+	ids := []models.Id{}
+	for _, v := range items {
+		ids = append(ids, models.Id(v))
+	}
+
+	songs, err := a.GetSongsById(ids)
+	if err != nil {
+		logrus.Errorf("remote control: add songs to queue: get songs from ids: %v", err)
+		return
+	}
+	logrus.Debug("received play event: ", mode)
+
+	// some modes are swapped in other clients, use those for consistency
+	if mode == "PlayNow" {
+		a.player.StopMedia()
+		a.queue.ClearQueue(true)
+		a.queue.PlayNext(songs)
+	} else if mode == "PlayLast" {
+		//} else if mode == "PlayNext" {
+		a.queue.PlayNext(songs)
+	} else if mode == "PlayNext" {
+		//} else if mode == "PlayLast" {
+		a.queue.AddSongs(songs)
+	} else {
+		logrus.Errorf("unknown remote play mode: %s", mode)
+	}
 }

@@ -268,6 +268,12 @@ func (p *Player) audioCallback(status interfaces.AudioStatus) {
 		logrus.Warningf("cannot map audio state to api event: %v", status.Action)
 	}
 
+	songs := p.GetQueue()
+	queue := make([]models.Id, len(songs))
+	for i, v := range songs {
+		queue[i] = v.Id
+	}
+	apiStatus.Queue = queue
 	apiStatus.IsPaused = status.Paused
 
 	if status.Song != nil {

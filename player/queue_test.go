@@ -321,3 +321,67 @@ func TestQueue_playLastSong(t *testing.T) {
 		})
 	}
 }
+
+func TestQueue_PlayNext(t *testing.T) {
+	songs := testSongs()
+	type fields struct {
+		items              []*models.Song
+		history            []*models.Song
+		queueUpdatedFunc   []func([]*models.Song)
+		historyUpdatedFunc func([]*models.Song)
+	}
+	type args struct {
+		songs []*models.Song
+	}
+	tests := []struct {
+		name      string
+		fields    fields
+		args      args
+		wantQueue []*models.Song
+	}{
+		{
+			fields: fields{
+				items:              []*models.Song{},
+				history:            []*models.Song{},
+				queueUpdatedFunc:   nil,
+				historyUpdatedFunc: nil,
+			},
+			args:      args{songs: []*models.Song{songs[0]}},
+			wantQueue: []*models.Song{songs[0]},
+		},
+		{
+			fields: fields{
+				items:              []*models.Song{songs[0]},
+				history:            []*models.Song{},
+				queueUpdatedFunc:   nil,
+				historyUpdatedFunc: nil,
+			},
+			args:      args{songs: []*models.Song{songs[1]}},
+			wantQueue: []*models.Song{songs[0], songs[1]},
+		},
+		{
+			fields: fields{
+				items:              []*models.Song{songs[0], songs[1], songs[2]},
+				history:            []*models.Song{},
+				queueUpdatedFunc:   nil,
+				historyUpdatedFunc: nil,
+			},
+			args:      args{songs: []*models.Song{songs[4], songs[5]}},
+			wantQueue: []*models.Song{songs[0], songs[4], songs[5], songs[1], songs[2]},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			q := &Queue{
+				items:              tt.fields.items,
+				history:            tt.fields.history,
+				queueUpdatedFunc:   tt.fields.queueUpdatedFunc,
+				historyUpdatedFunc: tt.fields.historyUpdatedFunc,
+			}
+			q.PlayNext(tt.args.songs)
+			if !reflect.DeepEqual(q.items, tt.wantQueue) {
+				t.Errorf("queue playNext, want: %v, got: %v", tt.wantQueue, q.items)
+			}
+		})
+	}
+}

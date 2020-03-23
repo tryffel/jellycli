@@ -155,11 +155,17 @@ func (a *Api) parseInboudMessage(buff *[]byte) error {
 		} else {
 			logrus.Error("Received play command, but queue ids are not array. command: ", msg.Data)
 		}
+		index, ok := msg.Data["StartIndex"].(float64)
+		startIndex := 0
+		if ok {
+			startIndex = int(index)
+		}
+
 		command, ok := msg.Data["PlayCommand"].(string)
 		if !ok {
 			logrus.Error("Received play command, but command is not string: ", msg.Data)
 		} else {
-			go a.pushSongsToQueue(items, command)
+			go a.pushSongsToQueue(items[startIndex:], command)
 		}
 	}
 	return err

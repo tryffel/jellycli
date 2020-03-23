@@ -17,7 +17,7 @@ Terminal client for Jellyfin, mostly for music at the moment.
     * Next/previous track
     * Control queue
 * Supported formats (server transcodes everything else to mp3): mp3,ogg,flac,wav
-* headless mode (with --no-gui argument)
+* headless mode (--no-gui)
 
 ## Building
 **You will need Go 1.13 or Go 1.14 installed and configured**
@@ -46,10 +46,22 @@ ensure you have alsa installed on host machine and disable / kill pulseaudio if 
 
 ```
 mkdir ~/jellycli-config
+# Gui
 docker run -it --rm --device /dev/snd:/dev/snd  -v ~/jellycli-config/jellycli-conf:/root/.config jellycli
+
+# Headless mode
+docker run -it --rm --device /dev/snd:/dev/snd  -v ~/jellycli-config/jellycli-conf:/root/.config jellycli --no-gui
 ```
 
 ## Run
+``` 
+# Gui
+./jellycli
+
+# Headless mode
+./jellycli --no-gui
+```
+
 On first time application asks for Jellyfin host, username, password and default collection for music. 
 All this is stored in configuration file at ~/.config/jellycli/jellycli.yaml. 
 Configuration file location is visible in help page. 

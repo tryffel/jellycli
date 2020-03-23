@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
+	"math"
 	"net/url"
 	"strconv"
 	"strings"
@@ -264,7 +265,33 @@ func (a *Api) pushSongsToQueue(items []string, mode string) {
 		ids = append(ids, models.Id(v))
 	}
 
-	songs, err := a.GetSongsById(ids)
+	var songs []*models.Song
+	var err error
+
+	// server does not accept too long id list (> 15 ids), so we need to split large queries
+	if len(ids) > 15 {
+		rounds := int(math.Ceil(float64(len(ids)) / 15))
+		logrus.Infof("Too many songs for single query, split query: %d total, %d queries", len(ids), rounds)
+		for i := 0; i < rounds; i++ {
+			from := i * 15
+			to := (i + 1) * 15
+			if to > len(ids) {
+				to = len(ids)
+			}
+			logrus.Debugf("Download songs [%d, %d]", from, to)
+			s, err := a.GetSongsById(ids[from:to])
+			if err != nil {
+				logrus.Errorf("download songs: %v", err)
+			}
+			songs = append(songs, s...)
+		}
+		if len(songs) != len(ids) {
+			logrus.Errorf("some songs were not downloaded: expect %d, got %d", len(ids), len(songs))
+		}
+	} else {
+		songs, err = a.GetSongsById(ids)
+	}
+
 	if err != nil {
 		logrus.Errorf("remote control: add songs to queue: get songs from ids: %v", err)
 		return

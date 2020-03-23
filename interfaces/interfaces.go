@@ -35,6 +35,9 @@ type QueueController interface {
 	//AddSongs adds songs to the end of queue.
 	//Adding songs calls QueueChangedCallback
 	AddSongs([]*models.Song)
+
+	//PlayNext adds songs to 2nd index in order.
+	PlayNext([]*models.Song)
 	//Reorder sets item in index currentIndex to newIndex.
 	//If either currentIndex or NewIndex is not valid, do nothing.
 	//On successful order QueueChangedCallback gets called.

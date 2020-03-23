@@ -22,12 +22,14 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
+	"math"
 	"net/url"
 	"strconv"
 	"strings"
 	"syscall"
 	"time"
 	"tryffel.net/go/jellycli/interfaces"
+	"tryffel.net/go/jellycli/models"
 )
 
 const (
@@ -127,6 +129,8 @@ func (a *Api) parseInboudMessage(buff *[]byte) error {
 					volume := interfaces.AudioVolume(volume)
 					a.player.SetVolume(volume)
 				}
+			default:
+				logrus.Warning("unknown socket command: ", name)
 			}
 		} else {
 			logrus.Error("unexpected command format from websocket, expected general command args map[string]interface, got", a)
@@ -137,6 +141,31 @@ func (a *Api) parseInboudMessage(buff *[]byte) error {
 		cmd, ok := rawCmd.(string)
 		if ok {
 			err = a.pushCommand(cmd)
+		}
+	} else if cmd == "play" {
+		var items []string
+		if i, ok := msg.Data["ItemIds"].([]interface{}); ok {
+			for _, v := range i {
+				if id, ok := v.(string); ok {
+					items = append(items, id)
+				} else {
+					logrus.Errorf("remote play, item id is not string: %s", v)
+				}
+			}
+		} else {
+			logrus.Error("Received play command, but queue ids are not array. command: ", msg.Data)
+		}
+		index, ok := msg.Data["StartIndex"].(float64)
+		startIndex := 0
+		if ok {
+			startIndex = int(index)
+		}
+
+		command, ok := msg.Data["PlayCommand"].(string)
+		if !ok {
+			logrus.Error("Received play command, but command is not string: ", msg.Data)
+		} else {
+			go a.pushSongsToQueue(items[startIndex:], command)
 		}
 	}
 	return err
@@ -233,4 +262,60 @@ func (a *Api) reconnectSocket() bool {
 	}
 	logrus.Warning("Websocket reconnected")
 	return true
+}
+
+// push songs to queue.
+func (a *Api) pushSongsToQueue(items []string, mode string) {
+	ids := []models.Id{}
+	for _, v := range items {
+		ids = append(ids, models.Id(v))
+	}
+
+	var songs []*models.Song
+	var err error
+
+	// server does not accept too long id list (> 15 ids), so we need to split large queries
+	if len(ids) > 15 {
+		rounds := int(math.Ceil(float64(len(ids)) / 15))
+		logrus.Infof("Too many songs for single query, split query: %d total, %d queries", len(ids), rounds)
+		for i := 0; i < rounds; i++ {
+			from := i * 15
+			to := (i + 1) * 15
+			if to > len(ids) {
+				to = len(ids)
+			}
+			logrus.Debugf("Download songs [%d, %d]", from, to)
+			s, err := a.GetSongsById(ids[from:to])
+			if err != nil {
+				logrus.Errorf("download songs: %v", err)
+			}
+			songs = append(songs, s...)
+		}
+		if len(songs) != len(ids) {
+			logrus.Errorf("some songs were not downloaded: expect %d, got %d", len(ids), len(songs))
+		}
+	} else {
+		songs, err = a.GetSongsById(ids)
+	}
+
+	if err != nil {
+		logrus.Errorf("remote control: add songs to queue: get songs from ids: %v", err)
+		return
+	}
+	logrus.Debug("received play event: ", mode)
+
+	// some modes are swapped in other clients, use those for consistency
+	if mode == "PlayNow" {
+		a.player.StopMedia()
+		a.queue.ClearQueue(true)
+		a.queue.PlayNext(songs)
+	} else if mode == "PlayLast" {
+		//} else if mode == "PlayNext" {
+		a.queue.PlayNext(songs)
+	} else if mode == "PlayNext" {
+		//} else if mode == "PlayLast" {
+		a.queue.AddSongs(songs)
+	} else {
+		logrus.Errorf("unknown remote play mode: %s", mode)
+	}
 }

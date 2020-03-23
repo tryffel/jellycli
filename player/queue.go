@@ -69,6 +69,22 @@ func (q *Queue) AddSongs(songs []*models.Song) {
 	logrus.Debug("Adding songs to queue, current size: ", len(q.items))
 }
 
+func (q *Queue) PlayNext(songs []*models.Song) {
+	q.lock.Lock()
+	size := len(q.items)
+	q.lock.Unlock()
+	// append songs if there is 0 or 1 songs
+	if size < 2 {
+		q.AddSongs(songs)
+		return
+	}
+	q.lock.Lock()
+	temp := append([]*models.Song{q.items[0]}, songs...)
+	q.items = append(temp, q.items[1:]...)
+	q.lock.Unlock()
+	q.notifyQueueUpdated()
+}
+
 func (q *Queue) RemoveSong(index int) {
 	changed := false
 	q.lock.Lock()

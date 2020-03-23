@@ -18,6 +18,7 @@ package interfaces
 
 import (
 	"io"
+	"tryffel.net/go/jellycli/models"
 )
 
 type ApiPlaybackEvent string
@@ -58,4 +59,6 @@ type ApiPlaybackState struct {
 	Position int
 	// Volume in 0-100
 	Volume int
+
+	Queue []models.Id
 }

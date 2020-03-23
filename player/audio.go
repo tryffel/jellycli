@@ -148,6 +148,8 @@ func (a *Audio) StopMedia() {
 	speaker.Lock()
 	a.status.State = interfaces.AudioStateStopped
 	a.status.Action = interfaces.AudioActionStop
+	a.ctrl.Paused = false
+	a.status.Paused = false
 	speaker.Unlock()
 	speaker.Clear()
 

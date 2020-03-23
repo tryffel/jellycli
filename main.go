@@ -295,15 +295,17 @@ func (a *Application) initApplication() error {
 
 	a.mpris, err = mpris2.NewController(a.player.Audio)
 	if err != nil {
-		return fmt.Errorf("initialize dbus connection: %v", err)
+		if strings.Contains(err.Error(), "dbus-launch") {
+			logrus.Warningf("Dbus disabled: %v", err)
+		} else {
+			return fmt.Errorf("initialize dbus connection: %v", err)
+		}
+	} else {
+		a.mprisPlayer = &mpris2.Player{
+			MediaController: a.mpris,
+		}
+		a.player.AddStatusCallback(a.mprisPlayer.UpdateStatus)
 	}
-
-	a.mprisPlayer = &mpris2.Player{
-		MediaController: a.mpris,
-	}
-
-	a.player.AddStatusCallback(a.mprisPlayer.UpdateStatus)
-
 	return nil
 }
 

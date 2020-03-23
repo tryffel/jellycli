@@ -33,10 +33,23 @@ Download & build package
 ```
 git clone https://github.com/tryffel/jellycli.git
 cd jellycli
+# checkout tag:
+# git checkout vx.x.x
 go build .
 ./jellycli
 ```
 
+## Docker
+Jellycli has experimental docker image tryffel/jellycli. Do note that you might run into issues using audio with docker.
+Jellycli relies on alsa and might clash with pulseaudio. In case of problems, 
+ensure you have alsa installed on host machine and disable / kill pulseaudio if required. 
+
+```
+mkdir ~/jellycli-config
+docker run -it --rm --device /dev/snd:/dev/snd  -v ~/jellycli-config/jellycli-conf:/root/.config jellycli
+```
+
+## Run
 On first time application asks for Jellyfin host, username, password and default collection for music. 
 All this is stored in configuration file at ~/.config/jellycli/jellycli.yaml. 
 Configuration file location is visible in help page. 

@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"io"
+	"strings"
 	"sync"
 	"time"
 	"tryffel.net/go/jellycli/api"
@@ -149,11 +150,27 @@ func (p *Player) downloadSong() {
 	p.lock.Lock()
 	p.downloadingSong = true
 	p.lock.Unlock()
+	ok := false
 
 	reader, format, err := p.api.GetSongUniversal(song.Id.String())
 	if err != nil {
-		logrus.Errorf("download song: %v", err)
+		if strings.Contains(err.Error(), "A task was canceled") {
+			// server task may fail sometimes, retry
+			logrus.Warningf("Failed to download song, retrying: %v", err)
+			time.Sleep(time.Second)
+			reader, format, err = p.api.GetSongUniversal(song.Id.String())
+			if err == nil {
+				ok = true
+			} else {
+				logrus.Errorf("retry downloading song: %v", err)
+			}
+		} else {
+			logrus.Errorf("download song: %v", err)
+		}
 	} else {
+		ok = true
+	}
+	if ok {
 		// fill metadata
 		albumId := song.GetParent()
 		album, err := p.api.GetAlbum(albumId)

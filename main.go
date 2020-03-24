@@ -274,7 +274,7 @@ func (a *Application) initApiView() error {
 					fmt.Println("Must be a valid number")
 				} else {
 					id := ""
-					if num < len(views)-1 && num > 0 {
+					if num < len(views)+1 && num > 0 {
 						id = views[num-1].Id.String()
 						a.conf.Server.MusicView = id
 						configChanged = true

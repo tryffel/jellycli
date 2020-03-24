@@ -43,13 +43,18 @@ func (a *Api) connectSocket() error {
 	}
 	u, err := url.Parse(a.host)
 	host := u.Host + u.Path
+	scheme := "wss"
+	if u.Scheme == "http" {
+		logrus.Info("Websocket encryption disabled")
+		scheme = "ws"
+	}
 	dialer := websocket.Dialer{
 		Proxy:            nil,
 		HandshakeTimeout: time.Second * 10,
 	}
 	logrus.Debug("connecting websocket to ", host)
 	socket, _, err := dialer.Dial(
-		fmt.Sprintf("wss://%s/socket?api_key=%s&deviceId=%s", host, a.token, a.DeviceId), nil)
+		fmt.Sprintf("%s://%s/socket?api_key=%s&deviceId=%s", scheme, host, a.token, a.DeviceId), nil)
 	if err != nil {
 		a.socketState = socketDisconnected
 		return fmt.Errorf("websocket connection failed: %v", err)

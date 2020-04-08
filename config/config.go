@@ -90,7 +90,7 @@ func ReadUserInput(name string, mask bool) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("failed to read user input: %v", err)
 		}
-		val = strings.Trim(val, "\n")
 	}
+	val = strings.Trim(val, "\n\r")
 	return val, nil
 }

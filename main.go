@@ -203,7 +203,8 @@ func (a *Application) initApi() error {
 }
 
 func (a *Application) login() error {
-	if a.conf.Server.Token == "" {
+
+	login := func() error {
 		configChanged = true
 		username, err := config.ReadUserInput("username", false)
 		if err != nil {
@@ -231,11 +232,21 @@ func (a *Application) login() error {
 			return fmt.Errorf("login failed")
 		}
 		return nil
-
+	}
+	if a.conf.Server.Token == "" {
+		logrus.Warning("login required")
+		return login()
 	} else {
 		err := a.api.SetToken(a.conf.Server.Token)
 		if err != nil {
-			return fmt.Errorf("set token: %v", err)
+			if strings.Contains(err.Error(), "invalid token") {
+				// renew token
+				logrus.Warning(err.Error())
+				a.conf.Server.Token = ""
+				return login()
+			} else {
+				return fmt.Errorf("set token: %v", err)
+			}
 		}
 		a.api.SetUserId(a.conf.Server.UserId)
 		a.api.DeviceId = a.conf.Server.DeviceId

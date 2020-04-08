@@ -20,6 +20,7 @@ package api
 
 import (
 	"crypto/rand"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/denisbrodbeck/machineid"
@@ -28,6 +29,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 	"tryffel.net/go/jellycli/config"
@@ -113,7 +115,7 @@ func (a *Api) Login(username, password string) error {
 //SetToken sets existing token
 func (a *Api) SetToken(token string) error {
 	a.token = token
-	return nil
+	return a.TokenOk()
 }
 
 func (a *Api) tokenExists() error {
@@ -145,6 +147,33 @@ func (a *Api) ConnectionOk() error {
 	return nil
 }
 
+func (a *Api) TokenOk() error {
+	type serverInfo struct {
+		SystemUpdateLevel string `json:"SystemUpdateLevel"`
+		RestartPending    bool   `json:"HasPendingRestart"`
+		IsShuttingDown    bool   `json:"IsShuttingDown"`
+	}
+
+	// check token validity
+	body, err := a.get("/System/Info", nil)
+	if body != nil {
+		defer body.Close()
+	}
+	if err != nil {
+		if strings.Contains(err.Error(), "Access token is invalid or expired") {
+			return fmt.Errorf("invalid token: %v", err)
+		}
+		return err
+	}
+
+	info := serverInfo{}
+	err = json.NewDecoder(body).Decode(&info)
+	if err != nil {
+		return fmt.Errorf("decode json: %v", err)
+	}
+	return nil
+}
+
 func (a *Api) DefaultMusicView() string {
 	return a.musicView
 }
@@ -164,13 +193,10 @@ func (a *Api) SetServerId(id string) {
 // Connect opens a connection to server. If websockets are supported, use that. Report capabilities to server.
 // This should be called before streaming any media
 func (a *Api) Connect() error {
-
-	var err error
-	err = a.ReportCapabilities()
+	err := a.ReportCapabilities()
 	if err != nil {
-		logrus.Warningf("report capabilities: %v", err)
+		return fmt.Errorf("report capabilities: %v", err)
 	}
-
 	err = a.connectSocket()
 	if err != nil {
 		logrus.Infof("No websocket connection: %v", err)

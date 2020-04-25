@@ -26,6 +26,7 @@ import (
 	"github.com/faiface/beep/vorbis"
 	"github.com/faiface/beep/wav"
 	"github.com/sirupsen/logrus"
+	"io"
 	"time"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
@@ -249,7 +250,11 @@ func (a *Audio) closeOldStream() error {
 	if a.streamer != nil {
 		streamErr = a.streamer.Err()
 		if streamErr != nil {
-			logrus.Errorf("streamer error: %v", streamErr)
+			if streamErr != io.EOF {
+				logrus.Errorf("streamer error: %v", streamErr)
+			} else {
+				logrus.Info("got streamer error eof")
+			}
 		}
 		err = a.streamer.Close()
 		if err != nil {
@@ -322,8 +327,6 @@ func (a *Audio) playSongFromReader(metadata songMetadata) error {
 		if err != nil {
 			err = fmt.Errorf("failed to close old stream: %v", err)
 		}
-	} else {
-		logrus.Warning("No old streamer to close")
 	}
 	speaker.Play(a.volume)
 	speaker.Lock()

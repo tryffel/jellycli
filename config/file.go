@@ -61,7 +61,7 @@ func readConfigFile(file string) (*Config, error) {
 	if err != nil {
 		if errors.Is(err, io.EOF) {
 			// empty file
-			logrus.Warning("Creating new config file")
+			logrus.Warning("Creating new config file: ", conf.configFile)
 			err = SaveConfig(conf)
 			if err != nil {
 				return conf, fmt.Errorf("save empty config file")

@@ -20,10 +20,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/denisbrodbeck/machineid"
 	"io/ioutil"
 	"net/http"
-	"tryffel.net/go/jellycli/config"
 )
 
 type loginResponse struct {
@@ -46,14 +44,7 @@ func (a *Api) login(username, password string) error {
 	b := &bytes.Buffer{}
 	err := json.NewEncoder(b).Encode(body)
 
-	id, err := machineid.ProtectedID(config.AppName)
-	if err != nil {
-		return fmt.Errorf("failed to get unique host id: %v", err)
-	}
-
-	auth := fmt.Sprintf("MediaBrowser Client=\"%s\", Device=\"%s\", DeviceId=\"%s\", Version=\"%s\"",
-		config.AppName, config.AppName, id, config.Version)
-
+	auth := a.authHeader()
 	req, err := http.NewRequest("POST", a.host+"/Users/authenticatebyname", b)
 	if err != nil {
 		return fmt.Errorf("failed to login: %v", err)

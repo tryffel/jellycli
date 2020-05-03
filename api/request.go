@@ -43,7 +43,7 @@ func (a *Api) defaultParams() *params {
 }
 
 func (a *Api) get(url string, params *params) (io.ReadCloser, error) {
-	resp, err := a.makeRequest("GET", url, nil, params)
+	resp, err := a.makeRequest("GET", url, nil, params, nil)
 	if resp != nil {
 		return resp.Body, err
 	}
@@ -51,7 +51,7 @@ func (a *Api) get(url string, params *params) (io.ReadCloser, error) {
 }
 
 func (a *Api) post(url string, body *[]byte, params *params) (io.ReadCloser, error) {
-	resp, err := a.makeRequest("POST", url, body, params)
+	resp, err := a.makeRequest("POST", url, body, params, nil)
 	if resp != nil {
 		return resp.Body, err
 	}
@@ -61,7 +61,8 @@ func (a *Api) post(url string, body *[]byte, params *params) (io.ReadCloser, err
 //Construct request
 // Set authorization header and build url query
 // Make request, parse response code and raise error if needed. Else return response body
-func (a *Api) makeRequest(method, url string, body *[]byte, params *params) (*http.Response, error) {
+func (a *Api) makeRequest(method, url string, body *[]byte, params *params,
+	headers map[string]string) (*http.Response, error) {
 	var reader *bytes.Buffer
 	var req *http.Request
 	var err error
@@ -79,6 +80,12 @@ func (a *Api) makeRequest(method, url string, body *[]byte, params *params) (*ht
 		req.Header.Set("Content-Type", "application/json")
 	}
 	req.Header.Set("X-Emby-Token", a.token)
+
+	if len(headers) > 0 {
+		for k, v := range headers {
+			req.Header.Set(k, v)
+		}
+	}
 
 	if params != nil {
 		q := req.URL.Query()

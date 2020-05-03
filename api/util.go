@@ -19,8 +19,12 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/denisbrodbeck/machineid"
 	"github.com/sirupsen/logrus"
 	"io"
+	"net/http"
+	"os"
+	"runtime"
 	"strconv"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
@@ -202,7 +206,8 @@ func (a *Api) ReportCapabilities() error {
 	data["SupportsPersistentIdentifier"] = false
 	data["ApplicationVersion"] = config.Version
 	data["Client"] = config.AppName
-	data["DeviceName"] = config.AppName
+
+	data["DeviceName"] = a.deviceName()
 	data["DeviceId"] = a.DeviceId
 
 	params := *a.defaultParams()
@@ -213,10 +218,38 @@ func (a *Api) ReportCapabilities() error {
 	}
 
 	url := "/Sessions/Capabilities/Full"
-	resp, err := a.post(url, &body, &params)
+
+	resp, err := a.makeRequest(http.MethodPost, url, &body, &params,
+		map[string]string{"X-Emby-Authorization": a.authHeader()})
 	if err != nil {
 		return err
 	}
-	resp.Close()
+	resp.Body.Close()
 	return nil
+}
+
+func (a *Api) authHeader() string {
+	id, err := machineid.ProtectedID(config.AppName)
+	if err != nil {
+		logrus.Errorf("get unique host id: %v", err)
+		id = randomKey(30)
+	}
+	hostname := a.deviceName()
+
+	auth := fmt.Sprintf("MediaBrowser Client=\"%s\", Device=\"%s\", DeviceId=\"%s\", Version=\"%s\"",
+		config.AppName, hostname, id, config.Version)
+	return auth
+}
+
+func (a *Api) deviceName() string {
+	hostname, err := os.Hostname()
+	if err != nil {
+		switch runtime.GOOS {
+		case "darwin":
+			hostname = "mac"
+		default:
+			hostname = runtime.GOOS
+		}
+	}
+	return hostname
 }

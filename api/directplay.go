@@ -42,7 +42,7 @@ func (a *Api) GetSongUniversal(id string) (rc io.ReadCloser, format interfaces.A
 	a.SessionId = randomKey(20)
 	ptr["PlaySessionId"] = a.SessionId
 	ptr["AudioCodec"] = "mp3"
-	resp, err := a.makeRequest(http.MethodGet, "/Audio/"+id+"/universal", nil, params)
+	resp, err := a.makeRequest(http.MethodGet, "/Audio/"+id+"/universal", nil, params, nil)
 	if err != nil {
 		err = fmt.Errorf("download file: %v", err)
 		return

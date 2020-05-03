@@ -1,5 +1,10 @@
+---
 kind: pipeline
-name: default
+name: test-linux-arm64
+
+platform: 
+  os: linux
+  arch: arm64
 
 steps:
 - name: tests
@@ -10,15 +15,86 @@ steps:
   commands:
   - go mod download
   - go test ./...
-    #- go build
+  - go build
 
 trigger:
   event:
     include:
     - push
     - pull_request
+    - tag
 
 volumes:
 - name: deps
   temp: {}
+
+---
+kind: pipeline
+name: test-linux-amd64
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: tests
+  image: tryffel/golang-alsa:13.7
+  volumes:
+  - name: deps
+    path: /go
+  commands:
+  - go mod download
+  - go test ./...
+  - go build .
+
+trigger:
+  event:
+    include:
+    - push
+    - pull_request
+    - tag
+
+volumes:
+- name: deps
+  temp: {}
+
+---
+kind: pipeline
+name: release
+
+platform:
+  os: linux
+  arch: amd64
+
+trigger:
+  event:
+    - tag
+  
+depends_on: 
+  - test-linux-amd64
+  - test-linux-arm64
+
+steps:
+- name: fetch
+  image: docker:git
+  commands:
+    - git fetch --tags
+
+- name: release
+  image: golang
+  environment:
+    GITHUB_TOKEN:
+      from_secret: github_token
+  volumes:
+    - name: deps
+      path: /go
+  commands:
+    - curl -sL https://git.io/goreleaser | bash
+  when:
+    event: tag
+
+volumes:
+- name: deps
+  temp: {}
+
 

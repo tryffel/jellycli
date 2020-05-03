@@ -88,6 +88,10 @@ func (i *Items) GetLatestAlbums() ([]*models.Album, error) {
 	return i.api.GetLatestAlbums()
 }
 
+func (i *Items) GetRecentlyPlayed(paging interfaces.Paging) ([]*models.Song, int, error) {
+	return i.api.GetRecentlyPlayed(paging)
+}
+
 func (i *Items) GetSimilarArtists(artist models.Id) ([]*models.Artist, error) {
 	return i.api.GetSimilarArtists(artist)
 }

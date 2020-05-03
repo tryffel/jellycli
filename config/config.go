@@ -53,9 +53,10 @@ type Server struct {
 }
 
 type Player struct {
-	PageSize int    `yaml:"page_size"`
-	LogFile  string `yaml:"log_file"`
-	LogLevel string `yaml:"log_level"`
+	PageSize            int    `yaml:"page_size"`
+	LogFile             string `yaml:"log_file"`
+	LogLevel            string `yaml:"log_level"`
+	LimitRecentlyPlayed bool   `yaml:"limit_recent_songs"`
 }
 
 func (p *Player) fillDefaults() {

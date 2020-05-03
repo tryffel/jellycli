@@ -85,6 +85,8 @@ type ItemController interface {
 
 	GetLatestAlbums() ([]*models.Album, error)
 
+	GetRecentlyPlayed(paging Paging) ([]*models.Song, int, error)
+
 	// GetStatistics returns application statistics
 	GetStatistics() models.Stats
 

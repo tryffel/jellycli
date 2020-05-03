@@ -83,9 +83,7 @@ func NewMediaNavigation(selectFunc func(selection MediaSelect)) *MediaNavigation
 
 func (m *MediaNavigation) markDisabledMethods() {
 	// colorize methods that are not implemented
-	notImplemented := []MediaSelect{
-		MediaRecent,
-	}
+	notImplemented := []MediaSelect{}
 
 	for _, v := range notImplemented {
 		cell := m.Table.GetCell(int(v), 0)

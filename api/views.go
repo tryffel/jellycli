@@ -19,6 +19,8 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"tryffel.net/go/jellycli/config"
+	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
 )
 
@@ -68,4 +70,46 @@ func (a *Api) GetLatestAlbums() ([]*models.Album, error) {
 	}
 	a.cache.PutList("latest_music", ids)
 	return albums, nil
+}
+
+func (a *Api) GetRecentlyPlayed(paging interfaces.Paging) ([]*models.Song, int, error) {
+	params := *a.defaultParams()
+
+	params.setIncludeTypes(mediaTypeSong)
+	params.setSorting("DatePlayed", "Descending")
+	params.enableRecursive()
+	params["UserId"] = a.userId
+	params.setParentId(a.musicView)
+
+	if config.LimitRecentlyPlayed {
+		paging = interfaces.Paging{
+			CurrentPage: 0,
+			PageSize:    config.LimitedRecentlyPlayedCount,
+		}
+	}
+	params.setPaging(paging)
+
+	resp, err := a.get(fmt.Sprintf("/Users/%s/Items", a.userId), &params)
+	if err != nil {
+		return nil, 0, fmt.Errorf("request latest albums: %v", err)
+	}
+
+	var dto songs
+	err = json.NewDecoder(resp).Decode(&dto)
+	if err != nil {
+		return nil, 0, fmt.Errorf("parse latest albums: %v", err)
+	}
+
+	songs := make([]*models.Song, len(dto.Songs))
+	for i, v := range dto.Songs {
+		songs[i] = v.toSong()
+	}
+
+	totalSongs := dto.TotalSongs
+
+	if config.LimitRecentlyPlayed {
+		totalSongs = len(dto.Songs)
+	}
+
+	return songs, totalSongs, nil
 }

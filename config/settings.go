@@ -33,7 +33,10 @@ const (
 
 var (
 	// PageSize controls paging and is read from config file
-	PageSize = 100
+	PageSize            = 100
+	LimitRecentlyPlayed = false
+	// how many recent song to show, if limited
+	LimitedRecentlyPlayedCount = 24
 )
 
 // audio configuration

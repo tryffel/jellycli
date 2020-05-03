@@ -422,16 +422,34 @@ func (w *Window) selectMedia(m MediaSelect) {
 			w.playlists.SetPlaylists(playlists)
 			w.setViewWidget(w.playlists, true)
 		}
-	case MediaSongs:
+	case MediaSongs, MediaRecent:
 		page := interfaces.DefaultPaging()
+		var songs []*models.Song
+		var count int
+		var err error
 
-		songs, count, err := w.mediaItems.GetSongs(0, page.PageSize)
-		if err != nil {
-			logrus.Errorf("get songs: %v", err)
+		if m == MediaSongs {
+			songs, count, err = w.mediaItems.GetSongs(0, page.PageSize)
+			if err != nil {
+				logrus.Errorf("get songs: %v", err)
+			} else {
+				w.songs.showPage = w.selectSongs
+				w.mediaNav.SetCount(m, count)
+				w.songs.setTitle("All albums")
+			}
+		} else {
+			songs, count, err = w.mediaItems.GetRecentlyPlayed(page)
+			if err != nil {
+				logrus.Errorf("get songs: %v", err)
+			} else {
+				w.songs.showPage = w.showRecentSongsPage
+				w.songs.setTitle("Recently played")
+				if !config.LimitRecentlyPlayed {
+					w.mediaNav.SetCount(m, count)
+				}
+			}
 		}
-
 		page.SetTotalItems(count)
-		w.mediaNav.SetCount(MediaSongs, page.TotalItems)
 		w.songs.SetSongs(songs, page)
 
 		w.setViewWidget(w.songs, true)
@@ -545,6 +563,16 @@ func (w *Window) selectPlaylist(playlist *models.Playlist) {
 
 func (w *Window) selectSongs(page interfaces.Paging) {
 	songs, _, err := w.mediaItems.GetSongs(page.CurrentPage, page.PageSize)
+	if err != nil {
+		logrus.Errorf("get songs: %v", err)
+	}
+
+	w.songs.SetSongs(songs, page)
+	w.setViewWidget(w.songs, true)
+}
+
+func (w *Window) showRecentSongsPage(page interfaces.Paging) {
+	songs, _, err := w.mediaItems.GetRecentlyPlayed(page)
 	if err != nil {
 		logrus.Errorf("get songs: %v", err)
 	}

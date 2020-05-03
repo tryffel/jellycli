@@ -71,6 +71,7 @@ func NewApplication(configFile string) (*Application, error) {
 
 	config.ConfigFile = a.conf.ConfigFile()
 	config.PageSize = a.conf.Player.PageSize
+	config.LimitRecentlyPlayed = a.conf.Player.LimitRecentlyPlayed
 
 	a.logfile = setLogging(a.conf)
 

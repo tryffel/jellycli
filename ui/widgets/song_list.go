@@ -34,6 +34,7 @@ type SongList struct {
 	list        *twidgets.ScrollList
 	songs       []*albumSong
 	listFocused bool
+	title       string
 
 	playSongFunc  func(song *models.Song)
 	playSongsFunc func(songs []*models.Song)
@@ -101,7 +102,13 @@ func NewSongList(playSong func(song *models.Song), playSongs func(songs []*model
 	p.Banner.Selectable = selectables
 	p.description.SetBackgroundColor(config.Color.Background)
 	p.description.SetTextColor(config.Color.Text)
+
+	p.title = "All songs"
 	return p
+}
+
+func (s *SongList) setTitle(title string) {
+	s.title = title
 }
 
 func (s *SongList) SetSongs(songs []*models.Song, page interfaces.Paging) {
@@ -110,7 +117,7 @@ func (s *SongList) SetSongs(songs []*models.Song, page interfaces.Paging) {
 	s.songs = make([]*albumSong, len(songs))
 	items := make([]twidgets.ListItem, len(songs))
 
-	text := fmt.Sprintf("All songs: %d songs", page.TotalItems)
+	text := fmt.Sprintf("%s: %d songs", s.title, page.TotalItems)
 
 	s.description.SetText(text)
 

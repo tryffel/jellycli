@@ -578,8 +578,6 @@ func (w *Window) showAlbumPage(page interfaces.Paging) {
 	w.albumList.SetPage(page)
 	w.albumList.Clear()
 	w.albumList.EnablePaging(true)
-	w.albumList.EnableSimilar(true)
-	w.albumList.SetText("Albums")
 	w.albumList.SetAlbums(albums)
 }
 

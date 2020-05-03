@@ -3,7 +3,7 @@
 [![Godoc Reference](https://img.shields.io/badge/godoc-reference-blue.svg)](https://pkg.go.dev/tryffel.net/go/jellycli)
 [![Go Report Card](https://goreportcard.com/badge/tryffel.net/go/jellycli)](https://goreportcard.com/report/tryffel.net/go/jellycli)
 
-Terminal client for Jellyfin, mostly for music at the moment.
+Terminal music player for Jellyfin.
 
 ![Screenshot](screenshot.png)
 
@@ -18,6 +18,13 @@ Terminal client for Jellyfin, mostly for music at the moment.
     * Control queue
 * Supported formats (server transcodes everything else to mp3): mp3,ogg,flac,wav
 * headless mode (--no-gui)
+
+**Platforms tested**:
+* [x] Windows 10 
+* [x] Linux 64 bit
+* [ ] Linux 32 bit (raspi 2)
+* [ ] MacOS
+
 
 ## Building
 **You will need Go 1.13 or Go 1.14 installed and configured**
@@ -39,6 +46,15 @@ go build .
 ./jellycli
 ```
 
+## Run
+``` 
+# Gui
+./jellycli
+
+# Headless mode
+./jellycli --no-gui
+```
+
 ## Docker
 Jellycli has experimental docker image tryffel/jellycli. Do note that you might run into issues using audio with docker.
 Jellycli relies on alsa and might clash with pulseaudio. In case of problems, 
@@ -53,24 +69,19 @@ docker run -it --rm --device /dev/snd:/dev/snd  -v ~/jellycli-config/jellycli-co
 docker run -it --rm --device /dev/snd:/dev/snd  -v ~/jellycli-config/jellycli-conf:/root/.config jellycli --no-gui
 ```
 
-## Run
-``` 
-# Gui
-./jellycli
-
-# Headless mode
-./jellycli --no-gui
-```
-
 On first time application asks for Jellyfin host, username, password and default collection for music. 
-All this is stored in configuration file at ~/.config/jellycli/jellycli.yaml. 
-Configuration file location is visible in help page. 
+All this is stored in configuration file:
+* ~/.config/jellycli/jellycli.yaml 
+* C:\Users\<user>\AppData\Roaming/jellycli/jellycli.yaml
+
+Configuration file location is also visible in help page. 
 You can use multiple config files by providing argument:
 ```
 jellycli --config temp.yaml
 ```
 
-Log file is located at '/tmp/jellycli.log' by default. This can be overridden with config file. 
+Log file is located at '/tmp/jellycli.log' or 'C:\Users\<user>\AppData\Local\Temp/jellycli.log' by default. 
+This can be overridden with config file. 
 At the moment jellycli does not inform user about errors but rather just silently logs them.
 For development purposes you should set log-level either to debug or trace.
 

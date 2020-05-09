@@ -127,3 +127,47 @@ func (c *Cache) GetList(id string) ([]models.Id, bool) {
 	}
 	return ids, true
 }
+
+func (c *Cache) GetArtist(id models.Id) *models.Artist {
+	item, found := c.Get(id)
+	if found {
+		artist, ok := item.(*models.Artist)
+		if ok {
+			return artist
+		}
+	}
+	return nil
+}
+
+func (c *Cache) GetAlbum(id models.Id) *models.Album {
+	item, found := c.Get(id)
+	if found {
+		album, ok := item.(*models.Album)
+		if ok {
+			return album
+		}
+	}
+	return nil
+}
+
+func (c *Cache) GetSong(id models.Id) *models.Song {
+	item, found := c.Get(id)
+	if found {
+		song, ok := item.(*models.Song)
+		if ok {
+			return song
+		}
+	}
+	return nil
+}
+
+func (c *Cache) GetPlaylist(id models.Id) *models.Playlist {
+	item, found := c.Get(id)
+	if found {
+		playlist, ok := item.(*models.Playlist)
+		if ok {
+			return playlist
+		}
+	}
+	return nil
+}

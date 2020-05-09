@@ -98,6 +98,10 @@ type ItemController interface {
 
 	// GetGenreAlbums returns all albums that belong to given genre
 	GetGenreAlbums(genre models.IdName) ([]*models.Album, error)
+
+	GetAlbumArtist(album *models.Album) (*models.Artist, error)
+
+	GetSongArtistAlbum(song *models.Song) (*models.Album, *models.Artist, error)
 }
 
 // Paging. First page is 0

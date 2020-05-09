@@ -130,3 +130,11 @@ func (i *Items) GetStatistics() models.Stats {
 func (i *Items) GetSongs(page, pageSize int) ([]*models.Song, int, error) {
 	return i.api.GetSongs(page, pageSize)
 }
+
+func (i *Items) GetAlbumArtist(album *models.Album) (*models.Artist, error) {
+	return i.api.GetAlbumArtist(album)
+}
+
+func (i *Items) GetSongArtistAlbum(song *models.Song) (*models.Album, *models.Artist, error) {
+	return i.api.GetSongArtistAlbum(song)
+}

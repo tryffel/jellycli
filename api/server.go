@@ -32,6 +32,11 @@ type MediaServer interface {
 	//ReportProgress reports current playing progress to server
 	ReportProgress(state *interfaces.ApiPlaybackState) error
 
+	//GetItem retrieves single item by its id
+	GetItem(id models.Id) (models.Item, error)
+	//GetItems retrieves multiple items by their id's
+	GetItems(ids []models.Id) ([]models.Item, error)
+
 	//GetArtist gets artist by id.
 	GetArtist(id models.Id) (models.Artist, error)
 

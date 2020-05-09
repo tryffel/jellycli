@@ -17,10 +17,12 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"io"
+	"io/ioutil"
 	"strconv"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
@@ -59,8 +61,15 @@ func (a *Api) GetItem(id models.Id) (models.Item, error) {
 	if err != nil {
 		return nil, fmt.Errorf("get item by id: %v", err)
 	}
+
+	b, err := ioutil.ReadAll(resp)
+	if err != nil {
+		return nil, fmt.Errorf("read http body: %v", err)
+	}
+	body := bytes.NewBuffer(b)
+
 	dto := &map[string]interface{}{}
-	err = json.NewDecoder(resp).Decode(dto)
+	err = json.NewDecoder(body).Decode(dto)
 	if err != nil {
 		return nil, fmt.Errorf("parse json response: %v", err)
 	}
@@ -69,14 +78,45 @@ func (a *Api) GetItem(id models.Id) (models.Item, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid item type: %v", err)
 	}
-	//decoder := json.NewDecoder(resp)
-	//var item models.Item
-	switch itemT {
-	case models.TypeAlbum:
 
+	body = bytes.NewBuffer(b)
+
+	item = nil
+	switch itemT {
+	case models.TypeSong:
+		dto := song{}
+		err = json.NewDecoder(body).Decode(&dto)
+		if err != nil {
+			return nil, fmt.Errorf("decode song: %v", err)
+		}
+		item = &(*dto.toSong())
+	case models.TypeAlbum:
+		dto := album{}
+		err = json.NewDecoder(body).Decode(&dto)
+		if err != nil {
+			return nil, fmt.Errorf("decode album: %v", err)
+		}
+		item = &(*dto.toAlbum())
 	case models.TypeArtist:
+		dto := artist{}
+		err = json.NewDecoder(body).Decode(&dto)
+		if err != nil {
+			return nil, fmt.Errorf("decode artist: %v", err)
+		}
+		item = &(*dto.toArtist())
+	case models.TypePlaylist:
+		dto := playlist{}
+		err = json.NewDecoder(body).Decode(&dto)
+		if err != nil {
+			return nil, fmt.Errorf("decode playlist: %v", err)
+		}
+		item = &(*dto.toPlaylist())
+	default:
+		return nil, fmt.Errorf("unknown item type: %s", itemT)
 	}
-	return nil, nil
+
+	a.cache.Put(id, item, true)
+	return item, nil
 }
 
 func (a *Api) GetChildItems(id models.Id) ([]models.Item, error) {
@@ -244,7 +284,9 @@ func (a *Api) GetAlbumSongs(album models.Id) ([]*models.Song, error) {
 
 	songs := make([]*models.Song, len(dto.Songs))
 	for i, v := range dto.Songs {
-		songs[i] = v.toSong()
+		song := v.toSong()
+		songs[i] = song
+		a.cache.Put(song.Id, song, true)
 	}
 
 	return songs, nil
@@ -612,4 +654,64 @@ func (a *Api) GetGenreAlbums(genre models.IdName) ([]*models.Album, error) {
 
 	albums, _, err := a.parseAlbums(resp)
 	return albums, err
+}
+
+func (a *Api) GetAlbumArtist(album *models.Album) (*models.Artist, error) {
+	item, found := a.cache.Get(album.Artist)
+	if found {
+		artist, ok := item.(*models.Artist)
+		if ok {
+			return artist, nil
+		} else {
+			a.cache.Delete(album.Artist)
+		}
+	} else {
+		logrus.Errorf("no cache item for album artist")
+	}
+	return nil, nil
+}
+
+func (a *Api) GetSongArtistAlbum(song *models.Song) (*models.Album, *models.Artist, error) {
+	var artist *models.Artist
+	var album *models.Album
+	var ok bool
+	var err error
+	var item models.Item
+
+	album = a.cache.GetAlbum(song.Album)
+	if album == nil {
+
+		item, err = a.GetItem(song.Album)
+		if err == nil {
+			album, ok = item.(*models.Album)
+			if ok {
+				a.cache.Put(item.GetId(), item, true)
+			} else {
+				album = nil
+			}
+		}
+	}
+
+	if album == nil {
+		if err == nil {
+			err = fmt.Errorf("album not found")
+		}
+		return nil, nil, err
+	}
+
+	artist = a.cache.GetArtist(album.Artist)
+	if artist == nil {
+		item, err = a.GetItem(album.Artist)
+		if err == nil {
+			artist, ok = item.(*models.Artist)
+			if ok {
+				a.cache.Put(item.GetId(), item, true)
+			}
+		}
+	}
+
+	if artist == nil {
+		return nil, nil, fmt.Errorf("not found")
+	}
+	return album, artist, nil
 }

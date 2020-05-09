@@ -25,3 +25,31 @@ type Playlist struct {
 	Songs     []*Song
 	SongCount int
 }
+
+func (p Playlist) GetId() Id {
+	return p.Id
+}
+
+func (p Playlist) GetName() string {
+	return p.Name
+}
+
+func (p Playlist) HasChildren() bool {
+	return p.SongCount > 0
+}
+
+func (p Playlist) GetChildren() []Id {
+	ids := make([]Id, len(p.Songs))
+	for i, v := range p.Songs {
+		ids[i] = v.Id
+	}
+	return ids
+}
+
+func (p Playlist) GetParent() Id {
+	return ""
+}
+
+func (p Playlist) GetType() ItemType {
+	return TypePlaylist
+}

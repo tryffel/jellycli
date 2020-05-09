@@ -71,7 +71,6 @@ func NewMediaNavigation(selectFunc func(selection MediaSelect)) *MediaNavigation
 	m.SetBorder(true)
 	m.SetSelectable(true, false)
 	m.SetSelectedStyle(config.Color.TextSelected, config.Color.BackgroundSelected, 0)
-	m.SetSelectionChangedFunc(m.selectCell)
 
 	for i, v := range mediaSelections {
 		cell := tableCell(v)
@@ -105,11 +104,40 @@ func (m *MediaNavigation) InputHandler() func(event *tcell.EventKey, setFocus fu
 	}
 }
 
-func (m *MediaNavigation) selectCell(row, col int) {
-	if m.selectFunc != nil {
-		index, _ := m.Table.GetSelection()
-		m.selectFunc(MediaSelect(index))
-	}
+// MouseHandler returns the mouse handler for this primitive.
+func (m *MediaNavigation) MouseHandler() func(action cview.MouseAction, event *tcell.EventMouse, setFocus func(p cview.Primitive)) (consumed bool, capture cview.Primitive) {
+	return m.WrapMouseHandler(func(action cview.MouseAction, event *tcell.EventMouse, setFocus func(p cview.Primitive)) (consumed bool, capture cview.Primitive) {
+		// Pass events to context menu.
+		if !m.InRect(event.Position()) {
+			return false, nil
+		}
+
+		// Process mouse event.
+		switch action {
+		case cview.MouseLeftClick:
+			setFocus(m)
+			index := 0
+			x, y := event.Position()
+			rectX, rectY, width, height := m.GetInnerRect()
+			if x < rectX || x >= rectX+width || y < rectY || y >= rectY+height {
+				index = -1
+			}
+
+			index = y - rectY
+			offset, _ := m.GetOffset()
+			index += offset
+
+			if index >= m.GetRowCount() {
+				index = -1
+			}
+
+			if index >= 0 && index < m.GetRowCount() && m.selectFunc != nil {
+				m.Table.Select(index, 0)
+				m.selectFunc(MediaSelect(index))
+			}
+		}
+		return
+	})
 }
 
 func (m *MediaNavigation) SetCount(id MediaSelect, count int) {

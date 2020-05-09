@@ -365,7 +365,9 @@ func (a *Api) GetPlaylists() ([]*models.Playlist, error) {
 	data = make([]*models.Playlist, len(dto.Playlists))
 	for i, v := range dto.Playlists {
 		logInvalidType(&v, "get playlists")
-		data[i] = v.toPlaylist()
+		pl := v.toPlaylist()
+		data[i] = pl
+		a.cache.Put(pl.Id, pl, true)
 	}
 
 	return data, nil

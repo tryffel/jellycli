@@ -71,6 +71,7 @@ func NewMediaNavigation(selectFunc func(selection MediaSelect)) *MediaNavigation
 	m.SetBorder(true)
 	m.SetSelectable(true, false)
 	m.SetSelectedStyle(config.Color.TextSelected, config.Color.BackgroundSelected, 0)
+	m.SetSelectionChangedFunc(m.selectCell)
 
 	for i, v := range mediaSelections {
 		cell := tableCell(v)
@@ -101,6 +102,13 @@ func (m *MediaNavigation) InputHandler() func(event *tcell.EventKey, setFocus fu
 		} else {
 			m.Table.InputHandler()(event, setFocus)
 		}
+	}
+}
+
+func (m *MediaNavigation) selectCell(row, col int) {
+	if m.selectFunc != nil {
+		index, _ := m.Table.GetSelection()
+		m.selectFunc(MediaSelect(index))
 	}
 }
 

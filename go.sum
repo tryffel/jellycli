@@ -121,5 +121,5 @@ gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 h1:uRGJdciOHaEIrze2W8Q3AKkep
 gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7/go.mod h1:dt/ZhP58zS4L8KSrWDmTeBkI65Dw0HsyUHuEVlX15mw=
 gopkg.in/yaml.v2 v2.2.4 h1:/eiJrUcujPVeJ3xlSWaiNi3uSVmDGBK1pDHUHAnao1I=
 gopkg.in/yaml.v2 v2.2.4/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
-tryffel.net/go/twidgets v0.0.0-20200509065314-8313d36f5eb5 h1:EWtz2vMQs6lEKyYxGUGqNB2HDKX1fjQSiDeoRCwt4Qs=
-tryffel.net/go/twidgets v0.0.0-20200509065314-8313d36f5eb5/go.mod h1:p8xJcL57OPI9r1Iab9CI53SeLU6uAWYynngcD5cdTck=
+tryffel.net/go/twidgets v0.0.0-20200509125417-ad1a73eaca8f h1:y+oTvEwOUbGQ1SPBTumMTbCTqz4H++YgkyFWprMHpjI=
+tryffel.net/go/twidgets v0.0.0-20200509125417-ad1a73eaca8f/go.mod h1:p8xJcL57OPI9r1Iab9CI53SeLU6uAWYynngcD5cdTck=

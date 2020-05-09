@@ -149,6 +149,7 @@ func (h *Help) shortcutsPage() string {
 	* Page Up / Down: Ctrl+F / Ctrl+B
 * Switch between panels: Tab 
 * Select button or item: Enter
+* Open context menu: Alt+Enter
 * Close application: Ctrl-C
 
 [yellow]Queue[-]:
@@ -156,6 +157,11 @@ func (h *Help) shortcutsPage() string {
 * Move up song: Ctrl-K
 * Move down song: Ctrl-J
 * Clear queue with 'clear'. This does not remove current song
+
+[yellow]Mouse[-]:
+You can use mouse (if enabled) to navigate in application.
+* Select: Left click / double click
+* Open context menu: right click
 
 `
 }

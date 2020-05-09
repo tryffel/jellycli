@@ -99,12 +99,12 @@ func NewApplication(configFile string) (*Application, error) {
 		os.Exit(1)
 	}
 
-	if configChanged {
-		err = config.SaveConfig(a.conf)
-		if err != nil {
-			logrus.Fatalf("save config file: %v", err)
-		}
+	err = config.SaveConfig(a.conf)
+	if err != nil {
+		logrus.Error("save config file: %v", err)
 	}
+
+	config.AppConfig = a.conf
 
 	err = a.initApplication()
 	return a, err

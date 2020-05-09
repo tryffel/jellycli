@@ -112,6 +112,12 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 
 	w.setLayout()
 	w.app.SetRoot(w.layout, true)
+	if config.AppConfig.Player.MouseEnabled {
+		w.app.EnableMouse(true)
+		interval := time.Millisecond * time.Duration(config.AppConfig.Player.DoubleClickMs)
+		w.app.SetDoubleClickInterval(interval)
+	}
+
 	w.app.SetFocus(w.mediaNav)
 
 	w.app.SetInputCapture(w.eventHandler)

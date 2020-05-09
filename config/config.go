@@ -30,6 +30,9 @@ import (
 	"syscall"
 )
 
+// AppConfig is a configuration loaded during startup
+var AppConfig *Config
+
 type Config struct {
 	Server Server `yaml:"server"`
 	Player Player `yaml:"player"`
@@ -57,6 +60,8 @@ type Player struct {
 	LogFile             string `yaml:"log_file"`
 	LogLevel            string `yaml:"log_level"`
 	LimitRecentlyPlayed bool   `yaml:"limit_recent_songs"`
+	MouseEnabled        bool   `yaml:"enable_mouse"`
+	DoubleClickMs       int    `yaml:"mouse_double_click_interval_ms"`
 }
 
 func (p *Player) fillDefaults() {
@@ -70,11 +75,15 @@ func (p *Player) fillDefaults() {
 	if p.LogLevel == "" {
 		p.LogLevel = logrus.WarnLevel.String()
 	}
+	if p.DoubleClickMs <= 0 {
+		p.DoubleClickMs = 220
+	}
 }
 
 // initialize new config with some sensible values
 func (c *Config) initNewConfig() {
 	c.Player.fillDefaults()
+	c.Player.MouseEnabled = true
 	// booleans are hard to determine whether they are set or not,
 	// so only fill this here
 	c.Player.LimitRecentlyPlayed = true

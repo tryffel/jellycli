@@ -88,7 +88,7 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 	w.similarAlbums.SetBackCallback(w.goBack)
 	w.similarAlbums.EnablePaging(false)
 
-	w.album = NewAlbumview(w.playSong, w.playSongs)
+	w.album = NewAlbumview(w.playSong, w.playSongs, &w)
 	w.album.SetBackCallback(w.goBack)
 	w.album.similarFunc = w.showSimilarAlbums
 	w.mediaNav = NewMediaNavigation(w.selectMedia)

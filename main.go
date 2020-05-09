@@ -101,7 +101,7 @@ func NewApplication(configFile string) (*Application, error) {
 
 	err = config.SaveConfig(a.conf)
 	if err != nil {
-		logrus.Error("save config file: %v", err)
+		logrus.Errorf("save config file: %v", err)
 	}
 
 	config.AppConfig = a.conf

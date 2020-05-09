@@ -103,7 +103,7 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 	w.genres.selectFunc = w.selectGenre
 	w.genres.selectPageFunc = w.showGenrePage
 
-	w.songs = NewSongList(w.playSong, w.playSongs)
+	w.songs = NewSongList(w.playSong, w.playSongs, &w)
 	w.songs.SetBackCallback(w.goBack)
 	w.songs.showPage = w.selectSongs
 	w.mediaPlayer = p

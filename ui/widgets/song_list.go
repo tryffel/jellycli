@@ -44,19 +44,23 @@ type SongList struct {
 	prevBtn     *button
 	playBtn     *button
 
+	context contextOperator
+
 	page interfaces.Paging
 
 	prevFunc func()
 }
 
 // NewSongList initializes new song list
-func NewSongList(playSong func(song *models.Song), playSongs func(songs []*models.Song)) *SongList {
+func NewSongList(playSong func(song *models.Song), playSongs func(songs []*models.Song),
+	operator contextOperator) *SongList {
 	p := &SongList{
 		Banner:        twidgets.NewBanner(),
 		previous:      &previous{},
 		list:          twidgets.NewScrollList(nil),
 		playSongFunc:  playSong,
 		playSongsFunc: playSongs,
+		context:       operator,
 
 		description: cview.NewTextView(),
 		prevBtn:     newButton("Back"),
@@ -104,6 +108,27 @@ func NewSongList(playSong func(song *models.Song), playSongs func(songs []*model
 	p.description.SetTextColor(config.Color.Text)
 
 	p.title = "All songs"
+
+	if p.context != nil {
+		p.list.AddContextItem("View album", 0, func(index int) {
+			selected := p.list.GetSelectedIndex()
+			song := p.songs[selected]
+			p.context.ViewSongAlbum(song.song)
+		})
+		p.list.AddContextItem("View artist", 0, func(index int) {
+			selected := p.list.GetSelectedIndex()
+			song := p.songs[selected]
+			p.context.ViewSongArtist(song.song)
+		})
+	}
+
+	p.list.ContextMenuList().SetBorder(true)
+	p.list.ContextMenuList().SetBackgroundColor(config.Color.Background)
+	p.list.ContextMenuList().SetBorderColor(config.Color.BorderFocus)
+	p.list.ContextMenuList().SetSelectedBackgroundColor(config.Color.BackgroundSelected)
+	p.list.ContextMenuList().SetMainTextColor(config.Color.Text)
+	p.list.ContextMenuList().SetSelectedTextColor(config.Color.TextSelected)
+
 	return p
 }
 
@@ -176,7 +201,7 @@ func (s *SongList) playAll() {
 }
 
 func (s *SongList) listHandler(key *tcell.EventKey) *tcell.EventKey {
-	if key.Key() == tcell.KeyEnter {
+	if key.Key() == tcell.KeyEnter && key.Modifiers() == tcell.ModNone {
 		index := s.list.GetSelectedIndex()
 		s.playSong(index)
 		return nil

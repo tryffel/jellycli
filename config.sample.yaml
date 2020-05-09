@@ -1,0 +1,37 @@
+# Jellycli reference configuration file
+
+# Jellycli does not (yet) parse yaml comments.
+# Do not copy this file, let Jellycli create / initialize
+# the config file.
+
+# Server settings
+server:
+  server_url: http://localhost/jellyfin
+  username: ""
+  # To force logout, clear token
+  token:
+  # Don't touch these
+  user_id:
+  device_id:
+  server_id:
+  music_view:
+# Player & Gui settings
+player:
+  # Paging, default: 100
+  page_size: 100
+  # Logging
+  log_file: /tmp/jellycli.log
+  # Allowed values: trace|debug|info|warning|error|fatal
+  log_level: warning
+
+  # Limit recent songs to a sensible value.
+  # When set to false, 'recent songs' are actually
+  # all songs ever listened on this account
+  limit_recent_songs: true
+
+  # Enable mouse support
+  enable_mouse: true
+
+  # If mouse support is enabled, maximum interval (ms) for double click.
+  # Default: 200
+  mouse_double_click_interval_ms: 200

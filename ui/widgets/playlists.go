@@ -22,6 +22,7 @@ import (
 	"gitlab.com/tslocum/cview"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/models"
+	"tryffel.net/go/jellycli/util"
 	"tryffel.net/go/twidgets"
 )
 
@@ -48,7 +49,8 @@ func NewPlaylistCover(index int, playlist *models.Playlist) *PlaylistCover {
 	a.SetBorderPadding(0, 0, 1, 1)
 	a.SetTextColor(config.Color.Text)
 	ar := printArtists(a.artists, 40)
-	text := fmt.Sprintf("%d. %s\n%d songs", index, playlist.Name, playlist.SongCount)
+	text := fmt.Sprintf("%d. %s\n%d songs, %s", index, playlist.Name,
+		playlist.SongCount, util.SecToStringApproximate(playlist.Duration))
 	if ar != "" {
 		text += "\n" + ar
 	}

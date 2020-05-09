@@ -72,6 +72,22 @@ func (p *Player) fillDefaults() {
 	}
 }
 
+// initialize new config with some sensible values
+func (c *Config) initNewConfig() {
+	c.Player.fillDefaults()
+	// booleans are hard to determine whether they are set or not,
+	// so only fill this here
+	c.Player.LimitRecentlyPlayed = true
+}
+
+// can config file be considered empty / not configured
+func (c *Config) isEmptyConfig() bool {
+	return c.Server.UserId == "" &&
+		c.Server.ServerId == "" &&
+		c.Server.MusicView == "" &&
+		c.Server.Token == ""
+}
+
 // ReadUserInput reads value from stdin. Name is printed like 'Enter <name>. If mask is true, input is masked.
 func ReadUserInput(name string, mask bool) (string, error) {
 	fmt.Print("Enter ", name, ": ")

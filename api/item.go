@@ -30,6 +30,55 @@ const (
 	defaultLimit = "100"
 )
 
+func getItemType(dto *map[string]interface{}) (models.ItemType, error) {
+	field := (*dto)["Type"]
+	text, ok := field.(string)
+	if !ok {
+		return "", fmt.Errorf("invalid type: %v", text)
+	}
+	switch text {
+	case mediaTypeArtist.String():
+		return models.TypeArtist, nil
+	case mediaTypeAlbum.String():
+		return models.TypeAlbum, nil
+	case mediaTypeSong.String():
+		return models.TypeSong, nil
+	default:
+		return "", fmt.Errorf("unknown type: %s", text)
+	}
+}
+
+func (a *Api) GetItem(id models.Id) (models.Item, error) {
+	item, found := a.cache.Get(id)
+	if found && item != nil {
+		return item, nil
+	}
+	params := a.defaultParams()
+
+	resp, err := a.get(fmt.Sprintf("/Users/%s/Items/%s", a.userId, id), params)
+	if err != nil {
+		return nil, fmt.Errorf("get item by id: %v", err)
+	}
+	dto := &map[string]interface{}{}
+	err = json.NewDecoder(resp).Decode(dto)
+	if err != nil {
+		return nil, fmt.Errorf("parse json response: %v", err)
+	}
+
+	itemT, err := getItemType(dto)
+	if err != nil {
+		return nil, fmt.Errorf("invalid item type: %v", err)
+	}
+	//decoder := json.NewDecoder(resp)
+	//var item models.Item
+	switch itemT {
+	case models.TypeAlbum:
+
+	case models.TypeArtist:
+	}
+	return nil, nil
+}
+
 func (a *Api) GetChildItems(id models.Id) ([]models.Item, error) {
 	// get users/<uid>/items/<id>?parentid=<pid>
 	return nil, nil

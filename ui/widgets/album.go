@@ -233,10 +233,12 @@ type AlbumView struct {
 	playBtn     *button
 	prevFunc    func()
 	similarFunc func(album *models.Album)
+	context     contextOperator
 }
 
 //NewAlbumView initializes new album view
-func NewAlbumview(playSong func(song *models.Song), playSongs func(songs []*models.Song)) *AlbumView {
+func NewAlbumview(playSong func(song *models.Song),
+	playSongs func(songs []*models.Song), operator contextOperator) *AlbumView {
 	a := &AlbumView{
 		Banner:        twidgets.NewBanner(),
 		previous:      &previous{},
@@ -248,6 +250,7 @@ func NewAlbumview(playSong func(song *models.Song), playSongs func(songs []*mode
 		prevBtn:     newButton("Back"),
 		similarBtn:  newButton("Similar"),
 		playBtn:     newButton("Play all"),
+		context:     operator,
 	}
 
 	a.list.ItemHeight = 2
@@ -289,6 +292,23 @@ func NewAlbumview(playSong func(song *models.Song), playSongs func(songs []*mode
 	a.Banner.Selectable = selectables
 	a.description.SetBackgroundColor(config.Color.Background)
 	a.description.SetTextColor(config.Color.Text)
+
+	if a.context != nil {
+		a.list.AddContextItem("View artist", 0, func(index int) {
+			if index < len(a.songs) && a.context != nil {
+				song := a.songs[0]
+				a.context.ViewSongArtist(song.song)
+			}
+		})
+	}
+
+	a.list.ContextMenuList().SetBorder(true)
+	a.list.ContextMenuList().SetBackgroundColor(config.Color.Background)
+	a.list.ContextMenuList().SetBorderColor(config.Color.BorderFocus)
+	a.list.ContextMenuList().SetSelectedBackgroundColor(config.Color.BackgroundSelected)
+	a.list.ContextMenuList().SetMainTextColor(config.Color.Text)
+	a.list.ContextMenuList().SetSelectedTextColor(config.Color.TextSelected)
+
 	return a
 }
 
@@ -344,7 +364,7 @@ func (a *AlbumView) InputHandler() func(event *tcell.EventKey, setFocus func(p c
 				a.listFocused = false
 				a.prevBtn.Focus(func(p cview.Primitive) {})
 				a.list.Blur()
-			} else if key == tcell.KeyEnter {
+			} else if key == tcell.KeyEnter && event.Modifiers() == 0 {
 				a.playSong(index)
 			} else {
 				a.list.InputHandler()(event, setFocus)
@@ -377,7 +397,7 @@ func (a *AlbumView) playAlbum() {
 }
 
 func (a *AlbumView) listHandler(key *tcell.EventKey) *tcell.EventKey {
-	if key.Key() == tcell.KeyEnter {
+	if key.Key() == tcell.KeyEnter && key.Modifiers() == tcell.ModNone {
 		index := a.list.GetSelectedIndex()
 		a.playSong(index)
 		return nil

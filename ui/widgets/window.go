@@ -95,7 +95,7 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 	w.navBar = twidgets.NewNavBar(config.Color.NavBar.ToWidgetsNavBar(), w.navBarHandler)
 
 	w.playlists = NewPlaylists(w.selectPlaylist)
-	w.playlist = NewPlaylistView(w.playSong, w.playSongs)
+	w.playlist = NewPlaylistView(w.playSong, w.playSongs, &w)
 	w.playlist.SetBackCallback(w.goBack)
 
 	w.genres = NewGenreList()

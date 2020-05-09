@@ -678,17 +678,13 @@ func (a *Api) GetSongArtistAlbum(song *models.Song) (*models.Album, *models.Arti
 	var err error
 	var item models.Item
 
-	album = a.cache.GetAlbum(song.Album)
-	if album == nil {
-
-		item, err = a.GetItem(song.Album)
-		if err == nil {
-			album, ok = item.(*models.Album)
-			if ok {
-				a.cache.Put(item.GetId(), item, true)
-			} else {
-				album = nil
-			}
+	item, err = a.GetItem(song.Album)
+	if err == nil {
+		album, ok = item.(*models.Album)
+		if ok {
+			a.cache.Put(item.GetId(), item, true)
+		} else {
+			album = nil
 		}
 	}
 
@@ -699,14 +695,11 @@ func (a *Api) GetSongArtistAlbum(song *models.Song) (*models.Album, *models.Arti
 		return nil, nil, err
 	}
 
-	artist = a.cache.GetArtist(album.Artist)
-	if artist == nil {
-		item, err = a.GetItem(album.Artist)
-		if err == nil {
-			artist, ok = item.(*models.Artist)
-			if ok {
-				a.cache.Put(item.GetId(), item, true)
-			}
+	item, err = a.GetItem(album.Artist)
+	if err == nil {
+		artist, ok = item.(*models.Artist)
+		if ok {
+			a.cache.Put(item.GetId(), item, true)
 		}
 	}
 

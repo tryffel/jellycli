@@ -279,8 +279,14 @@ func (w *Window) navBarCtrl(key tcell.Key) bool {
 		w.help.SetStats(stats)
 		w.showModal(w.help, 25, 50, true)
 	case navBar.Queue:
+		if w.help.HasFocus() {
+			w.closeModal(w.help)
+		}
 		w.setViewWidget(w.queue, true)
 	case navBar.History:
+		if w.help.HasFocus() {
+			w.closeModal(w.help)
+		}
 		w.setViewWidget(w.history, true)
 		items := w.mediaQueue.GetHistory(100)
 		duration := 0

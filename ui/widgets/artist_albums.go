@@ -19,7 +19,7 @@ package widgets
 import (
 	"fmt"
 	"github.com/gdamore/tcell"
-	"github.com/rivo/tview"
+	"gitlab.com/tslocum/cview"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
@@ -30,7 +30,7 @@ import (
 //AlbumCover is a simple cover for album, it shows
 // album name, year and possible artists
 type AlbumCover struct {
-	*tview.TextView
+	*cview.TextView
 	album   *models.Album
 	index   int
 	name    string
@@ -40,7 +40,7 @@ type AlbumCover struct {
 
 func NewAlbumCover(index int, album *models.Album) *AlbumCover {
 	a := &AlbumCover{
-		TextView: tview.NewTextView(),
+		TextView: cview.NewTextView(),
 		album:    album,
 		index:    index,
 	}
@@ -129,7 +129,7 @@ type AlbumList struct {
 	albumCovers   []*AlbumCover
 
 	artist *models.Artist
-	name   *tview.TextView
+	name   *cview.TextView
 
 	prevBtn        *button
 	infoBtn        *button
@@ -257,7 +257,7 @@ func NewAlbumList(selectAlbum func(album *models.Album)) *AlbumList {
 		previous:   &previous{},
 		selectFunc: selectAlbum,
 		artist:     &models.Artist{},
-		name:       tview.NewTextView(),
+		name:       cview.NewTextView(),
 		prevBtn:    newButton("Back"),
 		prevFunc:   nil,
 		playBtn:    newButton("Play all"),
@@ -307,8 +307,8 @@ func NewAlbumList(selectAlbum func(album *models.Album)) *AlbumList {
 	return a
 }
 
-func (a *AlbumList) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-	return func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+func (a *AlbumList) InputHandler() func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
+	return func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
 		a.Banner.InputHandler()(event, setFocus)
 	}
 }

@@ -19,7 +19,7 @@ package widgets
 import (
 	"fmt"
 	"github.com/gdamore/tcell"
-	"github.com/rivo/tview"
+	"gitlab.com/tslocum/cview"
 	"tryffel.net/go/jellycli/config"
 )
 
@@ -53,7 +53,7 @@ var mediaSelections = map[MediaSelect]string{
 
 //MediaNavigation provides access to artists, albums, playlists
 type MediaNavigation struct {
-	*tview.Table
+	*cview.Table
 	selectFunc func(MediaSelect)
 }
 
@@ -61,7 +61,7 @@ type MediaNavigation struct {
 // wants to access given resource. SelectFunc can be nil.
 func NewMediaNavigation(selectFunc func(selection MediaSelect)) *MediaNavigation {
 	m := &MediaNavigation{
-		Table:      tview.NewTable(),
+		Table:      cview.NewTable(),
 		selectFunc: selectFunc,
 	}
 
@@ -91,8 +91,8 @@ func (m *MediaNavigation) markDisabledMethods() {
 	}
 }
 
-func (m *MediaNavigation) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-	return func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+func (m *MediaNavigation) InputHandler() func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
+	return func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
 		key := event.Key()
 
 		if key == tcell.KeyEnter && m.selectFunc != nil {
@@ -108,9 +108,9 @@ func (m *MediaNavigation) SetCount(id MediaSelect, count int) {
 	m.Table.SetCellSimple(int(id), 1, fmt.Sprint(count))
 }
 
-func tableCell(text string) *tview.TableCell {
-	c := tview.NewTableCell(text)
+func tableCell(text string) *cview.TableCell {
+	c := cview.NewTableCell(text)
 	c.SetTextColor(config.Color.Text)
-	c.SetAlign(tview.AlignLeft)
+	c.SetAlign(cview.AlignLeft)
 	return c
 }

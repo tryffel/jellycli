@@ -19,7 +19,7 @@ package widgets
 import (
 	"fmt"
 	"github.com/gdamore/tcell"
-	"github.com/rivo/tview"
+	"gitlab.com/tslocum/cview"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
@@ -37,7 +37,7 @@ type ArtistList struct {
 	artists        []*ArtistCover
 
 	listFocused   bool
-	description   *tview.TextView
+	description   *cview.TextView
 	backBtn       *button
 	pagingEnabled bool
 	page          interfaces.Paging
@@ -49,7 +49,7 @@ func NewArtistList(selectFunc func(artist *models.Artist)) *ArtistList {
 		selectFunc:  selectFunc,
 		artists:     make([]*ArtistCover, 0),
 		previous:    &previous{},
-		description: tview.NewTextView(),
+		description: cview.NewTextView(),
 		backBtn:     newButton("Back"),
 	}
 	a.paging = NewPageSelector(a.selectPage)
@@ -182,13 +182,13 @@ func (a *ArtistList) listHandler(key *tcell.EventKey) *tcell.EventKey {
 }
 
 type ArtistCover struct {
-	*tview.TextView
+	*cview.TextView
 	artist *models.Artist
 }
 
 func newArtistCover(artist *models.Artist) *ArtistCover {
 	a := &ArtistCover{
-		TextView: tview.NewTextView(),
+		TextView: cview.NewTextView(),
 		artist:   artist,
 	}
 	a.SetBackgroundColor(config.Color.Background)

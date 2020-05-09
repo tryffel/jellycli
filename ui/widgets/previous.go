@@ -16,11 +16,11 @@
 
 package widgets
 
-import "github.com/rivo/tview"
+import "gitlab.com/tslocum/cview"
 
 // Previous can give last primitive
 type Previous interface {
-	tview.Primitive
+	cview.Primitive
 	// Back gives last primitive
 	Back() Previous
 	// SetLast sets last primitive

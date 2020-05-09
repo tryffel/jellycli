@@ -18,24 +18,24 @@ package modal
 
 import (
 	"github.com/gdamore/tcell"
-	"github.com/rivo/tview"
+	"gitlab.com/tslocum/cview"
 	"tryffel.net/go/jellycli/config"
 )
 
 type Message struct {
-	*tview.TextView
+	*cview.TextView
 	visible bool
 	closeCb func()
 
-	okBtn *tview.Button
+	okBtn *cview.Button
 }
 
 func NewMessage() *Message {
 	m := &Message{
-		TextView: tview.NewTextView(),
+		TextView: cview.NewTextView(),
 		visible:  false,
 		closeCb:  nil,
-		okBtn:    tview.NewButton("Close"),
+		okBtn:    cview.NewButton("Close"),
 	}
 
 	colors := config.Color.Modal
@@ -55,7 +55,7 @@ func (m *Message) SetDoneFunc(doneFunc func()) {
 	m.okBtn.SetSelectedFunc(doneFunc)
 }
 
-func (m *Message) View() tview.Primitive {
+func (m *Message) View() cview.Primitive {
 	return m
 }
 
@@ -63,7 +63,7 @@ func (m *Message) SetVisible(visible bool) {
 	m.visible = visible
 }
 
-func (m *Message) Focus(delegate func(p tview.Primitive)) {
+func (m *Message) Focus(delegate func(p cview.Primitive)) {
 	m.TextView.SetBorderColor(config.Color.BorderFocus)
 	m.TextView.Focus(delegate)
 }
@@ -73,8 +73,8 @@ func (m *Message) Blur() {
 	m.TextView.Blur()
 }
 
-func (m *Message) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-	return func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+func (m *Message) InputHandler() func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
+	return func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
 		key := event.Key()
 		if key == tcell.KeyEscape {
 			m.closeCb()

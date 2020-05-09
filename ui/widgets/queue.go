@@ -19,7 +19,7 @@ package widgets
 import (
 	"fmt"
 	"github.com/gdamore/tcell"
-	"github.com/rivo/tview"
+	"gitlab.com/tslocum/cview"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
@@ -41,7 +41,7 @@ type Queue struct {
 
 	controller interfaces.QueueController
 
-	description *tview.TextView
+	description *cview.TextView
 	prevBtn     *button
 	clearBtn    *button
 	prevFunc    func()
@@ -55,7 +55,7 @@ func NewQueue() *Queue {
 		list:     twidgets.NewScrollList(nil),
 		previous: &previous{},
 
-		description: tview.NewTextView(),
+		description: cview.NewTextView(),
 		prevBtn:     newButton("Back"),
 		clearBtn:    newButton("Clear"),
 	}

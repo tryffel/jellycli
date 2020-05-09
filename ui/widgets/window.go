@@ -21,8 +21,9 @@ package widgets
 import (
 	"fmt"
 	"github.com/gdamore/tcell"
-	"github.com/rivo/tview"
 	"github.com/sirupsen/logrus"
+	"gitlab.com/tslocum/cview"
+	"time"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
@@ -31,7 +32,7 @@ import (
 )
 
 type Window struct {
-	app    *tview.Application
+	app    *cview.Application
 	layout *twidgets.ModalLayout
 
 	// Widgets
@@ -65,12 +66,12 @@ type Window struct {
 	mediaQueue  interfaces.QueueController
 
 	hasModal  bool
-	lastFocus tview.Primitive
+	lastFocus cview.Primitive
 }
 
 func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.QueueController) Window {
 	w := Window{
-		app:    tview.NewApplication(),
+		app:    cview.NewApplication(),
 		status: newStatus(p),
 		layout: twidgets.NewModalLayout(),
 	}
@@ -151,7 +152,7 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 	navBarShortucts := []tcell.Key{sc.Help, sc.Queue, sc.History}
 
 	for i, v := range navBarLabels {
-		btn := tview.NewButton(v)
+		btn := cview.NewButton(v)
 		w.navBar.AddButton(btn, navBarShortucts[i])
 	}
 

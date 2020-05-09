@@ -17,12 +17,12 @@
 // Package modal contains modal views that are drawn on top of existing layout.
 package modal
 
-import "github.com/rivo/tview"
+import "gitlab.com/tslocum/cview"
 
 //Modal creates a modal that overlaps other views and get's destroyed when it's ready
 type Modal interface {
 	SetDoneFunc(doneFunc func())
-	tview.Primitive
-	View() tview.Primitive
+	cview.Primitive
+	View() cview.Primitive
 	SetVisible(visible bool)
 }

@@ -19,14 +19,14 @@ package modal
 import (
 	"fmt"
 	"github.com/gdamore/tcell"
-	"github.com/rivo/tview"
+	"gitlab.com/tslocum/cview"
 	"strings"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/models"
 )
 
 type Help struct {
-	*tview.TextView
+	*cview.TextView
 	visible bool
 	closeCb func()
 
@@ -39,7 +39,7 @@ func (h *Help) SetDoneFunc(doneFunc func()) {
 	h.closeCb = doneFunc
 }
 
-func (h *Help) View() tview.Primitive {
+func (h *Help) View() cview.Primitive {
 	return h
 }
 
@@ -48,8 +48,8 @@ func (h *Help) SetVisible(visible bool) {
 
 }
 
-func (h *Help) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-	return func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+func (h *Help) InputHandler() func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
+	return func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
 		key := event.Key()
 		if key == tcell.KeyEscape {
 			h.closeCb()
@@ -69,7 +69,7 @@ func (h *Help) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.
 	}
 }
 
-func (h *Help) Focus(delegate func(p tview.Primitive)) {
+func (h *Help) Focus(delegate func(p cview.Primitive)) {
 	h.TextView.SetBorderColor(config.Color.BorderFocus)
 	h.TextView.Focus(delegate)
 }
@@ -79,12 +79,12 @@ func (h *Help) Blur() {
 	h.TextView.Blur()
 }
 
-func (h *Help) GetFocusable() tview.Focusable {
+func (h *Help) GetFocusable() cview.Focusable {
 	return h.TextView.GetFocusable()
 }
 
 func NewHelp(doneCb func()) *Help {
-	h := &Help{TextView: tview.NewTextView()}
+	h := &Help{TextView: cview.NewTextView()}
 	h.closeCb = doneCb
 
 	colors := config.Color.Modal

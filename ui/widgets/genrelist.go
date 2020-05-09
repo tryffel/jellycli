@@ -18,7 +18,7 @@ package widgets
 
 import (
 	"fmt"
-	"github.com/rivo/tview"
+	"gitlab.com/tslocum/cview"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
@@ -35,7 +35,7 @@ type GenreList struct {
 	genres         []*Genre
 
 	listFocused   bool
-	description   *tview.TextView
+	description   *cview.TextView
 	backBtn       *button
 	pagingEnabled bool
 	page          interfaces.Paging
@@ -46,7 +46,7 @@ func NewGenreList() *GenreList {
 		Banner:        twidgets.NewBanner(),
 		previous:      &previous{},
 		listFocused:   false,
-		description:   tview.NewTextView(),
+		description:   cview.NewTextView(),
 		backBtn:       newButton("Back"),
 		pagingEnabled: false,
 		page:          interfaces.Paging{},
@@ -141,13 +141,13 @@ func (g *GenreList) setGenres(genres []*models.IdName) {
 }
 
 type Genre struct {
-	*tview.TextView
+	*cview.TextView
 	genre *models.IdName
 }
 
 func newGenre(genre *models.IdName) *Genre {
 	g := &Genre{
-		TextView: tview.NewTextView(),
+		TextView: cview.NewTextView(),
 		genre:    genre,
 	}
 	g.SetBackgroundColor(config.Color.Background)

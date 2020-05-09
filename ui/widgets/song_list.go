@@ -19,7 +19,7 @@ package widgets
 import (
 	"fmt"
 	"github.com/gdamore/tcell"
-	"github.com/rivo/tview"
+	"gitlab.com/tslocum/cview"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
@@ -40,7 +40,7 @@ type SongList struct {
 	playSongsFunc func(songs []*models.Song)
 	showPage      func(paging interfaces.Paging)
 
-	description *tview.TextView
+	description *cview.TextView
 	prevBtn     *button
 	playBtn     *button
 
@@ -58,7 +58,7 @@ func NewSongList(playSong func(song *models.Song), playSongs func(songs []*model
 		playSongFunc:  playSong,
 		playSongsFunc: playSongs,
 
-		description: tview.NewTextView(),
+		description: cview.NewTextView(),
 		prevBtn:     newButton("Back"),
 		playBtn:     newButton("Play all"),
 	}
@@ -134,14 +134,14 @@ func (s *SongList) SetSongs(songs []*models.Song, page interfaces.Paging) {
 	s.paging.SetTotalPages(page.TotalPages)
 }
 
-func (s *SongList) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-	return func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+func (s *SongList) InputHandler() func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
+	return func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
 		key := event.Key()
 		if s.listFocused {
 			index := s.list.GetSelectedIndex()
 			if index == 0 && (key == tcell.KeyUp || key == tcell.KeyCtrlK) {
 				s.listFocused = false
-				s.prevBtn.Focus(func(p tview.Primitive) {})
+				s.prevBtn.Focus(func(p cview.Primitive) {})
 				s.list.Blur()
 			} else if key == tcell.KeyEnter {
 				s.playSong(index)
@@ -151,7 +151,7 @@ func (s *SongList) InputHandler() func(event *tcell.EventKey, setFocus func(p tv
 		} else {
 			if key == tcell.KeyDown || key == tcell.KeyCtrlJ {
 				s.listFocused = true
-				s.list.Focus(func(p tview.Primitive) {})
+				s.list.Focus(func(p cview.Primitive) {})
 			} else {
 			}
 		}

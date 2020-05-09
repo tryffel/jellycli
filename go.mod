@@ -14,12 +14,12 @@ require (
 	github.com/onsi/ginkgo v1.12.0 // indirect
 	github.com/onsi/gomega v1.9.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/rivo/tview v0.0.0-20191018125527-685bf6da76c2
 	github.com/rivo/uniseg v0.1.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
+	gitlab.com/tslocum/cview v1.4.5
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
-	golang.org/x/sys v0.0.0-20200321134203-328b4cd54aae // indirect
+	golang.org/x/sys v0.0.0-20200509044756-6aff5f38e54f // indirect
 	gopkg.in/yaml.v2 v2.2.4
 	tryffel.net/go/twidgets v0.0.0-20200321190309-5294ef48c180
 )

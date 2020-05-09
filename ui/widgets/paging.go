@@ -19,14 +19,14 @@ package widgets
 import (
 	"fmt"
 	"github.com/gdamore/tcell"
-	"github.com/rivo/tview"
+	"gitlab.com/tslocum/cview"
 	"tryffel.net/go/jellycli/config"
 )
 
 // PageSelector shows current page and buttons for next and previous page. SelectFunc can be nil,
 // in which case buttons do nothing.
 type PageSelector struct {
-	*tview.Box
+	*cview.Box
 	Next       *button
 	Previous   *button
 	PageNum    int
@@ -38,7 +38,7 @@ type PageSelector struct {
 
 func NewPageSelector(selectPage func(int)) *PageSelector {
 	p := &PageSelector{
-		Box:        tview.NewBox(),
+		Box:        cview.NewBox(),
 		Next:       newButton(" > "),
 		Previous:   newButton(" < "),
 		SelectFunc: selectPage,
@@ -79,8 +79,8 @@ func (p *PageSelector) Draw(screen tcell.Screen) {
 		x, y, _, _ := p.GetRect()
 		p.Next.Draw(screen)
 
-		tview.Print(screen, fmt.Sprintf("%d / %d", p.PageNum+1, p.TotalPages),
-			x+4, y, 9, tview.AlignCenter, config.Color.Text)
+		cview.Print(screen, fmt.Sprintf("%d / %d", p.PageNum+1, p.TotalPages),
+			x+4, y, 9, cview.AlignCenter, config.Color.Text)
 		p.Previous.Draw(screen)
 	}
 }

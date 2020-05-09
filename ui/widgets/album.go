@@ -19,8 +19,8 @@ package widgets
 import (
 	"fmt"
 	"github.com/gdamore/tcell"
-	"github.com/rivo/tview"
 	"github.com/rivo/uniseg"
+	"gitlab.com/tslocum/cview"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/models"
 	"tryffel.net/go/jellycli/util"
@@ -28,11 +28,11 @@ import (
 )
 
 type button struct {
-	*tview.Button
+	*cview.Button
 }
 
-func (b *button) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-	return func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+func (b *button) InputHandler() func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
+	return func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
 		override := event
 		key := event.Key()
 		r := event.Rune()
@@ -51,11 +51,11 @@ func (b *button) InputHandler() func(event *tcell.EventKey, setFocus func(p tvie
 	}
 }
 
-func (b *button) Focus(delegate func(p tview.Primitive)) {
+func (b *button) Focus(delegate func(p cview.Primitive)) {
 	b.Button.Focus(delegate)
 }
 
-func (b *button) GetFocusable() tview.Focusable {
+func (b *button) GetFocusable() cview.Focusable {
 	return b.Button.GetFocusable()
 }
 
@@ -65,13 +65,13 @@ func (b *button) SetBlurFunc(blur func(key tcell.Key)) {
 
 func newButton(label string) *button {
 	return &button{
-		Button: tview.NewButton(label),
+		Button: cview.NewButton(label),
 	}
 
 }
 
 type albumSong struct {
-	*tview.TextView
+	*cview.TextView
 	song        *models.Song
 	showDiscNum bool
 	index       int
@@ -161,7 +161,7 @@ func (a *albumSong) getAlignedDuration(text string) string {
 
 	// calculate space needed between name etc and duration
 	if spaces <= 0 {
-		lines := tview.WordWrap(a.song.Name, w-2)
+		lines := cview.WordWrap(a.song.Name, w-2)
 		if len(lines) >= 1 {
 			text = lines[0] + "… "
 		}
@@ -194,7 +194,7 @@ func (a *albumSong) SetPlaying(playing bool) {
 // overrideIndex: set -1 to use song index, else overrides index
 func newAlbumSong(s *models.Song, showDiscNum bool, overrideIndex int) *albumSong {
 	song := &albumSong{
-		TextView:    tview.NewTextView(),
+		TextView:    cview.NewTextView(),
 		song:        s,
 		showDiscNum: showDiscNum,
 		playing:     false,
@@ -227,7 +227,7 @@ type AlbumView struct {
 	playSongFunc  func(song *models.Song)
 	playSongsFunc func(songs []*models.Song)
 
-	description *tview.TextView
+	description *cview.TextView
 	prevBtn     *button
 	similarBtn  *button
 	playBtn     *button
@@ -244,7 +244,7 @@ func NewAlbumview(playSong func(song *models.Song), playSongs func(songs []*mode
 		playSongFunc:  playSong,
 		playSongsFunc: playSongs,
 
-		description: tview.NewTextView(),
+		description: cview.NewTextView(),
 		prevBtn:     newButton("Back"),
 		similarBtn:  newButton("Similar"),
 		playBtn:     newButton("Play all"),
@@ -335,14 +335,14 @@ func (a *AlbumView) SetAlbum(album *models.Album, songs []*models.Song) {
 	a.list.AddItems(items...)
 }
 
-func (a *AlbumView) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-	return func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+func (a *AlbumView) InputHandler() func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
+	return func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
 		key := event.Key()
 		if a.listFocused {
 			index := a.list.GetSelectedIndex()
 			if index == 0 && (key == tcell.KeyUp || key == tcell.KeyCtrlK) {
 				a.listFocused = false
-				a.prevBtn.Focus(func(p tview.Primitive) {})
+				a.prevBtn.Focus(func(p cview.Primitive) {})
 				a.list.Blur()
 			} else if key == tcell.KeyEnter {
 				a.playSong(index)
@@ -352,7 +352,7 @@ func (a *AlbumView) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 		} else {
 			if key == tcell.KeyDown || key == tcell.KeyCtrlJ {
 				a.listFocused = true
-				a.list.Focus(func(p tview.Primitive) {})
+				a.list.Focus(func(p cview.Primitive) {})
 			} else {
 			}
 		}

@@ -18,8 +18,8 @@ package config
 
 import (
 	"fmt"
-	"github.com/rivo/tview"
 	"github.com/sirupsen/logrus"
+	"gitlab.com/tslocum/cview"
 	"time"
 )
 
@@ -79,7 +79,7 @@ var GridBordersColor = Color.Border
 
 //DebugGridBorders enables grid borders if config.Debug is true and if config.GridBordesShow is true
 // Else do nothing
-func DebugGridBorders(view *tview.Grid) {
+func DebugGridBorders(view *cview.Grid) {
 	if Debug && GridBordersShow {
 		view.SetBorders(true)
 		view.SetBordersColor(GridBordersColor)

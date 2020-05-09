@@ -19,8 +19,8 @@ package widgets
 import (
 	"fmt"
 	"github.com/gdamore/tcell"
-	"github.com/rivo/tview"
 	"github.com/sirupsen/logrus"
+	"gitlab.com/tslocum/cview"
 	"sync"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
@@ -57,20 +57,20 @@ func effect(text string, e string) string {
 type Status struct {
 	lock sync.RWMutex
 
-	frame   *tview.Box
-	layout  *tview.Grid
-	details *tview.TextView
+	frame   *cview.Box
+	layout  *cview.Grid
+	details *cview.TextView
 
-	btnPlay     *tview.Button
-	btnPause    *tview.Button
-	btnNext     *tview.Button
-	btnPrevious *tview.Button
-	btnForward  *tview.Button
-	btnBackward *tview.Button
-	btnStop     *tview.Button
-	btnQueue    *tview.Button
+	btnPlay     *cview.Button
+	btnPause    *cview.Button
+	btnNext     *cview.Button
+	btnPrevious *cview.Button
+	btnForward  *cview.Button
+	btnBackward *cview.Button
+	btnStop     *cview.Button
+	btnQueue    *cview.Button
 
-	buttons   []*tview.Button
+	buttons   []*cview.Button
 	shortCuts []string
 	progress  ProgressBar
 	volume    ProgressBar
@@ -93,8 +93,12 @@ type Status struct {
 	player interfaces.Player
 }
 
+func (s *Status) MouseHandler() func(action cview.MouseAction, event *tcell.EventMouse, setFocus func(p cview.Primitive)) (consumed bool, capture cview.Primitive) {
+	return s.layout.MouseHandler()
+}
+
 func newStatus(ctrl interfaces.Player) *Status {
-	s := &Status{frame: tview.NewBox()}
+	s := &Status{frame: cview.NewBox()}
 	s.player = ctrl
 
 	colors := config.Color.Status
@@ -106,7 +110,7 @@ func newStatus(ctrl interfaces.Player) *Status {
 	s.detailsBgColor = colors.Background
 
 	s.frame.SetBackgroundColor(colors.Background)
-	s.layout = tview.NewGrid()
+	s.layout = cview.NewGrid()
 	s.layout.SetBorder(true)
 
 	s.layout.SetRows(-1, 1, 1)
@@ -115,23 +119,23 @@ func newStatus(ctrl interfaces.Player) *Status {
 	s.frame.SetBorderAttributes(tcell.AttrBold)
 	s.frame.SetBorderColor(colors.Border)
 
-	s.details = tview.NewTextView()
+	s.details = cview.NewTextView()
 
-	s.btnPlay = tview.NewButton(btnPlay)
+	s.btnPlay = cview.NewButton(btnPlay)
 	s.btnPlay.SetSelectedFunc(s.namedCbFunc(btnPlay))
-	s.btnPause = tview.NewButton(btnPause)
+	s.btnPause = cview.NewButton(btnPause)
 	s.btnPause.SetSelectedFunc(s.namedCbFunc(btnPause))
-	s.btnNext = tview.NewButton(btnNext)
+	s.btnNext = cview.NewButton(btnNext)
 	s.btnNext.SetSelectedFunc(s.namedCbFunc(btnNext))
-	s.btnPrevious = tview.NewButton(btnPrevious)
+	s.btnPrevious = cview.NewButton(btnPrevious)
 	s.btnPrevious.SetSelectedFunc(s.namedCbFunc(btnPrevious))
-	s.btnForward = tview.NewButton(btnForward)
+	s.btnForward = cview.NewButton(btnForward)
 	s.btnForward.SetSelectedFunc(s.namedCbFunc(btnForward))
-	s.btnBackward = tview.NewButton(btnBackward)
+	s.btnBackward = cview.NewButton(btnBackward)
 	s.btnBackward.SetSelectedFunc(s.namedCbFunc(btnBackward))
-	s.btnStop = tview.NewButton(btnStop)
+	s.btnStop = cview.NewButton(btnStop)
 	s.btnStop.SetSelectedFunc(s.namedCbFunc(btnStop))
-	s.btnQueue = tview.NewButton(btnQueue)
+	s.btnQueue = cview.NewButton(btnQueue)
 
 	s.progress = NewProgressBar(40, 100)
 	s.volume = NewProgressBar(10, 100)
@@ -148,7 +152,7 @@ func newStatus(ctrl interfaces.Player) *Status {
 
 	s.state = state
 
-	s.buttons = []*tview.Button{
+	s.buttons = []*cview.Button{
 		s.btnPrevious, s.btnBackward, s.btnStop, s.btnPlay, s.btnForward, s.btnNext,
 	}
 
@@ -199,20 +203,20 @@ func (s *Status) Draw(screen tcell.Screen) {
 
 	colors := config.Color.Status
 
-	tview.Print(screen, progress, topX, y-1, progressLen+5, tview.AlignLeft, colors.ProgressBar)
+	cview.Print(screen, progress, topX, y-1, progressLen+5, cview.AlignLeft, colors.ProgressBar)
 	topX += progressLen + progressLen/10
-	tview.Print(screen, volume, topX, y-1, w, tview.AlignLeft, colors.ProgressBar)
+	cview.Print(screen, volume, topX, y-1, w, cview.AlignLeft, colors.ProgressBar)
 
-	tview.Print(screen, util.PackKeyBindingName(config.KeyBinds.Global.VolumeDown, 5),
-		topX+7, y, topX+16, tview.AlignLeft, colors.Shortcuts)
-	tview.Print(screen, util.PackKeyBindingName(config.KeyBinds.Global.VolumeUp, 5),
-		topX+18, y, topX+1, tview.AlignLeft, colors.Shortcuts)
+	cview.Print(screen, util.PackKeyBindingName(config.KeyBinds.Global.VolumeDown, 5),
+		topX+7, y, topX+16, cview.AlignLeft, colors.Shortcuts)
+	cview.Print(screen, util.PackKeyBindingName(config.KeyBinds.Global.VolumeUp, 5),
+		topX+18, y, topX+1, cview.AlignLeft, colors.Shortcuts)
 
 	btnY := y + 1
 	btnX := x + 1
 
 	for i, v := range s.buttons {
-		tview.Print(screen, s.shortCuts[i], btnX, btnY-1, 4, tview.AlignLeft, colors.Shortcuts)
+		cview.Print(screen, s.shortCuts[i], btnX, btnY-1, 4, cview.AlignLeft, colors.Shortcuts)
 
 		v.SetRect(btnX, btnY, 3, 1)
 		v.Draw(screen)
@@ -229,14 +233,14 @@ func (s *Status) SetRect(x, y, width, height int) {
 	s.frame.SetRect(x, y, width, height)
 }
 
-func (s *Status) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-	return s.frame.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+func (s *Status) InputHandler() func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
+	return s.frame.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
 		//key := event.Key()
 
 	})
 }
 
-func (s *Status) Focus(delegate func(p tview.Primitive)) {
+func (s *Status) Focus(delegate func(p cview.Primitive)) {
 	s.frame.Focus(delegate)
 }
 
@@ -244,7 +248,7 @@ func (s *Status) Blur() {
 	s.frame.Blur()
 }
 
-func (s *Status) GetFocusable() tview.Focusable {
+func (s *Status) GetFocusable() cview.Focusable {
 	return s.frame.GetFocusable()
 }
 
@@ -253,14 +257,14 @@ func (s *Status) WriteStatus(screen tcell.Screen, x, y int) {
 		(s.state.Song != nil && s.state.Album != nil && s.state.Artist != nil) {
 		xi := x
 		w, _ := screen.Size()
-		tview.Print(screen, effect(s.state.Song.Name, "b")+" - ", x, y, w, tview.AlignLeft, s.detailsMainColor)
+		cview.Print(screen, effect(s.state.Song.Name, "b")+" - ", x, y, w, cview.AlignLeft, s.detailsMainColor)
 		x += len(s.state.Song.Name) + 3
-		tview.Print(screen, effect(s.state.Artist.Name, "b")+" ", x, y, w, tview.AlignLeft, s.detailsMainColor)
+		cview.Print(screen, effect(s.state.Artist.Name, "b")+" ", x, y, w, cview.AlignLeft, s.detailsMainColor)
 		x += len(s.state.Artist.Name) + 1
 		x = xi + 4
-		tview.Print(screen, s.state.Album.Name+" ", x, y+1, w, tview.AlignLeft, s.detailsMainColor)
+		cview.Print(screen, s.state.Album.Name+" ", x, y+1, w, cview.AlignLeft, s.detailsMainColor)
 		x += len(s.state.Album.Name) + 1
-		tview.Print(screen, fmt.Sprintf("(%d)", s.state.Album.Year), x, y+1, w, tview.AlignLeft, s.detailsMainColor)
+		cview.Print(screen, fmt.Sprintf("(%d)", s.state.Album.Year), x, y+1, w, cview.AlignLeft, s.detailsMainColor)
 	}
 }
 

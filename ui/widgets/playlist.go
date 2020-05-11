@@ -43,6 +43,7 @@ type PlaylistView struct {
 	description *cview.TextView
 	prevBtn     *button
 	playBtn     *button
+	options     *dropDown
 	prevFunc    func()
 }
 
@@ -60,6 +61,7 @@ func NewPlaylistView(playSong func(song *models.Song), playSongs func(songs []*m
 		prevBtn:     newButton("Back"),
 		playBtn:     newButton("Play all"),
 		context:     operator,
+		options:     newDropDown("Options"),
 	}
 
 	p.list.ItemHeight = 2
@@ -83,10 +85,11 @@ func NewPlaylistView(playSong func(song *models.Song), playSongs func(songs []*m
 	p.Banner.Grid.AddItem(p.prevBtn, 0, 0, 1, 1, 1, 5, false)
 	p.Banner.Grid.AddItem(p.description, 0, 2, 2, 6, 1, 10, false)
 	p.Banner.Grid.AddItem(p.playBtn, 3, 2, 1, 1, 1, 10, true)
+	p.Banner.Grid.AddItem(p.options, 3, 4, 1, 1, 1, 10, false)
 	p.Banner.Grid.AddItem(p.list, 4, 0, 1, 8, 4, 10, false)
 
 	btns := []*button{p.prevBtn, p.playBtn}
-	selectables := []twidgets.Selectable{p.prevBtn, p.playBtn, p.list}
+	selectables := []twidgets.Selectable{p.prevBtn, p.playBtn, p.options, p.list}
 	for _, btn := range btns {
 		btn.SetLabelColor(config.Color.ButtonLabel)
 		btn.SetLabelColorActivated(config.Color.ButtonLabelSelected)
@@ -112,6 +115,21 @@ func NewPlaylistView(playSong func(song *models.Song), playSongs func(songs []*m
 				song := p.songs[index]
 				p.context.ViewSongArtist(song.song)
 			}
+		})
+		p.list.AddContextItem("Instant mix", 0, func(index int) {
+			if index < len(p.songs) && p.context != nil {
+				index := p.list.GetSelectedIndex()
+				song := p.songs[index]
+				p.context.InstantMix(song.song)
+			}
+		})
+
+		p.options.AddOption("Instant mix", func() {
+			p.context.InstantMix(p.playlist)
+		})
+
+		p.options.AddOption("Open in browser", func() {
+			p.context.OpenInBrowser(p.playlist)
 		})
 	}
 

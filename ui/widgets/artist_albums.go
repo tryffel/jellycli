@@ -121,6 +121,7 @@ type AlbumList struct {
 	*previous
 	context       contextOperator
 	paging        *PageSelector
+	options       *dropDown
 	pagingEnabled bool
 	page          interfaces.Paging
 	artistMode    bool
@@ -135,7 +136,6 @@ type AlbumList struct {
 	prevBtn        *button
 	infoBtn        *button
 	playBtn        *button
-	similarBtn     *button
 	prevFunc       func()
 	selectPageFunc func(paging interfaces.Paging)
 	similarFunc    func(id models.Id)
@@ -238,13 +238,18 @@ func (a *AlbumList) setButtons() {
 	a.Grid.AddItem(a.prevBtn, 0, 0, 1, 1, 1, 5, false)
 	a.Grid.AddItem(a.name, 0, 2, 2, 6, 1, 10, false)
 	a.Grid.AddItem(a.playBtn, 3, 2, 1, 1, 1, 10, false)
+
 	if a.pagingEnabled {
 		selectables = append(selectables, a.paging.Previous, a.paging.Next)
 		a.Grid.AddItem(a.paging, 3, 4, 1, 3, 1, 10, false)
 	}
 	if a.similarEnabled {
-		selectables = append(selectables, a.similarBtn)
-		a.Grid.AddItem(a.similarBtn, 3, 6, 1, 1, 1, 10, false)
+		selectables = append(selectables, a.options)
+		col := 4
+		if a.pagingEnabled {
+			col = 6
+		}
+		a.Grid.AddItem(a.options, 3, col, 1, 1, 1, 10, false)
 	}
 	selectables = append(selectables, a.list)
 	a.Banner.Selectable = selectables
@@ -263,23 +268,20 @@ func NewAlbumList(selectAlbum func(album *models.Album), context contextOperator
 		prevBtn:    newButton("Back"),
 		prevFunc:   nil,
 		playBtn:    newButton("Play all"),
-		similarBtn: newButton("Similar"),
+		options:    newDropDown("Options"),
 	}
 	a.paging = NewPageSelector(a.selectPage)
-	a.list = twidgets.NewScrollList(a.selectAlbum)
+	a.list = newScrollList(a.selectAlbum)
 	a.list.ItemHeight = 3
 
 	a.SetBorder(true)
 	a.SetBorderColor(config.Color.Border)
 	a.SetBackgroundColor(config.Color.Background)
-	a.list.SetBackgroundColor(config.Color.Background)
-	a.list.SetBorder(true)
-	a.list.SetBorderColor(config.Color.Border)
 	a.list.Grid.SetColumns(-1, 5)
 	a.SetBorderColor(config.Color.Border)
 
-	btns := []*button{a.prevBtn, a.playBtn, a.similarBtn, a.paging.Previous, a.paging.Next}
-	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.similarBtn, a.paging.Previous, a.paging.Next, a.list}
+	btns := []*button{a.prevBtn, a.playBtn, a.paging.Previous, a.paging.Next}
+	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.options, a.paging.Previous, a.paging.Next, a.list}
 	for _, v := range btns {
 		v.SetBackgroundColor(config.Color.ButtonBackground)
 		v.SetLabelColor(config.Color.ButtonLabel)
@@ -288,7 +290,6 @@ func NewAlbumList(selectAlbum func(album *models.Album), context contextOperator
 	}
 
 	a.prevBtn.SetSelectedFunc(a.goBack)
-	a.similarBtn.SetSelectedFunc(a.showSimilar)
 
 	a.Banner.Selectable = selectables
 
@@ -305,21 +306,47 @@ func NewAlbumList(selectAlbum func(album *models.Album), context contextOperator
 	a.pagingEnabled = true
 	a.similarEnabled = true
 
+	if a.context != nil {
+		a.list.AddContextItem("Instant mix", 0, func(index int) {
+			if index < len(a.albumCovers) && a.context != nil {
+				album := a.albumCovers[index]
+				a.context.InstantMix(album.album)
+			}
+		})
+		a.options.AddOption("Instant Mix", func() {
+			a.context.InstantMix(a.artist)
+		})
+		a.options.AddOption("Show similar", func() {
+			if a.similarEnabled {
+				a.showSimilar()
+			}
+		})
+		a.options.AddOption("Show in browser", func() {
+			a.context.OpenInBrowser(a.artist)
+		})
+	}
+
 	a.setButtons()
 	return a
 }
 
 func (a *AlbumList) InputHandler() func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
 	return func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
-		a.Banner.InputHandler()(event, setFocus)
+		if event.Key() == tcell.KeyEnter && event.Modifiers() == tcell.ModAlt {
+			a.list.InputHandler()(event, setFocus)
+		} else {
+			a.Banner.InputHandler()(event, setFocus)
+		}
 	}
 }
 
 func (a *AlbumList) selectAlbum(index int) {
 	if a.selectFunc != nil {
 		index := a.list.GetSelectedIndex()
-		album := a.albumCovers[index]
-		a.selectFunc(album.album)
+		if len(a.albumCovers) > index {
+			album := a.albumCovers[index]
+			a.selectFunc(album.album)
+		}
 	}
 }
 

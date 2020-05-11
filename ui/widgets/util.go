@@ -20,6 +20,7 @@ import (
 	"github.com/gdamore/tcell"
 	"gitlab.com/tslocum/cview"
 	"tryffel.net/go/jellycli/config"
+	"tryffel.net/go/twidgets"
 )
 
 // a button that implements widgets.Selectable
@@ -158,4 +159,12 @@ func (d *dropDown) Focus(delegate func(p cview.Primitive)) {
 	d.SetBackgroundColor(config.Color.ButtonBackgroundSelected)
 	d.DropDown.Focus(delegate)
 	d.isSelected = true
+}
+
+func newScrollList(selectFunc func(index int)) *twidgets.ScrollList {
+	s := twidgets.NewScrollList(selectFunc)
+	s.SetBackgroundColor(config.Color.Background)
+	s.SetBorder(true)
+	s.SetBorderColor(config.Color.Border)
+	return s
 }

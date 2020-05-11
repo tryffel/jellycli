@@ -278,7 +278,7 @@ func NewAlbumview(playSong func(song *models.Song),
 		a.dropDown.AddOption("View similar", func() {
 			a.showSimilar()
 		})
-		a.dropDown.AddOption("View in browser", func() {
+		a.dropDown.AddOption("Open in browser", func() {
 			a.context.OpenInBrowser(a.album)
 		})
 	}

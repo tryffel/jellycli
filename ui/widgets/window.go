@@ -306,6 +306,10 @@ func (w *Window) navBarCtrl(key tcell.Key) bool {
 
 func (w *Window) moveCtrl(key tcell.Key) bool {
 	if key == tcell.KeyTAB {
+		if w.hasModal {
+			w.closeModal(w.modal)
+		}
+
 		if w.mediaViewSelected {
 			w.lastFocus = w.mediaView
 			w.app.SetFocus(w.mediaNav)

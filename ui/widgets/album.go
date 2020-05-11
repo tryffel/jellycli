@@ -305,6 +305,11 @@ func (a *AlbumView) SetAlbum(album *models.Album, songs []*models.Song) {
 	if len(a.album.AdditionalArtists) > 1 {
 		text += " ("
 		for i, v := range a.album.AdditionalArtists {
+			if i > 6 {
+				remaining := len(a.album.AdditionalArtists) - i
+				text += fmt.Sprintf(" and %d other artists", remaining)
+				break
+			}
 			if i > 0 {
 				text += ", "
 			}

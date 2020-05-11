@@ -25,6 +25,9 @@ Terminal music player for Jellyfin.
 * [ ] Linux 32 bit (raspi 2)
 * [ ] MacOS
 
+Jellycli (headless & Gui) should work on Windows. However, there are some limitations, 
+namely poor colors and some keybindings
+might not work as expected.
 
 ## Building
 **You will need Go 1.13 or Go 1.14 installed and configured**
@@ -69,10 +72,14 @@ docker run -it --rm --device /dev/snd:/dev/snd  -v ~/jellycli-config/jellycli-co
 docker run -it --rm --device /dev/snd:/dev/snd  -v ~/jellycli-config/jellycli-conf:/root/.config jellycli --no-gui
 ```
 
+# Configuration
+
 On first time application asks for Jellyfin host, username, password and default collection for music. 
 All this is stored in configuration file:
 * ~/.config/jellycli/jellycli.yaml 
-* C:\Users\<user>\AppData\Roaming/jellycli/jellycli.yaml
+* C:\Users\<user>\AppData\Roaming\jellycli\jellycli.yaml
+
+See config.sample.yaml for more info and up-to-date version of config file.
 
 Configuration file location is also visible in help page. 
 You can use multiple config files by providing argument:

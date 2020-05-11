@@ -188,6 +188,8 @@ type AlbumView struct {
 	prevBtn     *button
 	similarBtn  *button
 	playBtn     *button
+	dropDown    *dropDown
+
 	prevFunc    func()
 	similarFunc func(album *models.Album)
 	context     contextOperator
@@ -208,6 +210,7 @@ func NewAlbumview(playSong func(song *models.Song),
 		similarBtn:  newButton("Similar"),
 		playBtn:     newButton("Play all"),
 		context:     operator,
+		dropDown:    newDropDown(),
 	}
 
 	a.list.ItemHeight = 2
@@ -231,11 +234,11 @@ func NewAlbumview(playSong func(song *models.Song),
 	a.Banner.Grid.AddItem(a.prevBtn, 0, 0, 1, 1, 1, 5, false)
 	a.Banner.Grid.AddItem(a.description, 0, 2, 2, 6, 1, 10, false)
 	a.Banner.Grid.AddItem(a.playBtn, 3, 2, 1, 1, 1, 10, true)
-	a.Banner.Grid.AddItem(a.similarBtn, 3, 4, 1, 1, 1, 10, false)
+	a.Banner.Grid.AddItem(a.dropDown, 3, 4, 1, 1, 1, 10, false)
 	a.Banner.Grid.AddItem(a.list, 4, 0, 1, 8, 4, 10, false)
 
 	btns := []*button{a.prevBtn, a.playBtn, a.similarBtn}
-	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.similarBtn, a.list}
+	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.dropDown, a.list}
 	for _, btn := range btns {
 		btn.SetLabelColor(config.Color.ButtonLabel)
 		btn.SetLabelColorActivated(config.Color.ButtonLabelSelected)
@@ -251,11 +254,30 @@ func NewAlbumview(playSong func(song *models.Song),
 	a.description.SetTextColor(config.Color.Text)
 
 	if a.context != nil {
+		a.dropDown.SetLabel("Options")
 		a.list.AddContextItem("View artist", 0, func(index int) {
 			if index < len(a.songs) && a.context != nil {
 				song := a.songs[0]
 				a.context.ViewSongArtist(song.song)
 			}
+		})
+		a.list.AddContextItem("Instant mix", 0, func(index int) {
+			if index < len(a.songs) && a.context != nil {
+				song := a.songs[0]
+				a.context.InstantMix(song.song)
+			}
+		})
+	}
+
+	if a.context != nil {
+		a.dropDown.AddOption("Instant mix", func() {
+
+			a.context.InstantMix(a.artist)
+		})
+	}
+	if a.context != nil {
+		a.dropDown.AddOption("View similar", func() {
+			a.showSimilar()
 		})
 	}
 
@@ -310,6 +332,10 @@ func (a *AlbumView) SetAlbum(album *models.Album, songs []*models.Song) {
 	}
 
 	a.list.AddItems(items...)
+}
+
+func (a *AlbumView) SetArtist(artist *models.Artist) {
+	a.artist = artist
 }
 
 func (a *AlbumView) InputHandler() func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {

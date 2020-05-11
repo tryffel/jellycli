@@ -121,27 +121,7 @@ func (a *Api) GetInstantMix(item models.Item) ([]*models.Song, error) {
 	params["UserId"] = a.userId
 	params.setParentId(a.musicView)
 
-	format := ""
-	param := item.GetId().String()
-
-	switch item.GetType() {
-	case models.TypeSong:
-		format = "/Songs/%s/InstantMix"
-	case models.TypeAlbum:
-		format = "/Albums/%s/InstantMix"
-	case models.TypeArtist:
-		format = "/Artists/%s/InstantMix"
-	case models.TypePlaylist:
-		format = "/Playlists/%s/InstantMix"
-	case models.TypeGenre:
-		format = "/Genres/%s/InstantMix"
-		param = item.GetName()
-	default:
-		return []*models.Song{}, fmt.Errorf("unsupported type: %s", item.GetType())
-	}
-
-	url := fmt.Sprintf(format, param)
-
+	url := fmt.Sprintf("/Items/%s/InstantMix", item.GetId().String())
 	resp, err := a.get(url, &params)
 	if resp != nil {
 		defer resp.Close()

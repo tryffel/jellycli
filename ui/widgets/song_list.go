@@ -120,6 +120,12 @@ func NewSongList(playSong func(song *models.Song), playSongs func(songs []*model
 			song := p.songs[selected]
 			p.context.ViewSongArtist(song.song)
 		})
+		p.list.AddContextItem("Instant mix", 0, func(index int) {
+			selected := p.list.GetSelectedIndex()
+			song := p.songs[selected]
+			p.context.InstantMix(song.song)
+		})
+
 	}
 
 	p.list.ContextMenuList().SetBorder(true)

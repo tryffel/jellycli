@@ -19,6 +19,7 @@ package widgets
 import (
 	"github.com/sirupsen/logrus"
 	"tryffel.net/go/jellycli/models"
+	"tryffel.net/go/jellycli/ui/widgets/modal"
 )
 
 // all operations that are callable from context menus
@@ -62,6 +63,11 @@ func (w *Window) ViewSongAlbum(song *models.Song) {
 }
 
 func (w *Window) InstantMix(item models.Item) {
+	if item == nil {
+		logrus.Warning("get instant mix on empty item")
+		return
+	}
+
 	songs, err := w.mediaItems.GetInstantMix(item)
 	if err != nil {
 		logrus.Errorf("get instant mix: %v", err)

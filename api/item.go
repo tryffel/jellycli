@@ -659,18 +659,16 @@ func (a *Api) GetGenreAlbums(genre models.IdName) ([]*models.Album, error) {
 }
 
 func (a *Api) GetAlbumArtist(album *models.Album) (*models.Artist, error) {
-	item, found := a.cache.Get(album.Artist)
-	if found {
-		artist, ok := item.(*models.Artist)
-		if ok {
-			return artist, nil
-		} else {
-			a.cache.Delete(album.Artist)
+	artist := a.cache.GetArtist(album.Id)
+	if artist == nil {
+		artist, err := a.GetArtist(album.Artist)
+		if err != nil {
+			return nil, fmt.Errorf("get artist: %v", err)
 		}
-	} else {
-		logrus.Errorf("no cache item for album artist")
+		a.cache.Put(artist.Id, &artist, true)
+		return &artist, nil
 	}
-	return nil, nil
+	return artist, nil
 }
 
 func (a *Api) GetSongArtistAlbum(song *models.Song) (*models.Album, *models.Artist, error) {

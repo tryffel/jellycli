@@ -79,12 +79,12 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 	w.artistList = NewArtistList(w.selectArtist)
 	w.artistList.SetBackCallback(w.goBack)
 	w.artistList.selectPageFunc = w.showArtistPage
-	w.albumList = NewAlbumList(w.selectAlbum)
+	w.albumList = NewAlbumList(w.selectAlbum, &w)
 	w.albumList.SetBackCallback(w.goBack)
 	w.albumList.selectPageFunc = w.showAlbumPage
 	w.albumList.similarFunc = w.showSimilarArtists
 
-	w.similarAlbums = NewAlbumList(w.selectAlbum)
+	w.similarAlbums = NewAlbumList(w.selectAlbum, &w)
 	w.similarAlbums.SetBackCallback(w.goBack)
 	w.similarAlbums.EnablePaging(false)
 
@@ -555,6 +555,13 @@ func (w *Window) selectAlbum(album *models.Album) {
 	} else {
 		for _, v := range songs {
 			v.AlbumArtist = album.Artist
+		}
+
+		artist, err := w.mediaItems.GetAlbumArtist(album)
+		if err != nil {
+			logrus.Errorf("get album artist: %v", err)
+		} else {
+			w.album.SetArtist(artist)
 		}
 
 		w.album.SetAlbum(album, songs)

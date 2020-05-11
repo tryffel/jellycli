@@ -113,3 +113,56 @@ func (a *Api) GetRecentlyPlayed(paging interfaces.Paging) ([]*models.Song, int, 
 
 	return songs, totalSongs, nil
 }
+
+// GetInstantMix returns instant mix for given item.
+func (a *Api) GetInstantMix(item models.Item) ([]*models.Song, error) {
+	params := *a.defaultParams()
+	params.setIncludeTypes(mediaTypeSong)
+	params["UserId"] = a.userId
+	params.setParentId(a.musicView)
+
+	format := ""
+	param := item.GetId().String()
+
+	switch item.GetType() {
+	case models.TypeSong:
+		format = "/Songs/%s/InstantMix"
+	case models.TypeAlbum:
+		format = "/Albums/%s/InstantMix"
+	case models.TypeArtist:
+		format = "/Artists/%s/InstantMix"
+	case models.TypePlaylist:
+		format = "/Playlists/%s/InstantMix"
+	case models.TypeGenre:
+		format = "/Genres/%s/InstantMix"
+		param = item.GetName()
+	default:
+		return []*models.Song{}, fmt.Errorf("unsupported type: %s", item.GetType())
+	}
+
+	url := fmt.Sprintf(format, param)
+
+	resp, err := a.get(url, &params)
+	if resp != nil {
+		defer resp.Close()
+	}
+
+	if err != nil {
+		return []*models.Song{}, err
+	}
+
+	dto := songs{}
+	err = json.NewDecoder(resp).Decode(&dto)
+	if err != nil {
+		return []*models.Song{}, fmt.Errorf("decode json: %v", err)
+	}
+
+	songs := make([]*models.Song, len(dto.Songs))
+
+	for i, v := range dto.Songs {
+		logInvalidType(&v, "get songs")
+		songs[i] = v.toSong()
+	}
+
+	return songs, nil
+}

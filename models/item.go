@@ -41,4 +41,5 @@ const (
 	TypeQueue    ItemType = "Queue"
 	TypeHistory  ItemType = "History"
 	TypeSong     ItemType = "Song"
+	TypeGenre    ItemType = "Genre"
 )

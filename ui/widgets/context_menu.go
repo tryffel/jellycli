@@ -28,6 +28,7 @@ type contextOperator interface {
 	ViewSongArtist(song *models.Song)
 	ViewSongAlbum(song *models.Song)
 	ViewArtist(artist *models.Artist)
+	InstantMix(item models.Item)
 }
 
 func (w *Window) AddSongToPlaylist(song *models.Song) error {
@@ -58,4 +59,16 @@ func (w *Window) ViewSongAlbum(song *models.Song) {
 		return
 	}
 	w.selectAlbum(album)
+}
+
+func (w *Window) InstantMix(item models.Item) {
+	songs, err := w.mediaItems.GetInstantMix(item)
+	if err != nil {
+		logrus.Errorf("get instant mix: %v", err)
+		return
+	}
+
+	w.mediaPlayer.StopMedia()
+	w.mediaQueue.ClearQueue(true)
+	w.mediaQueue.AddSongs(songs)
 }

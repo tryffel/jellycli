@@ -102,6 +102,9 @@ type ItemController interface {
 	GetAlbumArtist(album *models.Album) (*models.Artist, error)
 
 	GetSongArtistAlbum(song *models.Song) (*models.Album, *models.Artist, error)
+
+	// GetInstantMix returns instant mix based on given item.
+	GetInstantMix(item models.Item) ([]*models.Song, error)
 }
 
 // Paging. First page is 0

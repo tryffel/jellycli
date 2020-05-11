@@ -27,49 +27,6 @@ import (
 	"tryffel.net/go/twidgets"
 )
 
-type button struct {
-	*cview.Button
-}
-
-func (b *button) InputHandler() func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
-	return func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
-		override := event
-		key := event.Key()
-		r := event.Rune()
-
-		if key == tcell.KeyTAB || key == tcell.KeyDown || r == 'j' {
-			override = tcell.NewEventKey(tcell.KeyTAB, 'j', tcell.ModNone)
-		} else if key == tcell.KeyUp || r == 'k' {
-			override = tcell.NewEventKey(tcell.KeyBacktab, 'k', tcell.ModShift)
-		}
-
-		if override == event {
-			b.Button.InputHandler()(event, setFocus)
-		} else {
-			b.Button.InputHandler()(override, setFocus)
-		}
-	}
-}
-
-func (b *button) Focus(delegate func(p cview.Primitive)) {
-	b.Button.Focus(delegate)
-}
-
-func (b *button) GetFocusable() cview.Focusable {
-	return b.Button.GetFocusable()
-}
-
-func (b *button) SetBlurFunc(blur func(key tcell.Key)) {
-	b.Button.SetBlurFunc(blur)
-}
-
-func newButton(label string) *button {
-	return &button{
-		Button: cview.NewButton(label),
-	}
-
-}
-
 type albumSong struct {
 	*cview.TextView
 	song        *models.Song

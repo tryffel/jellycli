@@ -254,6 +254,9 @@ func NewAlbumview(playSong func(song *models.Song),
 	a.description.SetTextColor(config.Color.Text)
 
 	if a.context != nil {
+		a.list.AddContextItem("Play all from here", 0, func(index int) {
+			a.playFromSelected()
+		})
 		a.list.AddContextItem("View artist", 0, func(index int) {
 			if index < len(a.songs) && a.context != nil {
 				song := a.songs[0]
@@ -273,8 +276,6 @@ func NewAlbumview(playSong func(song *models.Song),
 
 			a.context.InstantMix(a.artist)
 		})
-	}
-	if a.context != nil {
 		a.dropDown.AddOption("View similar", func() {
 			a.showSimilar()
 		})
@@ -380,6 +381,17 @@ func (a *AlbumView) playAlbum() {
 	if a.playSongsFunc != nil {
 		songs := make([]*models.Song, len(a.songs))
 		for i, v := range a.songs {
+			songs[i] = v.song
+		}
+		a.playSongsFunc(songs)
+	}
+}
+
+func (a *AlbumView) playFromSelected() {
+	if a.playSongsFunc != nil {
+		index := a.list.GetSelectedIndex()
+		songs := make([]*models.Song, len(a.songs)-index)
+		for i, v := range a.songs[index:] {
 			songs[i] = v.song
 		}
 		a.playSongsFunc(songs)

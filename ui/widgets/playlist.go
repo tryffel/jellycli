@@ -104,6 +104,9 @@ func NewPlaylistView(playSong func(song *models.Song), playSongs func(songs []*m
 	p.description.SetTextColor(config.Color.Text)
 
 	if p.context != nil {
+		p.list.AddContextItem("Play all from here", 0, func(index int) {
+			p.playFromSelected()
+		})
 		p.list.AddContextItem("View album", 0, func(index int) {
 			selected := p.list.GetSelectedIndex()
 			song := p.songs[selected]
@@ -200,6 +203,17 @@ func (p *PlaylistView) playAll() {
 	if p.playSongsFunc != nil {
 		songs := make([]*models.Song, len(p.songs))
 		for i, v := range p.songs {
+			songs[i] = v.song
+		}
+		p.playSongsFunc(songs)
+	}
+}
+
+func (p *PlaylistView) playFromSelected() {
+	if p.playSongsFunc != nil {
+		index := p.list.GetSelectedIndex()
+		songs := make([]*models.Song, len(p.songs)-index)
+		for i, v := range p.songs[index:] {
 			songs[i] = v.song
 		}
 		p.playSongsFunc(songs)

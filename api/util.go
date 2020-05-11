@@ -253,3 +253,13 @@ func (a *Api) deviceName() string {
 	}
 	return hostname
 }
+
+func (a *Api) GetLink(item models.Item) string {
+	// http://host/jellyfin/web/index.html#!/itemdetails.html?id=id&serverId=serverId
+	url := fmt.Sprintf("%s/web/index.html#!/itemdetails.html?id=%s", a.host, item.GetId())
+	if a.serverId != "" {
+		url += "&serverId=" + a.serverId
+	}
+
+	return url
+}

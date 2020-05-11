@@ -119,6 +119,7 @@ func printArtists(artists []string, maxWidth int) string {
 type AlbumList struct {
 	*twidgets.Banner
 	*previous
+	context       contextOperator
 	paging        *PageSelector
 	pagingEnabled bool
 	page          interfaces.Paging
@@ -251,10 +252,11 @@ func (a *AlbumList) setButtons() {
 }
 
 //NewAlbumList constructs new albumList view
-func NewAlbumList(selectAlbum func(album *models.Album)) *AlbumList {
+func NewAlbumList(selectAlbum func(album *models.Album), context contextOperator) *AlbumList {
 	a := &AlbumList{
 		Banner:     twidgets.NewBanner(),
 		previous:   &previous{},
+		context:    context,
 		selectFunc: selectAlbum,
 		artist:     &models.Artist{},
 		name:       cview.NewTextView(),

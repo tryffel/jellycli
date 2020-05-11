@@ -210,7 +210,7 @@ func NewAlbumview(playSong func(song *models.Song),
 		similarBtn:  newButton("Similar"),
 		playBtn:     newButton("Play all"),
 		context:     operator,
-		dropDown:    newDropDown(),
+		dropDown:    newDropDown("Options"),
 	}
 
 	a.list.ItemHeight = 2
@@ -254,7 +254,6 @@ func NewAlbumview(playSong func(song *models.Song),
 	a.description.SetTextColor(config.Color.Text)
 
 	if a.context != nil {
-		a.dropDown.SetLabel("Options")
 		a.list.AddContextItem("View artist", 0, func(index int) {
 			if index < len(a.songs) && a.context != nil {
 				song := a.songs[0]
@@ -278,6 +277,9 @@ func NewAlbumview(playSong func(song *models.Song),
 	if a.context != nil {
 		a.dropDown.AddOption("View similar", func() {
 			a.showSimilar()
+		})
+		a.dropDown.AddOption("View in browser", func() {
+			a.context.OpenInBrowser(a.album)
 		})
 	}
 

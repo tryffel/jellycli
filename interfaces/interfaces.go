@@ -105,6 +105,10 @@ type ItemController interface {
 
 	// GetInstantMix returns instant mix based on given item.
 	GetInstantMix(item models.Item) ([]*models.Song, error)
+
+	// GetLink returns a link to item that can be opened with browser.
+	// If there is no link or item is invalid, empty link is returned.
+	GetLink(item models.Item) string
 }
 
 // Paging. First page is 0

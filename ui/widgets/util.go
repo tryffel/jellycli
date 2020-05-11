@@ -77,7 +77,7 @@ func (d *dropDown) SetBlurFunc(f func(key tcell.Key)) {
 	d.blurFunc = f
 }
 
-func newDropDown() *dropDown {
+func newDropDown(text string) *dropDown {
 	d := &dropDown{
 		DropDown: cview.NewDropDown(),
 	}
@@ -90,6 +90,8 @@ func newDropDown() *dropDown {
 	d.SetFieldTextColor(config.Color.Text)
 	d.SetBorder(false)
 	d.SetBorderPadding(0, 0, 1, 2)
+
+	d.SetLabel(text)
 	return d
 }
 

@@ -19,7 +19,7 @@ package widgets
 import (
 	"github.com/sirupsen/logrus"
 	"tryffel.net/go/jellycli/models"
-	"tryffel.net/go/jellycli/ui/widgets/modal"
+	"tryffel.net/go/jellycli/util"
 )
 
 // all operations that are callable from context menus
@@ -30,6 +30,7 @@ type contextOperator interface {
 	ViewSongAlbum(song *models.Song)
 	ViewArtist(artist *models.Artist)
 	InstantMix(item models.Item)
+	OpenInBrowser(item models.Item)
 }
 
 func (w *Window) AddSongToPlaylist(song *models.Song) error {
@@ -77,4 +78,11 @@ func (w *Window) InstantMix(item models.Item) {
 	w.mediaPlayer.StopMedia()
 	w.mediaQueue.ClearQueue(true)
 	w.mediaQueue.AddSongs(songs)
+}
+
+func (w *Window) OpenInBrowser(item models.Item) {
+	url := w.mediaItems.GetLink(item)
+	if url != "" {
+		util.OpenUrlInBrowser(url)
+	}
 }

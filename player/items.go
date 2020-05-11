@@ -142,3 +142,8 @@ func (i *Items) GetSongArtistAlbum(song *models.Song) (*models.Album, *models.Ar
 func (i *Items) GetInstantMix(item models.Item) ([]*models.Song, error) {
 	return i.api.GetInstantMix(item)
 }
+
+func (i *Items) GetLink(item models.Item) string {
+	return i.api.GetLink(item)
+
+}

@@ -328,3 +328,19 @@ func (a *AlbumList) showSimilar() {
 		a.similarFunc(a.artist.Id)
 	}
 }
+
+func newLatestAlbums(selectAlbum func(album *models.Album), context contextOperator) *AlbumList {
+	a := NewAlbumList(selectAlbum, context)
+	a.EnableArtistMode(false)
+	a.EnablePaging(false)
+	a.EnableSimilar(false)
+	return a
+}
+
+func newFavoriteAlbums(selectAlbum func(album *models.Album), context contextOperator) *AlbumList {
+	a := NewAlbumList(selectAlbum, context)
+	a.EnableArtistMode(false)
+	a.EnablePaging(true)
+	a.EnableSimilar(false)
+	return a
+}

@@ -44,14 +44,16 @@ type Window struct {
 	queue    *Queue
 	history  *History
 
-	albumList     *AlbumList
-	similarAlbums *AlbumList
-	album         *AlbumView
-	artistList    *ArtistList
-	playlists     *Playlists
-	playlist      *PlaylistView
-	songs         *SongList
-	genres        *GenreList
+	albumList      *AlbumList
+	similarAlbums  *AlbumList
+	album          *AlbumView
+	latestAlbums   *AlbumList
+	favoriteAlbums *AlbumList
+	artistList     *ArtistList
+	playlists      *Playlists
+	playlist       *PlaylistView
+	songs          *SongList
+	genres         *GenreList
 
 	gridAxisX  []int
 	gridAxisY  []int
@@ -83,6 +85,9 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 	w.albumList.SetBackCallback(w.goBack)
 	w.albumList.selectPageFunc = w.showAlbumPage
 	w.albumList.similarFunc = w.showSimilarArtists
+
+	w.latestAlbums = newLatestAlbums(w.selectAlbum, &w)
+	w.favoriteAlbums = newFavoriteAlbums(w.selectAlbum, &w)
 
 	w.similarAlbums = NewAlbumList(w.selectAlbum, &w)
 	w.similarAlbums.SetBackCallback(w.goBack)
@@ -406,13 +411,11 @@ func (w *Window) selectMedia(m MediaSelect) {
 			}
 
 			w.mediaNav.SetCount(MediaLatestMusic, len(albums))
-			w.albumList.Clear()
-			w.albumList.EnablePaging(false)
-			w.albumList.EnableSimilar(false)
-			w.albumList.EnableArtistMode(false)
-			w.albumList.SetArtist(artist)
-			w.albumList.SetAlbums(albums)
-			w.setViewWidget(w.albumList, true)
+
+			w.latestAlbums.Clear()
+			w.latestAlbums.SetAlbums(albums)
+			w.latestAlbums.SetArtist(artist)
+			w.setViewWidget(w.latestAlbums, true)
 		}
 	case MediaFavoriteArtists:
 		artists, err := w.mediaItems.GetFavoriteArtists()
@@ -500,6 +503,8 @@ func (w *Window) selectMedia(m MediaSelect) {
 		var total int
 		var title string
 
+		list := w.albumList
+
 		if m == MediaAlbums {
 			albums, total, err = w.mediaItems.GetAlbums(paging)
 			title = "All Albums"
@@ -509,6 +514,7 @@ func (w *Window) selectMedia(m MediaSelect) {
 			albums, total, err = w.mediaItems.GetFavoriteAlbums(paging)
 			title = "Favorite albums"
 			w.albumList.EnablePaging(false)
+			list = w.favoriteAlbums
 		}
 
 		if err != nil {
@@ -518,14 +524,14 @@ func (w *Window) selectMedia(m MediaSelect) {
 		paging.SetTotalItems(total)
 		w.mediaNav.SetCount(m, total)
 
-		w.albumList.SetPage(paging)
-		w.albumList.Clear()
-		w.albumList.EnableSimilar(false)
-		w.albumList.EnableArtistMode(false)
+		list.SetPage(paging)
+		list.Clear()
+		list.EnableSimilar(false)
+		list.EnableArtistMode(false)
 
-		w.albumList.SetText(fmt.Sprintf("%s\nTotal %v", title, paging.TotalItems))
-		w.albumList.SetAlbums(albums)
-		w.setViewWidget(w.albumList, true)
+		list.SetText(fmt.Sprintf("%s\nTotal %v", title, paging.TotalItems))
+		list.SetAlbums(albums)
+		w.setViewWidget(list, true)
 	case MediaGenres:
 		paging := interfaces.DefaultPaging()
 		w.showGenrePage(paging)

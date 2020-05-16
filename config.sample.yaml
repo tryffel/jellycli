@@ -35,3 +35,7 @@ player:
   # If mouse support is enabled, maximum interval (ms) for double click.
   # Default: 200
   mouse_double_click_interval_ms: 200
+
+  # Low-level audio buffer duration. Set smaller (e.g. 50ms) for less delay and more cpu usage,
+  # increase if audio stutters (to 300, or even 500) or to use less cpu. Default value: 150.
+  audio_buffering_ms: 150

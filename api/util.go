@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	ticksToSecond = 10000000
+	ticksToSecond = int64(10000000)
 )
 
 type infoResponse struct {
@@ -74,14 +74,14 @@ type playbackStarted struct {
 	CanSeek             bool
 	ItemId              string
 	MediaSourceId       string
-	PositionTicks       int
+	PositionTicks       int64
 	VolumeLevel         int
 	IsPaused            bool
 	IsMuted             bool
 	PlayMethod          string
 	PlaySessionId       string
 	LiveStreamId        string
-	PlaylistLength      int
+	PlaylistLength      int64
 	PlaylistIndex       int
 	Queue               []queueItem `json:"NowPlayingQueue"`
 }
@@ -118,14 +118,14 @@ func (a *Api) ReportProgress(state *interfaces.ApiPlaybackState) error {
 		CanSeek:             true,
 		ItemId:              state.ItemId,
 		MediaSourceId:       state.ItemId,
-		PositionTicks:       state.Position * ticksToSecond,
+		PositionTicks:       int64(state.Position) * ticksToSecond,
 		VolumeLevel:         state.Volume,
 		IsPaused:            state.IsPaused,
 		IsMuted:             state.IsPaused,
 		PlayMethod:          "DirectPlay",
 		PlaySessionId:       a.SessionId,
 		LiveStreamId:        "",
-		PlaylistLength:      state.PlaylistLength * ticksToSecond,
+		PlaylistLength:      int64(state.PlaylistLength) * ticksToSecond,
 		Queue:               idsToQueue(state.Queue),
 	}
 

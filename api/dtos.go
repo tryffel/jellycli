@@ -78,7 +78,7 @@ type artists struct {
 type artist struct {
 	Name          string `json:"Name"`
 	Id            string `json:"Id"`
-	TotalDuration int    `json:"RunTimeTicks"`
+	TotalDuration int64  `json:"RunTimeTicks"`
 	Type          string `json:"Type"`
 	TotalSongs    int    `json:"SongCount"`
 	TotalAlbums   int    `json:"AlbumCount"`
@@ -97,7 +97,7 @@ func (a *artist) toArtist() *models.Artist {
 		Id:            models.Id(a.Id),
 		Name:          a.Name,
 		Albums:        nil,
-		TotalDuration: a.TotalDuration / ticksToSecond,
+		TotalDuration: int(a.TotalDuration / ticksToSecond),
 		AlbumCount:    a.TotalAlbums,
 	}
 }
@@ -110,7 +110,7 @@ type albums struct {
 type album struct {
 	Name      string   `json:"Name"`
 	Id        string   `json:"Id"`
-	Duration  int      `json:"RunTimeTicks"`
+	Duration  int64    `json:"RunTimeTicks"`
 	Year      int      `json:"ProductionYear"`
 	Type      string   `json:"Type"`
 	Artists   []nameId `json:"AlbumArtists"`
@@ -143,7 +143,7 @@ func (a *album) toAlbum() *models.Album {
 		Id:                models.Id(a.Id),
 		Name:              a.Name,
 		Year:              a.Year,
-		Duration:          a.Duration / ticksToSecond,
+		Duration:          int(a.Duration / ticksToSecond),
 		Artist:            artist,
 		Songs:             nil,
 		SongCount:         -1,
@@ -161,7 +161,7 @@ type songs struct {
 type song struct {
 	Name           string   `json:"Name"`
 	Id             string   `json:"Id"`
-	Duration       int      `json:"RunTimeTicks"`
+	Duration       int64    `json:"RunTimeTicks"`
 	ProductionYear int      `json:"ProductionYear"`
 	IndexNumber    int      `json:"IndexNumber"`
 	Type           string   `json:"Type"`
@@ -189,7 +189,7 @@ func (s *song) toSong() *models.Song {
 	return &models.Song{
 		Id:         models.Id(s.Id),
 		Name:       s.Name,
-		Duration:   s.Duration / ticksToSecond,
+		Duration:   int(s.Duration / ticksToSecond),
 		Album:      models.Id(s.AlbumId),
 		Index:      s.IndexNumber,
 		DiscNumber: s.DiscNumber,
@@ -216,7 +216,7 @@ type playlist struct {
 	Name     string   `json:"Name"`
 	Id       string   `json:"Id"`
 	Genres   []string `json:"Genres"`
-	Duration int      `json:"RunTimeTicks"`
+	Duration int64    `json:"RunTimeTicks"`
 	Type     string   `json:"Type"`
 	Songs    int      `json:"ChildCount"`
 }
@@ -233,7 +233,7 @@ func (p *playlist) toPlaylist() *models.Playlist {
 	return &models.Playlist{
 		Id:        models.Id(p.Id),
 		Name:      p.Name,
-		Duration:  p.Duration / ticksToSecond,
+		Duration:  int(p.Duration / ticksToSecond),
 		Songs:     nil,
 		SongCount: p.Songs,
 	}

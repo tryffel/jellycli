@@ -62,6 +62,7 @@ type Player struct {
 	LimitRecentlyPlayed bool   `yaml:"limit_recent_songs"`
 	MouseEnabled        bool   `yaml:"enable_mouse"`
 	DoubleClickMs       int    `yaml:"mouse_double_click_interval_ms"`
+	AudioBufferingMs    int    `yaml:"audio_buffering_ms"`
 }
 
 func (p *Player) fillDefaults() {
@@ -77,6 +78,9 @@ func (p *Player) fillDefaults() {
 	}
 	if p.DoubleClickMs <= 0 {
 		p.DoubleClickMs = 220
+	}
+	if p.AudioBufferingMs == 0 {
+		p.AudioBufferingMs = 150
 	}
 }
 

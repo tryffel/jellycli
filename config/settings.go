@@ -37,12 +37,12 @@ var (
 	LimitRecentlyPlayed = false
 	// how many recent song to show, if limited
 	LimitedRecentlyPlayedCount = 24
+	AudioBufferPeriod          = time.Millisecond * 100
 )
 
 // audio configuration
 const (
 	AudioSamplingRate = 44100
-	AudioBufferPeriod = time.Millisecond * 50
 
 	// Volume range in decibels
 	AudioMinVolumedB = -6

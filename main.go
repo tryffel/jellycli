@@ -31,6 +31,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 	"tryffel.net/go/jellycli/api"
 	"tryffel.net/go/jellycli/config"
 	mpris2 "tryffel.net/go/jellycli/mpris"
@@ -72,6 +73,7 @@ func NewApplication(configFile string) (*Application, error) {
 	config.ConfigFile = a.conf.ConfigFile()
 	config.PageSize = a.conf.Player.PageSize
 	config.LimitRecentlyPlayed = a.conf.Player.LimitRecentlyPlayed
+	config.AudioBufferPeriod = time.Millisecond * time.Duration(a.conf.Player.AudioBufferingMs)
 
 	a.logfile = setLogging(a.conf)
 

@@ -20,28 +20,26 @@ Terminal music player for Jellyfin.
 * headless mode (--no-gui)
 
 **Platforms tested**:
-* [x] Windows 10 
-* [x] Linux 64 bit
-* [ ] Linux 32 bit (raspi 2)
+* [x] Windows 10 (amd64)
+* [x] Linux 64 bit (amd64)
+* [x] Linux 32 bit (armv7 / raspi 2)
 * [ ] MacOS
 
 Jellycli (headless & Gui) should work on Windows. However, there are some limitations, 
 namely poor colors and some keybindings
 might not work as expected.
 
+On raspi 2 you need to increase audio buffer duration in config file to somewhere around 400.
+
 ## Building
 **You will need Go 1.13 or Go 1.14 installed and configured**
 
 * For additional audio libraries required, see [Hajimehoshi/oto](https://github.com/hajimehoshi/oto). 
 On linux you need libasound2-dev.
-* Currently jellycli has issues with Windows and is unable to start properly.
-
-**Warning: for the time being, use git clone directly instead of go get.** There is an issue with dependency 
-(rivo/tview) being automatically upgraded and causing deadlocks.
 
 Download & build package
 ```
-git clone https://github.com/tryffel/jellycli.git
+go get tryffel.net/go/jellycli
 cd jellycli
 # checkout tag:
 # git checkout vx.x.x
@@ -50,6 +48,9 @@ go build .
 ```
 
 ## Run
+Binaries for Linux & Windows are available at 
+[latest release](https://github.com/tryffel/jellycli/releases/latest).
+
 ``` 
 # Gui
 ./jellycli

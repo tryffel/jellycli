@@ -56,6 +56,8 @@ type Audio struct {
 	songCompleteFunc func()
 
 	statusCallbacks []func(status interfaces.AudioStatus)
+
+	currentSampleRate int
 }
 
 // initialize new player. This also initializes faiface.Speaker, which should be initialized only once.
@@ -79,6 +81,8 @@ func newAudio() *Audio {
 	a.volume.Streamer = a.ctrl
 	a.volume.Silent = false
 	a.status.Volume = 50
+
+	a.currentSampleRate = config.AudioSamplingRate
 	return a
 }
 
@@ -291,17 +295,18 @@ func (a *Audio) flushStatus() {
 // play song from io reader. Only song/album/artist/imageurl are used from status.
 func (a *Audio) playSongFromReader(metadata songMetadata) error {
 	// decode
+	var songFormat beep.Format
 	var streamer beep.StreamSeekCloser
 	var err error
 	switch metadata.format {
 	case interfaces.AudioFormatMp3:
-		streamer, _, err = mp3.Decode(metadata.reader)
+		streamer, songFormat, err = mp3.Decode(metadata.reader)
 	case interfaces.AudioFormatFlac:
-		streamer, _, err = flac.Decode(metadata.reader)
+		streamer, songFormat, err = flac.Decode(metadata.reader)
 	case interfaces.AudioFormatWav:
-		streamer, _, err = wav.Decode(metadata.reader)
+		streamer, songFormat, err = wav.Decode(metadata.reader)
 	case interfaces.AudioFormatOgg:
-		streamer, _, err = vorbis.Decode(metadata.reader)
+		streamer, songFormat, err = vorbis.Decode(metadata.reader)
 	default:
 		return fmt.Errorf("unknown audio format: %s", metadata.format)
 	}
@@ -309,7 +314,18 @@ func (a *Audio) playSongFromReader(metadata songMetadata) error {
 		return fmt.Errorf("decode audio stream: %v", err)
 	}
 
-	// play
+	logrus.Debugf("Song %s samplerate: %d Hz", metadata.song.Name, songFormat.SampleRate.N(time.Second))
+	sampleRate := songFormat.SampleRate.N(time.Second)
+	if a.currentSampleRate != sampleRate {
+		logrus.Debugf("Set samplerate to %d kHz", sampleRate/1000)
+		err = speaker.Init(songFormat.SampleRate, sampleRate/1000*
+			int(config.AudioBufferPeriod.Seconds()*1000))
+		if err != nil {
+			logrus.Errorf("Update sample rate (%d -> %d): %v", a.currentSampleRate, sampleRate, err)
+		} else {
+			a.currentSampleRate = sampleRate
+		}
+	}
 	logrus.Debug("Setting new streamer from ", metadata.format.String())
 	if streamer == nil {
 		return fmt.Errorf("empty streamer")

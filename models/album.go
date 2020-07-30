@@ -33,6 +33,8 @@ type Album struct {
 	// ImageId is optional id for image album
 	ImageId   string
 	DiscCount int
+
+	Favorite bool
 }
 
 func (a *Album) GetId() Id {

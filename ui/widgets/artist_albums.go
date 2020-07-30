@@ -157,8 +157,13 @@ func (a *AlbumList) Clear() {
 func (a *AlbumList) SetArtist(artist *models.Artist) {
 	a.artist = artist
 	if artist != nil {
-		a.name.SetText(fmt.Sprintf("%s\nAlbums: %d, Total: %s",
-			a.artist.Name, a.artist.AlbumCount, util.SecToStringApproximate(a.artist.TotalDuration)))
+		favorite := ""
+		if artist.Favorite {
+			favorite = charFavorite + " "
+		}
+
+		a.name.SetText(fmt.Sprintf("%s%s\nAlbums: %d, Total: %s",
+			favorite, a.artist.Name, a.artist.AlbumCount, util.SecToStringApproximate(a.artist.TotalDuration)))
 	} else {
 		a.name.SetText("")
 	}

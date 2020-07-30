@@ -302,7 +302,12 @@ func (a *AlbumView) SetAlbum(album *models.Album, songs []*models.Song) {
 	album.SongCount = len(a.songs)
 	a.album = album
 
-	text := album.Name
+	text := ""
+	if album.Favorite {
+		text += charFavorite + " "
+	}
+
+	text += album.Name
 	if len(a.album.AdditionalArtists) > 1 {
 		text += " ("
 		for i, v := range a.album.AdditionalArtists {

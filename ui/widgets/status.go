@@ -39,6 +39,9 @@ const (
 	btnBackward = " <<"
 	btnQueue    = "☰"
 
+	// yellow heart, utf8. Not visible on all editors.
+	charFavorite = "💛"
+
 	btnLessVolume = "\xF0\x9F\x94\x89"
 	btnMoreVolume = ""
 
@@ -222,7 +225,7 @@ func (s *Status) Draw(screen tcell.Screen) {
 		v.Draw(screen)
 		btnX += 5
 	}
-	s.WriteStatus(screen, x+32, y)
+	s.WriteStatus(screen, x+30, y)
 }
 
 func (s *Status) GetRect() (int, int, int, int) {
@@ -256,7 +259,13 @@ func (s *Status) WriteStatus(screen tcell.Screen, x, y int) {
 	if s.state.State != interfaces.AudioStateStopped &&
 		(s.state.Song != nil && s.state.Album != nil && s.state.Artist != nil) {
 		xi := x
+		x += 2
 		w, _ := screen.Size()
+		if s.state.Song.Favorite {
+			cview.Print(screen, charFavorite, x, y, 2, cview.AlignLeft, config.Color.TextSelected)
+			x += 3
+		}
+
 		cview.Print(screen, effect(s.state.Song.Name, "b")+" - ", x, y, w, cview.AlignLeft, s.detailsMainColor)
 		x += len(s.state.Song.Name) + 3
 		cview.Print(screen, effect(s.state.Artist.Name, "b")+" ", x, y, w, cview.AlignLeft, s.detailsMainColor)

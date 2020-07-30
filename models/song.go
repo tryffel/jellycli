@@ -31,6 +31,8 @@ type Song struct {
 	Artists []IdName
 	// AlbumArtist is primary artist
 	AlbumArtist Id
+
+	Favorite bool
 }
 
 func (s *Song) GetId() Id {

@@ -23,6 +23,8 @@ type Artist struct {
 	Albums        []Id
 	TotalDuration int
 	AlbumCount    int
+
+	Favorite bool
 }
 
 func (a *Artist) GetId() Id {

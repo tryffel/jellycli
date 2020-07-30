@@ -65,6 +65,12 @@ func logInvalidType(item itemType, action string) {
 	}
 }
 
+type userData struct {
+	PlayCount  int  `json:"PlayCount"`
+	IsFavorite bool `json:"IsFavorite"`
+	Played     bool `json:"Played"`
+}
+
 type nameId struct {
 	Name string `json:"Name"`
 	Id   string `json:"Id"`
@@ -76,12 +82,13 @@ type artists struct {
 }
 
 type artist struct {
-	Name          string `json:"Name"`
-	Id            string `json:"Id"`
-	TotalDuration int64  `json:"RunTimeTicks"`
-	Type          string `json:"Type"`
-	TotalSongs    int    `json:"SongCount"`
-	TotalAlbums   int    `json:"AlbumCount"`
+	Name          string   `json:"Name"`
+	Id            string   `json:"Id"`
+	TotalDuration int64    `json:"RunTimeTicks"`
+	Type          string   `json:"Type"`
+	TotalSongs    int      `json:"SongCount"`
+	TotalAlbums   int      `json:"AlbumCount"`
+	UserData      userData `json:"UserData"`
 }
 
 func (a *artist) ExpectType() mediaItemType {
@@ -99,6 +106,7 @@ func (a *artist) toArtist() *models.Artist {
 		Albums:        nil,
 		TotalDuration: int(a.TotalDuration / ticksToSecond),
 		AlbumCount:    a.TotalAlbums,
+		Favorite:      a.UserData.IsFavorite,
 	}
 }
 
@@ -117,6 +125,7 @@ type album struct {
 	Overview  string   `json:"Overview"`
 	Genres    []string `json:"Genres"`
 	ImageTags images   `json:"ImageTags"`
+	UserData  userData `json:"UserData"`
 }
 
 func (a *album) ExpectType() mediaItemType {
@@ -150,6 +159,7 @@ func (a *album) toAlbum() *models.Album {
 		ImageId:           a.ImageTags.Primary,
 		DiscCount:         0,
 		AdditionalArtists: artists,
+		Favorite:          a.UserData.IsFavorite,
 	}
 }
 
@@ -169,6 +179,8 @@ type song struct {
 	Album          string   `json:"Album"`
 	DiscNumber     int      `json:"ParentIndexNumber"`
 	Artists        []nameId `json:"ArtistItems"`
+
+	UserData userData `json:"UserData"`
 }
 
 func (s *song) ExpectType() mediaItemType {
@@ -194,6 +206,7 @@ func (s *song) toSong() *models.Song {
 		Index:      s.IndexNumber,
 		DiscNumber: s.DiscNumber,
 		Artists:    artists,
+		Favorite:   s.UserData.IsFavorite,
 	}
 }
 

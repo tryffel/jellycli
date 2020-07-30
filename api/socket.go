@@ -100,8 +100,8 @@ func (a *Api) readMessage() {
 }
 
 type webSocketInboudMsg struct {
-	MessageType string                 `json:"MessageType"`
-	Data        map[string]interface{} `json:"Data"`
+	MessageType string      `json:"MessageType"`
+	Data        interface{} `json:"Data"`
 }
 
 type controlCommand struct {
@@ -114,14 +114,24 @@ func (a *Api) parseInboudMessage(buff *[]byte) error {
 	err := json.Unmarshal(*buff, &msg)
 	if err != nil {
 		logrus.Errorf("Parse json: %v", err)
-		return fmt.Errorf("parse json: %v", err)
+
+		str := string(*buff)
+		logrus.Error(str)
+		return fmt.Errorf("parse json: %v, body: %s", err, str)
+	}
+
+	dataMap, ok := msg.Data.(map[string]interface{})
+	if !ok {
+		if msg.MessageType != "ForceKeepAlive" {
+			logrus.Errorf("Unknown websocket event: %v", msg)
+		}
+		return nil
 	}
 
 	cmd := strings.ToLower(msg.MessageType)
 	if cmd == "generalcommand" {
-		data := msg.Data
-		name := data["Name"]
-		ar := data["Arguments"]
+		name := dataMap["Name"]
+		ar := dataMap["Arguments"]
 		args, ok := ar.(map[string]interface{})
 		if ok {
 			switch name {
@@ -141,15 +151,14 @@ func (a *Api) parseInboudMessage(buff *[]byte) error {
 			logrus.Error("unexpected command format from websocket, expected general command args map[string]interface, got", a)
 		}
 	} else if cmd == "playstate" {
-		data := msg.Data
-		rawCmd := data["Command"]
+		rawCmd := dataMap["Command"]
 		cmd, ok := rawCmd.(string)
 		if ok {
 			err = a.pushCommand(cmd)
 		}
 	} else if cmd == "play" {
 		var items []string
-		if i, ok := msg.Data["ItemIds"].([]interface{}); ok {
+		if i, ok := dataMap["ItemIds"].([]interface{}); ok {
 			for _, v := range i {
 				if id, ok := v.(string); ok {
 					items = append(items, id)
@@ -160,13 +169,13 @@ func (a *Api) parseInboudMessage(buff *[]byte) error {
 		} else {
 			logrus.Error("Received play command, but queue ids are not array. command: ", msg.Data)
 		}
-		index, ok := msg.Data["StartIndex"].(float64)
+		index, ok := dataMap["StartIndex"].(float64)
 		startIndex := 0
 		if ok {
 			startIndex = int(index)
 		}
 
-		command, ok := msg.Data["PlayCommand"].(string)
+		command, ok := dataMap["PlayCommand"].(string)
 		if !ok {
 			logrus.Error("Received play command, but command is not string: ", msg.Data)
 		} else {

@@ -152,13 +152,13 @@ func (p *Player) downloadSong() {
 	p.lock.Unlock()
 	ok := false
 
-	reader, format, err := p.api.GetSongUniversal(song.Id.String())
+	reader, format, err := p.api.GetSongUniversal(song)
 	if err != nil {
 		if strings.Contains(err.Error(), "A task was canceled") {
 			// server task may fail sometimes, retry
 			logrus.Warningf("Failed to download song, retrying: %v", err)
 			time.Sleep(time.Second)
-			reader, format, err = p.api.GetSongUniversal(song.Id.String())
+			reader, format, err = p.api.GetSongUniversal(song)
 			if err == nil {
 				ok = true
 			} else {

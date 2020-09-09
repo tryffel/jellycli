@@ -3,7 +3,7 @@
 [![Godoc Reference](https://img.shields.io/badge/godoc-reference-blue.svg)](https://pkg.go.dev/tryffel.net/go/jellycli)
 [![Go Report Card](https://goreportcard.com/badge/tryffel.net/go/jellycli)](https://goreportcard.com/report/tryffel.net/go/jellycli)
 
-Terminal music player for Jellyfin.
+Terminal music player for Jellyfin (works with Emby too).
 
 ![Screenshot](screenshot.png)
 

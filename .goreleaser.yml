@@ -1,4 +1,4 @@
-project_name: Jellycli
+project_name: jellycli
 
 before:
   hooks:
@@ -10,7 +10,6 @@ builds:
       - windows
     goarch:
       - amd64
-      # - arm64
     ignore:
       - goos: windows
         goarch: arm64
@@ -19,9 +18,13 @@ archives:
     replacements:
       linux: Linux
       windows: Windows
+      amd64: x86_64
     format_overrides:
-    - goos: windows
-      format: zip
+      - goos: linux
+        format: binary
+      - goos: windows
+        format: binary
+
 checksum:
   name_template: 'checksums.txt'
 snapshot:

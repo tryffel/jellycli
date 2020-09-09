@@ -39,3 +39,11 @@ player:
   # Low-level audio buffer duration. Set smaller (e.g. 50ms) for less delay and more cpu usage,
   # increase if audio stutters (to 300, or even 500) or to use less cpu. Default value: 150.
   audio_buffering_ms: 150
+
+  # http buffering duration in seconds, how much to buffer from server before starting audio
+  http_buffering_s: 5
+
+  # max http buffering limit in MiB. Setting this to high enough ensures smooth play even with longer tracks.
+  # 20 MiB with flac ~ 10 min of audio buffered.
+  http_buffering_limit_mem: 20
+

@@ -161,9 +161,8 @@ func NewStreamDownload(url string, headers map[string]string, params map[string]
 	length, err := strconv.Atoi(sLength)
 
 	stream.bitrate = length / duration
-	// Initial read, ~5 secs of bytes
 	for {
-		if stream.buff.Len() > stream.bitrate*5 {
+		if stream.buff.Len() > stream.bitrate*config.AppConfig.Player.HttpBufferingS {
 			break
 		}
 		failed := stream.readData()
@@ -182,7 +181,10 @@ func (s *streamBuffer) bufferBackground() {
 	for {
 		select {
 		case <-timer.C:
-			if !s.readData() {
+			if s.buff.Len()/1024/1024 > config.AppConfig.Player.HttpBufferingLimitMem {
+				logrus.Tracef("Buffer is full")
+				timer.Reset(time.Second)
+			} else if !s.readData() {
 				timer.Reset(time.Second)
 			}
 		case <-s.cancelDownload:
@@ -230,6 +232,6 @@ func (s *streamBuffer) readData() bool {
 		}
 	}
 	size := s.buff.Len()
-	logrus.Debugf("Buffer: %d KiB, %d sec", size/1024, size/s.bitrate)
+	logrus.Tracef("Buffer: %d KiB, %d sec", size/1024, size/s.bitrate)
 	return stop
 }

@@ -63,6 +63,9 @@ type Player struct {
 	MouseEnabled        bool   `yaml:"enable_mouse"`
 	DoubleClickMs       int    `yaml:"mouse_double_click_interval_ms"`
 	AudioBufferingMs    int    `yaml:"audio_buffering_ms"`
+	HttpBufferingS      int    `yaml:"http_buffering_s"`
+	// memory limit in MiB
+	HttpBufferingLimitMem int `yaml:"http_buffering_limit_mem"`
 }
 
 func (p *Player) fillDefaults() {
@@ -81,6 +84,12 @@ func (p *Player) fillDefaults() {
 	}
 	if p.AudioBufferingMs == 0 {
 		p.AudioBufferingMs = 150
+	}
+	if p.HttpBufferingS == 0 {
+		p.HttpBufferingS = 5
+	}
+	if p.HttpBufferingLimitMem == 0 {
+		p.HttpBufferingLimitMem = 20
 	}
 }
 

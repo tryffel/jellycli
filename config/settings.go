@@ -24,7 +24,7 @@ import (
 const (
 	AppName      = "Jellycli"
 	AppNameLower = "jellycli"
-	Version      = "0.5.2"
+	Version      = "0.6.0"
 )
 
 var (

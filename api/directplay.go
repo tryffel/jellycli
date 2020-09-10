@@ -96,7 +96,6 @@ func (s *streamBuffer) Read(p []byte) (n int, err error) {
 
 func (s *streamBuffer) Close() error {
 	logrus.Debug("Close stream download")
-	s.cancelDownload <- true
 	return s.resp.Body.Close()
 }
 
@@ -178,20 +177,28 @@ func (s *streamBuffer) bufferBackground() {
 	logrus.Debug("Start buffered stream")
 	timer := time.NewTimer(time.Millisecond)
 	defer timer.Stop()
+loop:
 	for {
 		select {
 		case <-timer.C:
 			if s.buff.Len()/1024/1024 > config.AppConfig.Player.HttpBufferingLimitMem {
 				logrus.Tracef("Buffer is full")
 				timer.Reset(time.Second)
-			} else if !s.readData() {
-				timer.Reset(time.Second)
+			} else {
+				if !s.readData() {
+					timer.Reset(time.Second)
+				} else {
+					break loop
+				}
 			}
 		case <-s.cancelDownload:
 			logrus.Debug("Stop buffered stream")
-			return
+			break loop
 		}
 	}
+
+	close(s.cancelDownload)
+	s.cancelDownload = nil
 }
 
 func (s *streamBuffer) readData() bool {

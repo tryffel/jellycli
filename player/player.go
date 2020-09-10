@@ -57,6 +57,8 @@ type Player struct {
 	audioUpdated   chan interfaces.AudioStatus
 	songDownloaded chan songMetadata
 
+	nextSong *songMetadata
+
 	api *api.Api
 
 	lastApiReport time.Time
@@ -123,29 +125,48 @@ func (p *Player) loop() {
 			if len(p.Queue.GetQueue()) == 0 {
 				p.Audio.StopMedia()
 			} else {
-				p.downloadSong()
+				if p.nextSong != nil {
+					err := p.Audio.playSongFromReader(*p.nextSong)
+					if err != nil {
+						logrus.Errorf("play track: %v", err)
+					}
+					p.nextSong = nil
+				} else {
+					p.downloadSong(0)
+				}
 			}
 		case status := <-p.audioUpdated:
 			logrus.Infof("got audio status: %v", status)
 		case <-ticker.C:
 			// periodically update status, this will push status to p.audioUpdated
 			p.Audio.updateStatus()
+			if p.status.Song != nil && p.status.State == interfaces.AudioStatePlaying {
+				if (p.status.Song.Duration-p.status.SongPast.Seconds()) < 5 &&
+					!p.isDownloadingSong() && p.nextSong == nil && len(p.Queue.GetQueue()) >= 2 {
+					p.downloadSong(1)
+				}
+			}
 		case metadata := <-p.songDownloaded:
-			// download complete, send to audio
-			err := p.Audio.playSongFromReader(metadata)
-			if err != nil {
-				logrus.Errorf("play track: %v", err)
+			if p.status.State == interfaces.AudioStateStopped {
+				// download complete, send to audio
+				err := p.Audio.playSongFromReader(metadata)
+				if err != nil {
+					logrus.Errorf("play track: %v", err)
+				}
+				p.nextSong = nil
+			} else {
+				p.nextSong = &metadata
 			}
 		}
 	}
 }
 
 // download and play next song asynchronously
-func (p *Player) downloadSong() {
+func (p *Player) downloadSong(index int) {
 	if p.isDownloadingSong() || p.Queue.empty() {
 		return
 	}
-	song := p.Queue.GetQueue()[0]
+	song := p.Queue.GetQueue()[index]
 
 	p.lock.Lock()
 	p.downloadingSong = true
@@ -217,7 +238,7 @@ func (p *Player) Next() {
 	if len(p.Queue.GetQueue()) > 1 {
 		p.StopMedia()
 		p.Queue.songComplete()
-		go p.downloadSong()
+		go p.downloadSong(0)
 	}
 }
 
@@ -227,7 +248,7 @@ func (p *Player) Previous() {
 		p.StopMedia()
 		p.Queue.playLastSong()
 		p.Audio.Previous()
-		go p.downloadSong()
+		go p.downloadSong(0)
 	}
 }
 
@@ -310,7 +331,7 @@ func (p *Player) queueChanged(queue []*models.Song) {
 	// if player has nothing to play, start download
 	state := p.Audio.getStatus()
 	if state.State == interfaces.AudioStateStopped && len(queue) > 0 {
-		go p.downloadSong()
+		go p.downloadSong(0)
 	}
 }
 

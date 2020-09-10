@@ -252,12 +252,17 @@ func (a *Audio) closeOldStream() error {
 			if streamErr != io.EOF {
 				logrus.Errorf("streamer error: %v", streamErr)
 			} else {
-				logrus.Info("got streamer error eof")
+				logrus.Warning("got streamer error EOF")
+				err = nil
 			}
 		}
 		err = a.streamer.Close()
 		if err != nil {
-			err = fmt.Errorf("close streamer: %v", err)
+			if err == io.EOF {
+				// pass
+			} else {
+				err = fmt.Errorf("close streamer: %v", err)
+			}
 		} else {
 			logrus.Debug("closed old streamer")
 		}

@@ -34,11 +34,6 @@ import (
 
 type audioFormat string
 
-const (
-	audioFormatMp3  audioFormat = "mp3"
-	audioFormatFlac audioFormat = "flac"
-)
-
 // Audio manages playing song and implements interfaces.Player
 type Audio struct {
 	status interfaces.AudioStatus

@@ -18,8 +18,6 @@ package config
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
-	"gitlab.com/tslocum/cview"
 	"time"
 )
 
@@ -27,8 +25,6 @@ const (
 	AppName      = "Jellycli"
 	AppNameLower = "jellycli"
 	Version      = "0.5.2"
-
-	LogLevel = logrus.WarnLevel
 )
 
 var (
@@ -54,13 +50,9 @@ const (
 	// Audio volume is logarithmic, which base to use
 	AudioVolumeLogBase = 2
 
-	Debug = false
-
 	CacheTimeout = time.Minute * 5
 
 	SongHistorySize = 100
-
-	LatestMusicCount = "50"
 )
 
 // AppNameVersion returns string containing application name and current version
@@ -73,17 +65,3 @@ var LogFile string
 
 // ConfigFile is absolute location for configuration file
 var ConfigFile string
-
-var GridBordersShow = true
-var GridBordersColor = Color.Border
-
-//DebugGridBorders enables grid borders if config.Debug is true and if config.GridBordesShow is true
-// Else do nothing
-func DebugGridBorders(view *cview.Grid) {
-	if Debug && GridBordersShow {
-		view.SetBorders(true)
-		view.SetBordersColor(GridBordersColor)
-
-	}
-
-}

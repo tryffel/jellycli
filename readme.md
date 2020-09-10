@@ -52,6 +52,8 @@ go build .
 Binaries for Linux & Windows are available at 
 [latest release](https://github.com/tryffel/jellycli/releases/latest).
 
+On Arch Linux you can install jellycli with pre-built AUR package 'jellycli-bin'.
+
 ``` 
 # Gui
 ./jellycli

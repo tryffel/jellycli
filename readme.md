@@ -12,10 +12,11 @@ Terminal music player for Jellyfin (works with Emby too).
 * Queue: add songs and albums, reorder & delete songs, clear queue
 * Control (and view) play state through Dbus integration
 * Remote control over Jellyfin server. Currently implemented:
-    * Play / pause / stop
-    * Set volume
-    * Next/previous track
-    * Control queue
+    * [x] Play / pause / stop
+    * [x] Set volume
+    * [x] Next/previous track
+    * [x] Control queue
+    * [ ] Seeking, see [#8](https://github.com/tryffel/jellycli/issues/8)
 * Supported formats (server transcodes everything else to mp3): mp3,ogg,flac,wav
 * headless mode (--no-gui)
 
@@ -27,7 +28,7 @@ Terminal music player for Jellyfin (works with Emby too).
 
 Jellycli (headless & Gui) should work on Windows. However, there are some limitations, 
 namely poor colors and some keybindings
-might not work as expected.
+might not work as expected. Windows Console works better than Cmd.
 
 On raspi 2 you need to increase audio buffer duration in config file to somewhere around 400.
 

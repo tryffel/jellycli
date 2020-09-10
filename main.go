@@ -195,7 +195,7 @@ func (a *Application) initApi() error {
 		configChanged = true
 	}
 
-	a.api, err = api.NewApi(a.conf.Server.Url)
+	a.api, err = api.NewApi(a.conf.Server.Url, a.conf.Player.EnableRemoteControl)
 	if err != nil {
 		return fmt.Errorf("api init: %v", err)
 	}

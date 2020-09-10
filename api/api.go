@@ -65,13 +65,16 @@ type Api struct {
 	socketLock  sync.RWMutex
 	socket      *websocket.Conn
 	socketState socketState
+
+	enableRemoteControl bool
 }
 
-func NewApi(host string) (*Api, error) {
+func NewApi(host string, allowRemoteControl bool) (*Api, error) {
 	a := &Api{
-		host:   host,
-		token:  "",
-		client: &http.Client{},
+		host:                host,
+		token:               "",
+		client:              &http.Client{},
+		enableRemoteControl: allowRemoteControl,
 	}
 
 	id, err := machineid.ProtectedID(config.AppName)

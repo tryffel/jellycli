@@ -66,6 +66,8 @@ type Player struct {
 	HttpBufferingS      int    `yaml:"http_buffering_s"`
 	// memory limit in MiB
 	HttpBufferingLimitMem int `yaml:"http_buffering_limit_mem"`
+
+	EnableRemoteControl bool `yaml:"enable_remote_control"`
 }
 
 func (p *Player) fillDefaults() {
@@ -91,6 +93,7 @@ func (p *Player) fillDefaults() {
 	if p.HttpBufferingLimitMem == 0 {
 		p.HttpBufferingLimitMem = 20
 	}
+	p.EnableRemoteControl = true
 }
 
 // initialize new config with some sensible values

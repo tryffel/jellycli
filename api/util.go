@@ -202,7 +202,7 @@ func (a *Api) ReportCapabilities() error {
 		"ToggleMute",
 		"SetVolume",
 	}
-	data["SupportsMediaControl"] = true
+	data["SupportsMediaControl"] = a.enableRemoteControl
 	data["SupportsPersistentIdentifier"] = false
 	data["ApplicationVersion"] = config.Version
 	data["Client"] = config.AppName

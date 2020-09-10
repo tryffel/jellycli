@@ -47,3 +47,6 @@ player:
   # 20 MiB with flac ~ 10 min of audio buffered.
   http_buffering_limit_mem: 20
 
+  # If enabled, user can control playback remotely with another client.
+  enable_remote_control: true
+

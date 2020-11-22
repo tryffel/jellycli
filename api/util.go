@@ -36,29 +36,31 @@ const (
 )
 
 type infoResponse struct {
-	ServerName string `json:"ServerName"`
-	Version    string `json:"Version"`
-	Id         string `json:"Id"`
+	ServerName      string `json:"ServerName"`
+	Version         string `json:"Version"`
+	Id              string `json:"Id"`
+	RestartPending  bool   `json:"HasPendingRestart"`
+	ShutdownPending bool   `json:"HasShutdownPending"`
 }
 
 // GetServerVersion returns name, version, id and possible error
-func (a *Api) GetServerVersion() (string, string, string, error) {
+func (a *Api) GetServerVersion() (string, string, string, bool, bool, error) {
 	body, err := a.get("/System/Info/Public", nil)
 	if err != nil {
-		return "", "", "", fmt.Errorf("request failed: %v", err)
+		return "", "", "", false, false, fmt.Errorf("request failed: %v", err)
 	}
 
 	response := infoResponse{}
 	err = json.NewDecoder(body).Decode(&response)
 	if err != nil {
-		return "", "", "", fmt.Errorf("response read failed: %v", err)
+		return "", "", "", false, false, fmt.Errorf("response read failed: %v", err)
 	}
 
-	return response.ServerName, response.Version, response.Id, nil
+	return response.ServerName, response.Version, response.Id, response.RestartPending, response.ShutdownPending, nil
 }
 
 func (a *Api) VerifyServerId() error {
-	_, _, id, err := a.GetServerVersion()
+	_, _, id, _, _, err := a.GetServerVersion()
 	if err != nil {
 		return err
 	}

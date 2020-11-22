@@ -28,8 +28,15 @@ type Stats struct {
 	ServerName string
 	// ServerVersion server version
 	ServerVersion string
+
+	ServerId string
+
+	ServerRestartPending  bool
+	ServerShutdownPending bool
 	// WebSocket boolean if websocket is supported and connected
 	WebSocket bool
+
+	RemoteControl bool
 	//LogFile contains log file location
 	LogFile string
 

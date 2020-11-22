@@ -141,7 +141,7 @@ func (a *Api) IsLoggedIn() bool {
 }
 
 func (a *Api) ConnectionOk() error {
-	name, version, _, err := a.GetServerVersion()
+	name, version, _, _, _, err := a.GetServerVersion()
 	if err != nil {
 		return err
 	}

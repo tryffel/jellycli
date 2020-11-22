@@ -137,6 +137,8 @@ func (h *Help) SetStats(stats models.Stats) {
 func (h *Help) mainPage() string {
 	text := fmt.Sprintf("%s\n[yellow]v%s[-]\n\n", logo(), config.Version)
 	text += "License: Apache-2.0, http://www.apache.org/licenses/LICENSE-2.0"
+
+	text += "\n" + helpText()
 	return text
 }
 
@@ -183,12 +185,21 @@ func formatBytes(bytes uint64) string {
 }
 
 func (h *Help) statsPage() string {
-	text := "[yellow]Statistics[-]\n"
+	text := "[yellow]Server info[-]\n"
+	text += fmt.Sprintf("Name: %s\nVersion: %s\nIdentity: %s\n"+
+		"Restart pending: %t\nShutdown pending: %t\n"+
+		"Websocket enabled: %t\nRemote control enabled: %t",
+		h.stats.ServerName, h.stats.ServerVersion, h.stats.ServerId,
+		h.stats.ServerRestartPending, h.stats.ServerShutdownPending,
+		h.stats.WebSocket, h.stats.RemoteControl)
 
-	text += fmt.Sprintf("Server Name: %s\nServer Version: %s\nCache items: %d\nMemory allocated: %s\n"+
-		"Websocket enabled: %t\nLog file: %s\nConfig file: %s",
-		h.stats.ServerName, h.stats.ServerVersion, h.stats.CacheObjects, h.stats.HeapString(), h.stats.WebSocket,
+	text += "\n\n[yellow]Configuration[-]\n"
+	text += fmt.Sprintf("Log file: %s\nConfig file: %s",
 		h.stats.LogFile, h.stats.ConfigFile)
+
+	text += "\n\n[yellow]Statistics[-]\n"
+	text += fmt.Sprintf("Cache items: %d\nMemory allocated: %s\nWebsocket enabled: %t",
+		h.stats.CacheObjects, h.stats.HeapString(), h.stats.WebSocket)
 	return text
 }
 
@@ -205,8 +216,61 @@ func logo() string {
 }
 
 func helpText() string {
-	return `Help page for Jellycli. 
-Press Escape to return
+	return `
+[darkorange]Jellycli[-] is a command-line / terminal music player for Jellyfin media server.
+Source code: https://github.com/tryffel/jellycli
+
+[yellow::b]Features [-:-:-]
+* View artists, songs, albums, playlists, favorite artists and albums, genres, similar albums and artists
+* Queue: add songs and albums, reorder & delete songs, clear queue
+* Control (and view) play state through Dbus integration
+* Remote control over Jellyfin server. Currently implemented:
+    * [x] Play / pause / stop
+    * [x] Set volume
+    * [x] Next/previous track
+    * [x] Control queue
+    * [ ] Seeking, see (https://github.com/tryffel/jellycli/issues/8
+* Supported formats (server transcodes everything else to mp3): mp3,ogg,flac,wav
+* headless mode (--no-gui)
+
+Platforms tested:
+* [x] Windows 10 (amd64)
+* [x] Linux 64 bit (amd64)
+* [x] Linux 32 bit (armv7 / raspi 2)
+* [ ] MacOS
+
+Jellycli (headless & Gui) should work on Windows. However, there are some limitations, 
+namely poor colors and some keybindings
+might not work as expected. Windows Console works better than Cmd.
+
+On raspi 2 you need to increase audio buffer duration in config file to somewhere around 400.
+
+[yellow::b]Configuration[-::-]
+
+On first time application asks for Jellyfin host, username, password and default collection for music. 
+All this is stored in configuration file:
+* ~/.config/jellycli/jellycli.yaml 
+* C:\Users\<user>\AppData\Roaming\jellycli\jellycli.yaml
+
+See config.sample.yaml for more info and up-to-date version of config file.
+
+Configuration file location is also visible in help page. 
+You can use multiple config files by providing argument:
+
+[#005fff]jellycli --config temp.yaml[:]
+
+Log file is located at '/tmp/jellycli.log' or 'C:\Users\<user>\AppData\Local\Temp/jellycli.log' by default. 
+This can be overridden with config file. 
+At the moment jellycli does not inform user about errors but rather just silently logs them.
+For development purposes you should set log-level either to debug or trace.
+
+[yellow::b]Keybindings[-::-] are hardcoded at build time. 
+They are located in file [#005fff]config/keybindings.go:73[-] in function 
+[#005fff]func DefaultKeybindings()[-]
+
+edit that function as you like. 
+
+Press Escape to return.
 
 `
 }

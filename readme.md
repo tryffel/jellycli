@@ -96,5 +96,11 @@ This can be overridden with config file.
 At the moment jellycli does not inform user about errors but rather just silently logs them.
 For development purposes you should set log-level either to debug or trace.
 
+Keybindings are hardcoded at build time. They are located in file config/keybindings.go:73 in function 
+```
+func DefaultKeybindings()
+```
+edit that function as you like. 
+
 ## Acknowledgements
 Thanks [natsukagami](https://github.com/natsukagami/mpd-mpris) for implementing Mpris-interface.

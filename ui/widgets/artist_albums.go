@@ -169,6 +169,10 @@ func (a *AlbumList) SetArtist(artist *models.Artist) {
 	}
 }
 
+func (a *AlbumList) SetLabel(label string) {
+	a.name.SetText(label)
+}
+
 func (a *AlbumList) SetText(text string) {
 	a.name.SetText(text)
 }

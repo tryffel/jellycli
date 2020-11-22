@@ -43,6 +43,7 @@ type itemType interface {
 	// what type
 	ExpectType() mediaItemType
 	GotType() mediaItemType
+	ModelType() models.Item
 }
 
 // assert type matches expected
@@ -99,6 +100,10 @@ func (a *artist) GotType() mediaItemType {
 	return mediaItemType(a.Type)
 }
 
+func (a *artist) ModelType() models.Item {
+	return a.toArtist()
+}
+
 func (a *artist) toArtist() *models.Artist {
 	return &models.Artist{
 		Id:            models.Id(a.Id),
@@ -134,6 +139,10 @@ func (a *album) ExpectType() mediaItemType {
 
 func (a *album) GotType() mediaItemType {
 	return mediaItemType(a.Type)
+}
+
+func (a *album) ModelType() models.Item {
+	return a.toAlbum()
 }
 
 func (a *album) toAlbum() *models.Album {
@@ -191,6 +200,10 @@ func (s *song) GotType() mediaItemType {
 	return mediaItemType(s.Type)
 }
 
+func (s *song) ModelType() models.Item {
+	return s.toSong()
+}
+
 func (s *song) toSong() *models.Song {
 	artists := make([]models.IdName, len(s.Artists))
 	for i, v := range s.Artists {
@@ -240,6 +253,10 @@ func (p *playlist) ExpectType() mediaItemType {
 
 func (p *playlist) GotType() mediaItemType {
 	return mediaItemType(p.Type)
+}
+
+func (p *playlist) ModelType() models.Item {
+	return p.toPlaylist()
 }
 
 func (p *playlist) toPlaylist() *models.Playlist {

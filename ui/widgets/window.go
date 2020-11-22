@@ -114,7 +114,7 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 	w.songs.SetBackCallback(w.goBack)
 	w.songs.showPage = w.selectSongs
 
-	w.searchResultsTop = NewSearchTopList(w.searchCb)
+	w.searchResultsTop = NewSearchTopList(w.searchCb, w.showSearchResults)
 
 	w.mediaPlayer = p
 	w.mediaItems = i
@@ -349,8 +349,30 @@ func (w *Window) searchCb(query string) {
 	logrus.Debug("In search callback")
 	w.app.SetFocus(w.layout)
 
-	//w.mediaController.Search(query)
+	albums, err := w.mediaItems.Search(models.TypeAlbum, query)
+	if err == nil {
+		w.searchResultsTop.Clear()
+		w.searchResultsTop.addItems(models.TypeAlbum, albums)
+	} else {
+		logrus.Errorf("search albums: %v", err)
+	}
+}
 
+func (w *Window) showSearchResults(itemType models.ItemType, results []models.Item) {
+	if itemType == models.TypeAlbum {
+		albums := make([]*models.Album, len(results))
+
+		for i, v := range results {
+			albums[i], _ = v.(*models.Album)
+		}
+
+		w.albumList.Clear()
+		w.albumList.EnablePaging(false)
+		w.albumList.SetLabel(fmt.Sprintf("Search results: %d albums", len(results)))
+		w.albumList.SetAlbums(albums)
+		w.albumList.EnableSimilar(false)
+		w.setViewWidget(w.albumList, true)
+	}
 }
 
 func (w *Window) closeHelp() {

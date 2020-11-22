@@ -125,25 +125,27 @@ type SearchTopList struct {
 
 	searchInput *searchBox
 
-	list        *twidgets.ScrollList
-	listFocused bool
-	selectFunc  func(itemType models.ItemType)
+	list          *twidgets.ScrollList
+	listFocused   bool
+	selectFunc    func(itemType models.ItemType)
+	showMediafunc func(itemType models.ItemType, items []models.Item)
 
-	results map[models.ItemType]*searchListItem
+	results []*searchListItem
 
 	prevBtn  *button
 	prevFunc func()
 }
 
-func NewSearchTopList(searchFunc func(string)) *SearchTopList {
+func NewSearchTopList(searchFunc func(string), selectMediaFunc func(itemType models.ItemType, items []models.Item)) *SearchTopList {
 	stp := &SearchTopList{
-		Banner:      twidgets.NewBanner(),
-		previous:    &previous{},
-		listFocused: false,
-		selectFunc:  nil,
-		prevBtn:     newButton("Back"),
-		prevFunc:    nil,
-		results:     map[models.ItemType]*searchListItem{},
+		Banner:        twidgets.NewBanner(),
+		previous:      &previous{},
+		listFocused:   false,
+		selectFunc:    nil,
+		prevBtn:       newButton("Back"),
+		prevFunc:      nil,
+		results:       []*searchListItem{},
+		showMediafunc: selectMediaFunc,
 	}
 
 	stp.searchInput = newSearchBox("Search: ", searchFunc)
@@ -185,22 +187,35 @@ func NewSearchTopList(searchFunc func(string)) *SearchTopList {
 }
 
 func (s *SearchTopList) selectItem(index int) {
+	if index >= len(s.results) {
+		return
+	}
 
+	if s.showMediafunc == nil {
+		return
+	}
+
+	items := s.results[index].items
+	var itemType models.ItemType
+
+	if len(items) == 0 {
+		itemType = models.ItemType("")
+	} else {
+		itemType = items[0].GetType()
+	}
+
+	s.showMediafunc(itemType, items)
 }
 
 func (s *SearchTopList) Clear() {
 	if len(s.results) > 0 {
-		s.results = map[models.ItemType]*searchListItem{}
+		s.results = []*searchListItem{}
 	}
 	s.list.Clear()
 }
 
 func (s *SearchTopList) addItems(itemType models.ItemType, items []models.Item) {
-	if s.results[itemType] == nil {
-		list := newSearchListItem(string(itemType), len(s.results), items)
-		s.results[itemType] = list
-		s.list.AddItem(list)
-	} else {
-		// TODO: replace existing
-	}
+	list := newSearchListItem(string(itemType), len(s.results), items)
+	s.results = append(s.results, list)
+	s.list.AddItem(list)
 }

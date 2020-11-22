@@ -59,8 +59,9 @@ type QueueController interface {
 
 //MediaManager manages media: artists, albums, songs
 type ItemController interface {
-	SearchArtists(search string) ([]*models.Artist, error)
-	SearchAlbums(search string) ([]*models.Album, error)
+	// Search returns list of items based on search query. Item types
+	// Queue and history returns error.
+	Search(itemType models.ItemType, query string) ([]models.Item, error)
 	// GetArtists gets artist with given paging. Only PageSize and CurrentPage are used. Total count is returned
 	GetArtists(paging Paging) ([]*models.Artist, int, error)
 

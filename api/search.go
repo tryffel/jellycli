@@ -18,7 +18,9 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"tryffel.net/go/jellycli/models"
 )
 
 type SearchHint struct {
@@ -37,33 +39,61 @@ type SearchResult struct {
 }
 
 //Search searches audio items
-func (a *Api) Search(q string, limit int) (*SearchResult, error) {
+func (a *Api) Search(query string, itemType models.ItemType, limit int) ([]models.Item, error) {
 	if limit == 0 {
-		limit = 20
+		limit = 40
 	}
 	params := *a.defaultParams()
+	params.enableRecursive()
 	delete(params, "UserId")
 	delete(params, "DeviceId")
-	params["SearchTerm"] = q
+	params["SearchTerm"] = query
 	params["Limit"] = fmt.Sprint(limit)
-	params.setIncludeTypes(mediaTypeSong)
+	params["IncludePeople"] = "false"
+	params["IncludeMedia"] = "true"
+	var url string
 
-	body, err := a.get("/Search/Hints", &params)
+	switch itemType {
+	case models.TypeArtist:
+		params.setIncludeTypes(mediaTypeArtist)
+		url = "/Artists"
+	case models.TypeAlbum:
+		params.setIncludeTypes(mediaTypeAlbum)
+		url = "/Albums"
+		url = fmt.Sprintf("/Users/%s/Items", a.userId)
+	case models.TypeSong:
+		params.setIncludeTypes(mediaTypeSong)
+		url = fmt.Sprintf("/Users/%s/Items", a.userId)
+	case models.TypePlaylist:
+		params.setIncludeTypes(mediaTypePlaylist)
+		url = fmt.Sprintf("/Users/%s/Items", a.userId)
+		url = "/Playlists"
+	case models.TypeGenre:
+		return nil, errors.New("genres not supported")
+	}
+
+	type Result struct {
+		Items            []album
+		TotalRecordCount int
+	}
+
+	result := &Result{}
+
+	body, err := a.get(url, &params)
 	if err != nil {
 		msg := getBodyMsg(body)
 		return nil, fmt.Errorf("query failed: %v: %s", err, msg)
 	}
-	result := &SearchResult{}
+
 	err = json.NewDecoder(body).Decode(result)
 	if err != nil {
-		err = fmt.Errorf("json parsing failed: %v", err)
+		return []models.Item{}, err
 	}
 
-	if len(result.Items) > 0 {
-		for i, _ := range result.Items {
-			result.Items[i].Duration /= 10000000
-		}
-	}
+	items := make([]models.Item, len(result.Items))
 
-	return result, err
+	for i, v := range result.Items {
+		items[i] = v.ModelType()
+	}
+	return items, nil
 }

@@ -35,12 +35,8 @@ func newItems(api *api.Api) *Items {
 	}
 }
 
-func (i *Items) SearchArtists(search string) ([]*models.Artist, error) {
-	panic("implement me")
-}
-
-func (i *Items) SearchAlbums(search string) ([]*models.Album, error) {
-	panic("implement me")
+func (i *Items) Search(itemType models.ItemType, query string) ([]models.Item, error) {
+	return i.api.Search(query, itemType, 40)
 }
 
 func (i *Items) GetArtists(paging interfaces.Paging) ([]*models.Artist, int, error) {

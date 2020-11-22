@@ -37,7 +37,7 @@ type ItemType string
 const (
 	TypeArtist   ItemType = "Artist"
 	TypeAlbum    ItemType = "Album"
-	TypePlaylist ItemType = "TypePlaylist"
+	TypePlaylist ItemType = "Playlist"
 	TypeQueue    ItemType = "Queue"
 	TypeHistory  ItemType = "History"
 	TypeSong     ItemType = "Song"

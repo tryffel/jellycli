@@ -55,6 +55,8 @@ type Window struct {
 	songs          *SongList
 	genres         *GenreList
 
+	searchResultsTop *SearchTopList
+
 	gridAxisX  []int
 	gridAxisY  []int
 	customGrid bool
@@ -111,6 +113,9 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 	w.songs = NewSongList(w.playSong, w.playSongs, &w)
 	w.songs.SetBackCallback(w.goBack)
 	w.songs.showPage = w.selectSongs
+
+	w.searchResultsTop = NewSearchTopList()
+
 	w.mediaPlayer = p
 	w.mediaItems = i
 	w.mediaQueue = q
@@ -157,10 +162,10 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 
 	w.mediaPlayer.AddStatusCallback(w.statusCb)
 
-	navBarLabels := []string{"Help", "Queue", "History"}
+	navBarLabels := []string{"Help", "Search", "Queue", "History"}
 
 	sc := config.KeyBinds.NavigationBar
-	navBarShortucts := []tcell.Key{sc.Help, sc.Queue, sc.History}
+	navBarShortucts := []tcell.Key{sc.Help, sc.Search, sc.Queue, sc.History}
 
 	for i, v := range navBarLabels {
 		btn := cview.NewButton(v)
@@ -283,6 +288,16 @@ func (w *Window) navBarCtrl(key tcell.Key) bool {
 		stats := w.mediaItems.GetStatistics()
 		w.help.SetStats(stats)
 		w.showModal(w.help, 25, 50, true)
+	case navBar.Search:
+		// fake some results
+		artists := []models.Item{&models.Artist{}, &models.Artist{}, &models.Artist{}}
+
+		w.searchResultsTop.addItems(models.TypeArtist, artists)
+		w.searchResultsTop.addItems(models.TypeAlbum, artists)
+		w.searchResultsTop.addItems(models.TypeSong, artists)
+		w.searchResultsTop.addItems(models.TypePlaylist, artists)
+		w.searchResultsTop.addItems(models.TypeGenre, artists)
+		w.setViewWidget(w.searchResultsTop, true)
 	case navBar.Queue:
 		if w.help.HasFocus() {
 			w.closeModal(w.help)

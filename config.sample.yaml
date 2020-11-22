@@ -50,3 +50,9 @@ player:
   # If enabled, user can control playback remotely with another client.
   enable_remote_control: true
 
+  # Configure which fields get searched. Values are case-sensitive.
+  search_types:
+    - Artist
+    - Album
+    - Song
+    - Playlist

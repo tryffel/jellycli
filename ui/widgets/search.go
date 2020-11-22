@@ -2,6 +2,7 @@ package widgets
 
 import (
 	"fmt"
+	"github.com/gdamore/tcell"
 	"gitlab.com/tslocum/cview"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/models"
@@ -47,13 +48,82 @@ func (s *searchListItem) SetSelected(selected twidgets.Selection) {
 	}
 }
 
+type searchBox struct {
+	*cview.InputField
+	label string
+
+	previousQuery string
+	searchFunc    func(string)
+	blurFunc      func(key tcell.Key)
+}
+
+func (s *searchBox) SetBlurFunc(f func(key tcell.Key)) {
+	s.blurFunc = f
+}
+
+func newSearchBox(label string, searchFunc func(string)) *searchBox {
+	s := &searchBox{
+		InputField: cview.NewInputField(),
+		label:      label,
+		searchFunc: searchFunc,
+	}
+
+	colors := config.Color
+
+	s.InputField.SetBackgroundColor(colors.Background)
+	s.InputField.SetLabelColor(colors.TextSecondary)
+	s.InputField.SetFieldTextColor(colors.Text)
+	s.InputField.SetFieldBackgroundColor(colors.Background)
+	s.InputField.SetPlaceholderTextColor(colors.TextDisabled)
+
+	s.InputField.SetPlaceholder("John Cage")
+	s.InputField.SetLabel(label)
+	s.InputField.SetDoneFunc(s.done)
+
+	return s
+}
+
+func (s *searchBox) Blur() {
+	s.InputField.SetFieldBackgroundColor(config.Color.Background)
+	s.InputField.SetFieldTextColor(config.Color.Text)
+}
+
+func (s *searchBox) Focus(delegate func(p cview.Primitive)) {
+	s.InputField.SetFieldBackgroundColor(config.Color.BackgroundSelected)
+	s.InputField.SetFieldTextColor(config.Color.TextSelected)
+	s.InputField.Focus(delegate)
+}
+
+func (s *searchBox) done(key tcell.Key) {
+	if key == tcell.KeyEnter {
+		query := s.InputField.GetText()
+		s.previousQuery = query
+		if s.blurFunc != nil {
+			s.blurFunc(key)
+		}
+		if s.searchFunc != nil {
+			s.searchFunc(query)
+		}
+	} else if key == tcell.KeyEsc {
+		s.InputField.SetText(s.previousQuery)
+	} else if key == tcell.KeyTab {
+		if s.blurFunc != nil {
+			s.blurFunc(key)
+		}
+	} else if key == tcell.KeyBacktab {
+		if s.blurFunc != nil {
+			s.blurFunc(key)
+		}
+	}
+}
+
 // SearchTopList shows overall result of different keys, where user
 // can click any key and see actual results.
 type SearchTopList struct {
 	*twidgets.Banner
 	*previous
 
-	name *cview.TextView
+	searchInput *searchBox
 
 	list        *twidgets.ScrollList
 	listFocused bool
@@ -65,11 +135,10 @@ type SearchTopList struct {
 	prevFunc func()
 }
 
-func NewSearchTopList() *SearchTopList {
+func NewSearchTopList(searchFunc func(string)) *SearchTopList {
 	stp := &SearchTopList{
 		Banner:      twidgets.NewBanner(),
 		previous:    &previous{},
-		name:        cview.NewTextView(),
 		listFocused: false,
 		selectFunc:  nil,
 		prevBtn:     newButton("Back"),
@@ -77,6 +146,7 @@ func NewSearchTopList() *SearchTopList {
 		results:     map[models.ItemType]*searchListItem{},
 	}
 
+	stp.searchInput = newSearchBox("Search: ", searchFunc)
 	stp.list = twidgets.NewScrollList(stp.selectItem)
 
 	stp.SetBorder(true)
@@ -89,7 +159,7 @@ func NewSearchTopList() *SearchTopList {
 	stp.SetBorderColor(config.Color.Border)
 
 	btns := []*button{stp.prevBtn}
-	selectables := []twidgets.Selectable{stp.prevBtn, stp.list}
+	selectables := []twidgets.Selectable{stp.prevBtn, stp.searchInput, stp.list}
 
 	for _, v := range btns {
 		v.SetBackgroundColor(config.Color.ButtonBackground)
@@ -101,19 +171,15 @@ func NewSearchTopList() *SearchTopList {
 	stp.prevBtn.SetSelectedFunc(stp.goBack)
 	stp.Banner.Selectable = selectables
 
-	stp.Grid.SetRows(1, 1, 1, 1, -1)
+	stp.Grid.SetRows(1, 1, 1, -1)
 	stp.Grid.SetColumns(6, 2, 10, -1, 10, -1, 10, -3)
 	stp.Grid.SetMinSize(1, 6)
 	stp.Grid.SetBackgroundColor(config.Color.Background)
-	stp.name.SetBackgroundColor(config.Color.Background)
-	stp.name.SetTextColor(config.Color.Text)
-	stp.name.SetText("Search results")
-
 	stp.list.Grid.SetColumns(1, -1)
 
 	stp.Grid.AddItem(stp.prevBtn, 0, 0, 1, 1, 1, 5, false)
-	stp.Grid.AddItem(stp.name, 0, 2, 2, 6, 1, 10, false)
-	stp.Grid.AddItem(stp.list, 4, 0, 1, 8, 6, 20, false)
+	stp.Grid.AddItem(stp.searchInput, 1, 2, 2, 6, 1, 10, false)
+	stp.Grid.AddItem(stp.list, 3, 0, 1, 8, 6, 20, false)
 	stp.listFocused = false
 	return stp
 }

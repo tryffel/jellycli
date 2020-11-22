@@ -114,7 +114,7 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 	w.songs.SetBackCallback(w.goBack)
 	w.songs.showPage = w.selectSongs
 
-	w.searchResultsTop = NewSearchTopList()
+	w.searchResultsTop = NewSearchTopList(w.searchCb)
 
 	w.mediaPlayer = p
 	w.mediaItems = i
@@ -345,13 +345,11 @@ func (w *Window) moveCtrl(key tcell.Key) bool {
 	return false
 }
 
-func (w *Window) searchCb(query string, doSearch bool) {
+func (w *Window) searchCb(query string) {
 	logrus.Debug("In search callback")
 	w.app.SetFocus(w.layout)
 
-	if doSearch {
-		//w.mediaController.Search(query)
-	}
+	//w.mediaController.Search(query)
 
 }
 

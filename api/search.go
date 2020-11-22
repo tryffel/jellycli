@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"tryffel.net/go/jellycli/models"
 )
 
@@ -38,6 +39,31 @@ type SearchResult struct {
 	Items []SearchHint `json:"SearchHints"`
 }
 
+func searchDtoToItems(rc io.ReadCloser, target mediaItemType) ([]models.Item, error) {
+
+	var result itemMapper
+
+	switch target {
+	case mediaTypeSong:
+		result = &songs{}
+	case mediaTypeAlbum:
+		result = &albums{}
+	case mediaTypeArtist:
+		result = &artists{}
+	case mediaTypePlaylist:
+		result = &playlists{}
+	default:
+		return nil, fmt.Errorf("unknown item type: %s", target)
+	}
+
+	err := json.NewDecoder(rc).Decode(result)
+	if err != nil {
+		return nil, fmt.Errorf("decode item %s: %v", target, err)
+	}
+
+	return result.Items(), nil
+}
+
 //Search searches audio items
 func (a *Api) Search(query string, itemType models.ItemType, limit int) ([]models.Item, error) {
 	if limit == 0 {
@@ -45,8 +71,6 @@ func (a *Api) Search(query string, itemType models.ItemType, limit int) ([]model
 	}
 	params := *a.defaultParams()
 	params.enableRecursive()
-	delete(params, "UserId")
-	delete(params, "DeviceId")
 	params["SearchTerm"] = query
 	params["Limit"] = fmt.Sprint(limit)
 	params["IncludePeople"] = "false"
@@ -55,11 +79,11 @@ func (a *Api) Search(query string, itemType models.ItemType, limit int) ([]model
 
 	switch itemType {
 	case models.TypeArtist:
-		params.setIncludeTypes(mediaTypeArtist)
+		params["IncludeArtists"] = "true"
+		params["IncludeMedia"] = "false"
 		url = "/Artists"
 	case models.TypeAlbum:
 		params.setIncludeTypes(mediaTypeAlbum)
-		url = "/Albums"
 		url = fmt.Sprintf("/Users/%s/Items", a.userId)
 	case models.TypeSong:
 		params.setIncludeTypes(mediaTypeSong)
@@ -67,17 +91,9 @@ func (a *Api) Search(query string, itemType models.ItemType, limit int) ([]model
 	case models.TypePlaylist:
 		params.setIncludeTypes(mediaTypePlaylist)
 		url = fmt.Sprintf("/Users/%s/Items", a.userId)
-		url = "/Playlists"
 	case models.TypeGenre:
 		return nil, errors.New("genres not supported")
 	}
-
-	type Result struct {
-		Items            []album
-		TotalRecordCount int
-	}
-
-	result := &Result{}
 
 	body, err := a.get(url, &params)
 	if err != nil {
@@ -85,15 +101,5 @@ func (a *Api) Search(query string, itemType models.ItemType, limit int) ([]model
 		return nil, fmt.Errorf("query failed: %v: %s", err, msg)
 	}
 
-	err = json.NewDecoder(body).Decode(result)
-	if err != nil {
-		return []models.Item{}, err
-	}
-
-	items := make([]models.Item, len(result.Items))
-
-	for i, v := range result.Items {
-		items[i] = v.ModelType()
-	}
-	return items, nil
+	return searchDtoToItems(body, toItemType(itemType))
 }

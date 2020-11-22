@@ -289,14 +289,7 @@ func (w *Window) navBarCtrl(key tcell.Key) bool {
 		w.help.SetStats(stats)
 		w.showModal(w.help, 25, 50, true)
 	case navBar.Search:
-		// fake some results
-		artists := []models.Item{&models.Artist{}, &models.Artist{}, &models.Artist{}}
-
-		w.searchResultsTop.addItems(models.TypeArtist, artists)
-		w.searchResultsTop.addItems(models.TypeAlbum, artists)
-		w.searchResultsTop.addItems(models.TypeSong, artists)
-		w.searchResultsTop.addItems(models.TypePlaylist, artists)
-		w.searchResultsTop.addItems(models.TypeGenre, artists)
+		w.searchResultsTop.Clear()
 		w.setViewWidget(w.searchResultsTop, true)
 	case navBar.Queue:
 		if w.help.HasFocus() {
@@ -347,32 +340,77 @@ func (w *Window) moveCtrl(key tcell.Key) bool {
 
 func (w *Window) searchCb(query string) {
 	logrus.Debug("In search callback")
-	w.app.SetFocus(w.layout)
+	w.searchResultsTop.ClearResults()
 
-	albums, err := w.mediaItems.Search(models.TypeAlbum, query)
-	if err == nil {
-		w.searchResultsTop.Clear()
-		w.searchResultsTop.addItems(models.TypeAlbum, albums)
-	} else {
-		logrus.Errorf("search albums: %v", err)
+	for _, itemType := range config.AppConfig.Player.SearchTypes {
+		items, err := w.mediaItems.Search(itemType, query)
+		if err == nil {
+			if len(items) > 0 {
+				w.searchResultsTop.addItems(itemType, items)
+			}
+		} else {
+			logrus.Errorf("search items of type %s: %v", itemType, err)
+		}
 	}
 }
 
 func (w *Window) showSearchResults(itemType models.ItemType, results []models.Item) {
-	if itemType == models.TypeAlbum {
+	var view Previous
+
+	switch itemType {
+	case models.TypeAlbum:
+		view = w.albumList
 		albums := make([]*models.Album, len(results))
 
 		for i, v := range results {
 			albums[i], _ = v.(*models.Album)
 		}
-
 		w.albumList.Clear()
 		w.albumList.EnablePaging(false)
 		w.albumList.SetLabel(fmt.Sprintf("Search results: %d albums", len(results)))
 		w.albumList.SetAlbums(albums)
 		w.albumList.EnableSimilar(false)
-		w.setViewWidget(w.albumList, true)
+	case models.TypeArtist:
+		view = w.artistList
+		artists := make([]*models.Artist, len(results))
+
+		for i, v := range results {
+			artists[i], _ = v.(*models.Artist)
+		}
+
+		w.artistList.Clear()
+		w.artistList.EnablePaging(false)
+		w.artistList.AddArtists(artists)
+	case models.TypeSong:
+		view = w.songs
+		songs := make([]*models.Song, len(results))
+
+		for i, v := range results {
+			songs[i], _ = v.(*models.Song)
+		}
+
+		w.songs.setTitle(fmt.Sprintf("Search results: %d songs", len(songs)))
+		w.songs.SetSongs(songs, interfaces.DefaultPaging())
+	case models.TypePlaylist:
+		view = w.playlists
+		playlists := make([]*models.Playlist, len(results))
+
+		for i, v := range results {
+			playlists[i], _ = v.(*models.Playlist)
+		}
+
+		w.playlists.SetPlaylists(playlists)
+	case models.TypeGenre:
+		view = w.genres
+		genres := make([]*models.IdName, len(results))
+		w.genres.setGenres(genres)
 	}
+
+	if view != nil {
+		w.app.SetFocus(w.searchResultsTop)
+		w.setViewWidget(view, true)
+	}
+
 }
 
 func (w *Window) closeHelp() {

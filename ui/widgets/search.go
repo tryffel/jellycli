@@ -207,11 +207,17 @@ func (s *SearchTopList) selectItem(index int) {
 	s.showMediafunc(itemType, items)
 }
 
-func (s *SearchTopList) Clear() {
+func (s *SearchTopList) ClearResults() {
 	if len(s.results) > 0 {
 		s.results = []*searchListItem{}
 	}
+
 	s.list.Clear()
+}
+
+func (s *SearchTopList) Clear() {
+	s.ClearResults()
+	s.searchInput.SetText("")
 }
 
 func (s *SearchTopList) addItems(itemType models.ItemType, items []models.Item) {

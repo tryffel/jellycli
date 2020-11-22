@@ -28,6 +28,7 @@ import (
 	"path"
 	"strings"
 	"syscall"
+	"tryffel.net/go/jellycli/models"
 )
 
 // AppConfig is a configuration loaded during startup
@@ -68,6 +69,9 @@ type Player struct {
 	HttpBufferingLimitMem int `yaml:"http_buffering_limit_mem"`
 
 	EnableRemoteControl bool `yaml:"enable_remote_control"`
+
+	// valid types: artist,album,song,playlist,genre
+	SearchTypes []models.ItemType `yaml:"search_types"`
 }
 
 func (p *Player) fillDefaults() {
@@ -103,6 +107,7 @@ func (c *Config) initNewConfig() {
 	// booleans are hard to determine whether they are set or not,
 	// so only fill this here
 	c.Player.LimitRecentlyPlayed = true
+	c.Player.SearchTypes = []models.ItemType{"artist,album,song,playlist,genre"}
 }
 
 // can config file be considered empty / not configured
@@ -135,4 +140,12 @@ func ReadUserInput(name string, mask bool) (string, error) {
 	}
 	val = strings.Trim(val, "\n\r")
 	return val, nil
+}
+
+var allowedSearchTypes = map[string]bool{
+	"artist":   true,
+	"album":    true,
+	"song":     true,
+	"playlist": true,
+	"genre":    true,
 }

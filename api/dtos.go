@@ -28,6 +28,23 @@ func (m mediaItemType) String() string {
 	return string(m)
 }
 
+func toItemType(t models.ItemType) mediaItemType {
+	switch t {
+	case models.TypeArtist:
+		return mediaTypeArtist
+	case models.TypeAlbum:
+		return mediaTypeAlbum
+	case models.TypeSong:
+		return mediaTypeSong
+	case models.TypePlaylist:
+		return mediaTypePlaylist
+	case models.TypeGenre:
+		return mediaTypeGenre
+	default:
+		return ""
+	}
+}
+
 const (
 	mediaTypeAlbum        mediaItemType = "MusicAlbum"
 	mediaTypeArtist       mediaItemType = "MusicArtist"
@@ -35,7 +52,7 @@ const (
 	mediaTypePlaylist     mediaItemType = "Playlist"
 	folderTypePlaylists   mediaItemType = "PlaylistsFolder"
 	folderTypeCollections mediaItemType = "CollectionFolder"
-	fodlerTypeUserView    mediaItemType = "UserView"
+	mediaTypeGenre        mediaItemType = "Genre"
 )
 
 // itemType: each item provided by api has Type-field. This interface returns expected type and actual type
@@ -44,6 +61,10 @@ type itemType interface {
 	ExpectType() mediaItemType
 	GotType() mediaItemType
 	ModelType() models.Item
+}
+
+type itemMapper interface {
+	Items() []models.Item
 }
 
 // assert type matches expected
@@ -82,6 +103,14 @@ type artists struct {
 	TotalArtists int      `json:"TotalRecordCount"`
 }
 
+func (a *artists) Items() []models.Item {
+	items := make([]models.Item, len(a.Artists))
+	for i, v := range a.Artists {
+		items[i] = v.toArtist()
+	}
+	return items
+}
+
 type artist struct {
 	Name          string   `json:"Name"`
 	Id            string   `json:"Id"`
@@ -118,6 +147,14 @@ func (a *artist) toArtist() *models.Artist {
 type albums struct {
 	Albums      []album `json:"Items"`
 	TotalAlbums int     `json:"TotalRecordCount"`
+}
+
+func (a *albums) Items() []models.Item {
+	items := make([]models.Item, len(a.Albums))
+	for i, v := range a.Albums {
+		items[i] = v.toAlbum()
+	}
+	return items
 }
 
 type album struct {
@@ -175,6 +212,14 @@ func (a *album) toAlbum() *models.Album {
 type songs struct {
 	Songs      []song `json:"Items"`
 	TotalSongs int    `json:"TotalRecordCount"`
+}
+
+func (s *songs) Items() []models.Item {
+	items := make([]models.Item, len(s.Songs))
+	for i, v := range s.Songs {
+		items[i] = v.toSong()
+	}
+	return items
 }
 
 type song struct {
@@ -236,6 +281,14 @@ type collection struct {
 
 type playlists struct {
 	Playlists []playlist `json:"Items"`
+}
+
+func (p *playlists) Items() []models.Item {
+	items := make([]models.Item, len(p.Playlists))
+	for i, v := range p.Playlists {
+		items[i] = v.toPlaylist()
+	}
+	return items
 }
 
 type playlist struct {

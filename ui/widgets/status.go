@@ -18,7 +18,7 @@ package widgets
 
 import (
 	"fmt"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"github.com/sirupsen/logrus"
 	"gitlab.com/tslocum/cview"
 	"sync"
@@ -94,6 +94,16 @@ type Status struct {
 	actionCb func(state interfaces.AudioStatus)
 
 	player interfaces.Player
+
+	visible bool
+}
+
+func (s *Status) GetVisible() bool {
+	return s.visible
+}
+
+func (s *Status) SetVisible(v bool) {
+	s.visible = v
 }
 
 func (s *Status) MouseHandler() func(action cview.MouseAction, event *tcell.EventMouse, setFocus func(p cview.Primitive)) (consumed bool, capture cview.Primitive) {
@@ -206,20 +216,20 @@ func (s *Status) Draw(screen tcell.Screen) {
 
 	colors := config.Color.Status
 
-	cview.Print(screen, progress, topX, y-1, progressLen+5, cview.AlignLeft, colors.ProgressBar)
+	cview.Print(screen, []byte(progress), topX, y-1, progressLen+5, cview.AlignLeft, colors.ProgressBar)
 	topX += progressLen + progressLen/10
-	cview.Print(screen, volume, topX, y-1, w, cview.AlignLeft, colors.ProgressBar)
+	cview.Print(screen, []byte(volume), topX, y-1, w, cview.AlignLeft, colors.ProgressBar)
 
-	cview.Print(screen, util.PackKeyBindingName(config.KeyBinds.Global.VolumeDown, 5),
+	cview.Print(screen, []byte(util.PackKeyBindingName(config.KeyBinds.Global.VolumeDown, 5)),
 		topX+7, y, topX+16, cview.AlignLeft, colors.Shortcuts)
-	cview.Print(screen, util.PackKeyBindingName(config.KeyBinds.Global.VolumeUp, 5),
+	cview.Print(screen, []byte(util.PackKeyBindingName(config.KeyBinds.Global.VolumeUp, 5)),
 		topX+18, y, topX+1, cview.AlignLeft, colors.Shortcuts)
 
 	btnY := y + 1
 	btnX := x + 1
 
 	for i, v := range s.buttons {
-		cview.Print(screen, s.shortCuts[i], btnX, btnY-1, 4, cview.AlignLeft, colors.Shortcuts)
+		cview.Print(screen, []byte(s.shortCuts[i]), btnX, btnY-1, 4, cview.AlignLeft, colors.Shortcuts)
 
 		v.SetRect(btnX, btnY, 3, 1)
 		v.Draw(screen)
@@ -262,18 +272,18 @@ func (s *Status) WriteStatus(screen tcell.Screen, x, y int) {
 		x += 2
 		w, _ := screen.Size()
 		if s.state.Song.Favorite {
-			cview.Print(screen, charFavorite, x, y, 2, cview.AlignLeft, config.Color.TextSelected)
+			cview.Print(screen, []byte(charFavorite), x, y, 2, cview.AlignLeft, config.Color.TextSelected)
 			x += 3
 		}
 
-		cview.Print(screen, effect(s.state.Song.Name, "b")+" - ", x, y, w, cview.AlignLeft, s.detailsMainColor)
+		cview.Print(screen, []byte(effect(s.state.Song.Name, "b")+" - "), x, y, w, cview.AlignLeft, s.detailsMainColor)
 		x += len(s.state.Song.Name) + 3
-		cview.Print(screen, effect(s.state.Artist.Name, "b")+" ", x, y, w, cview.AlignLeft, s.detailsMainColor)
+		cview.Print(screen, []byte(effect(s.state.Artist.Name, "b")+" "), x, y, w, cview.AlignLeft, s.detailsMainColor)
 		x += len(s.state.Artist.Name) + 1
 		x = xi + 4
-		cview.Print(screen, s.state.Album.Name+" ", x, y+1, w, cview.AlignLeft, s.detailsMainColor)
+		cview.Print(screen, []byte(s.state.Album.Name+" "), x, y+1, w, cview.AlignLeft, s.detailsMainColor)
 		x += len(s.state.Album.Name) + 1
-		cview.Print(screen, fmt.Sprintf("(%d)", s.state.Album.Year), x, y+1, w, cview.AlignLeft, s.detailsMainColor)
+		cview.Print(screen, []byte(fmt.Sprintf("(%d)", s.state.Album.Year)), x, y+1, w, cview.AlignLeft, s.detailsMainColor)
 	}
 }
 

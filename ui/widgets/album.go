@@ -18,7 +18,7 @@ package widgets
 
 import (
 	"fmt"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/uniseg"
 	"gitlab.com/tslocum/cview"
 	"tryffel.net/go/jellycli/config"
@@ -241,9 +241,9 @@ func NewAlbumview(playSong func(song *models.Song),
 	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.dropDown, a.list}
 	for _, btn := range btns {
 		btn.SetLabelColor(config.Color.ButtonLabel)
-		btn.SetLabelColorActivated(config.Color.ButtonLabelSelected)
+		btn.SetLabelColorFocused(config.Color.ButtonLabelSelected)
 		btn.SetBackgroundColor(config.Color.ButtonBackground)
-		btn.SetBackgroundColorActivated(config.Color.ButtonBackgroundSelected)
+		btn.SetBackgroundColorFocused(config.Color.ButtonBackgroundSelected)
 	}
 
 	a.prevBtn.SetSelectedFunc(a.goBack)
@@ -272,16 +272,20 @@ func NewAlbumview(playSong func(song *models.Song),
 	}
 
 	if a.context != nil {
-		a.dropDown.AddOption("Instant mix", func() {
-
+		mixOpts := cview.NewDropDownOption("Instant mix")
+		mixOpts.SetSelectedFunc(func(index int, option *cview.DropDownOption) {
 			a.context.InstantMix(a.artist)
 		})
-		a.dropDown.AddOption("View similar", func() {
+		similarOpts := cview.NewDropDownOption("View similar")
+		mixOpts.SetSelectedFunc(func(index int, option *cview.DropDownOption) {
 			a.showSimilar()
 		})
-		a.dropDown.AddOption("Open in browser", func() {
+		browserMix := cview.NewDropDownOption("Open in browser")
+		mixOpts.SetSelectedFunc(func(index int, option *cview.DropDownOption) {
 			a.context.OpenInBrowser(a.album)
 		})
+
+		a.dropDown.AddOptions(mixOpts, similarOpts, browserMix)
 	}
 
 	a.list.ContextMenuList().SetBorder(true)

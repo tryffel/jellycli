@@ -18,7 +18,7 @@ package modal
 
 import (
 	"fmt"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"gitlab.com/tslocum/cview"
 	"strings"
 	"tryffel.net/go/jellycli/config"
@@ -94,7 +94,7 @@ func NewHelp(doneCb func()) *Help {
 	h.SetBorderColor(config.Color.Border)
 	h.SetTitleColor(config.Color.TextSecondary)
 	h.SetDynamicColors(true)
-	h.SetBorderPadding(0, 1, 2, 2)
+	h.SetPadding(0, 1, 2, 2)
 
 	h.totalPages = 3
 	h.setContent()

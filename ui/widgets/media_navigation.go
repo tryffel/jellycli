@@ -18,7 +18,7 @@ package widgets
 
 import (
 	"fmt"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"gitlab.com/tslocum/cview"
 	"tryffel.net/go/jellycli/config"
 )

@@ -24,5 +24,4 @@ type Modal interface {
 	SetDoneFunc(doneFunc func())
 	cview.Primitive
 	View() cview.Primitive
-	SetVisible(visible bool)
 }

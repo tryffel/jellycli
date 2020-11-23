@@ -73,9 +73,9 @@ func NewGenreList() *GenreList {
 	selectables := []twidgets.Selectable{g.backBtn, g.paging.Previous, g.paging.Next, g.list}
 	for _, btn := range btns {
 		btn.SetLabelColor(config.Color.ButtonLabel)
-		btn.SetLabelColorActivated(config.Color.ButtonLabelSelected)
+		btn.SetLabelColorFocused(config.Color.ButtonLabelSelected)
 		btn.SetBackgroundColor(config.Color.ButtonBackground)
-		btn.SetBackgroundColorActivated(config.Color.ButtonBackgroundSelected)
+		btn.SetBackgroundColorFocused(config.Color.ButtonBackgroundSelected)
 	}
 
 	g.backBtn.SetSelectedFunc(g.goBack)

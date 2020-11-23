@@ -16,7 +16,7 @@
 
 package config
 
-import "github.com/gdamore/tcell"
+import "github.com/gdamore/tcell/v2"
 
 var (
 	KeyBinds = DefaultKeyBindings()

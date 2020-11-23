@@ -18,7 +18,7 @@ package widgets
 
 import (
 	"fmt"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"gitlab.com/tslocum/cview"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/models"
@@ -145,8 +145,8 @@ func NewPlaylists(selectPlaylist func(playlist *models.Playlist)) *Playlists {
 	for _, v := range btns {
 		v.SetBackgroundColor(config.Color.ButtonBackground)
 		v.SetLabelColor(config.Color.ButtonLabel)
-		v.SetBackgroundColorActivated(config.Color.ButtonBackgroundSelected)
-		v.SetLabelColorActivated(config.Color.ButtonLabelSelected)
+		v.SetBackgroundColorFocused(config.Color.ButtonBackgroundSelected)
+		v.SetLabelColorFocused(config.Color.ButtonLabelSelected)
 	}
 
 	a.prevBtn.SetSelectedFunc(a.goBack)

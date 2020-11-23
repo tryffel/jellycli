@@ -17,7 +17,7 @@
 package config
 
 import (
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"tryffel.net/go/twidgets"
 )
 

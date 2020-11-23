@@ -17,7 +17,7 @@
 package widgets
 
 import (
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"gitlab.com/tslocum/cview"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/twidgets"
@@ -90,7 +90,7 @@ func newDropDown(text string) *dropDown {
 	d.SetFieldBackgroundColor(config.Color.Background)
 	d.SetFieldTextColor(config.Color.Text)
 	d.SetBorder(false)
-	d.SetBorderPadding(0, 0, 1, 2)
+	d.SetPadding(0, 0, 1, 2)
 
 	d.SetLabel(text)
 	return d

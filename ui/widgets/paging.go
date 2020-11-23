@@ -18,7 +18,7 @@ package widgets
 
 import (
 	"fmt"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"gitlab.com/tslocum/cview"
 	"tryffel.net/go/jellycli/config"
 )
@@ -79,7 +79,7 @@ func (p *PageSelector) Draw(screen tcell.Screen) {
 		x, y, _, _ := p.GetRect()
 		p.Next.Draw(screen)
 
-		cview.Print(screen, fmt.Sprintf("%d / %d", p.PageNum+1, p.TotalPages),
+		cview.Print(screen, []byte(fmt.Sprintf("%d / %d", p.PageNum+1, p.TotalPages)),
 			x+4, y, 9, cview.AlignCenter, config.Color.Text)
 		p.Previous.Draw(screen)
 	}

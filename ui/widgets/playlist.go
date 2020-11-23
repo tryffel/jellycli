@@ -18,7 +18,7 @@ package widgets
 
 import (
 	"fmt"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"gitlab.com/tslocum/cview"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/models"
@@ -92,9 +92,9 @@ func NewPlaylistView(playSong func(song *models.Song), playSongs func(songs []*m
 	selectables := []twidgets.Selectable{p.prevBtn, p.playBtn, p.options, p.list}
 	for _, btn := range btns {
 		btn.SetLabelColor(config.Color.ButtonLabel)
-		btn.SetLabelColorActivated(config.Color.ButtonLabelSelected)
+		btn.SetLabelColorFocused(config.Color.ButtonLabelSelected)
 		btn.SetBackgroundColor(config.Color.ButtonBackground)
-		btn.SetBackgroundColorActivated(config.Color.ButtonBackgroundSelected)
+		btn.SetBackgroundColorFocused(config.Color.ButtonBackgroundSelected)
 	}
 
 	p.prevBtn.SetSelectedFunc(p.goBack)
@@ -127,13 +127,17 @@ func NewPlaylistView(playSong func(song *models.Song), playSongs func(songs []*m
 			}
 		})
 
-		p.options.AddOption("Instant mix", func() {
+		opts := cview.NewDropDownOption("Instant Mix")
+		opts.SetSelectedFunc(func(index int, option *cview.DropDownOption) {
 			p.context.InstantMix(p.playlist)
 		})
 
-		p.options.AddOption("Open in browser", func() {
+		optsBrowser := cview.NewDropDownOption("Instant Mix")
+		optsBrowser.SetSelectedFunc(func(index int, option *cview.DropDownOption) {
 			p.context.OpenInBrowser(p.playlist)
 		})
+
+		p.options.AddOptions(opts, optsBrowser)
 	}
 
 	p.list.ContextMenuList().SetBorder(true)

@@ -97,13 +97,16 @@ func (p *Player) fillDefaults() {
 	if p.HttpBufferingLimitMem == 0 {
 		p.HttpBufferingLimitMem = 20
 	}
-	p.EnableRemoteControl = true
+	if len(p.SearchTypes) == 0 {
+		p.SearchTypes = []models.ItemType{models.TypeArtist, models.TypeAlbum, models.TypeSong, models.TypePlaylist}
+	}
 }
 
 // initialize new config with some sensible values
 func (c *Config) initNewConfig() {
 	c.Player.fillDefaults()
 	c.Player.MouseEnabled = true
+	c.Player.EnableRemoteControl = true
 	// booleans are hard to determine whether they are set or not,
 	// so only fill this here
 	c.Player.LimitRecentlyPlayed = true
@@ -140,12 +143,4 @@ func ReadUserInput(name string, mask bool) (string, error) {
 	}
 	val = strings.Trim(val, "\n\r")
 	return val, nil
-}
-
-var allowedSearchTypes = map[string]bool{
-	"artist":   true,
-	"album":    true,
-	"song":     true,
-	"playlist": true,
-	"genre":    true,
 }

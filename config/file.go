@@ -74,6 +74,7 @@ func readConfigFile(file string) (*Config, error) {
 	if conf.isEmptyConfig() {
 		conf.initNewConfig()
 	}
+	conf.Player.fillDefaults()
 	return conf, nil
 }
 

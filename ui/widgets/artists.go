@@ -28,69 +28,39 @@ import (
 )
 
 type ArtistList struct {
-	*twidgets.Banner
-	list *twidgets.ScrollList
-	*previous
+	*itemList
 	paging         *PageSelector
 	selectFunc     func(artist *models.Artist)
 	selectPageFunc func(page interfaces.Paging)
 	artists        []*ArtistCover
 
-	listFocused   bool
-	description   *cview.TextView
-	backBtn       *button
 	pagingEnabled bool
 	page          interfaces.Paging
 }
 
 func NewArtistList(selectFunc func(artist *models.Artist)) *ArtistList {
 	a := &ArtistList{
-		Banner:      twidgets.NewBanner(),
-		selectFunc:  selectFunc,
-		artists:     make([]*ArtistCover, 0),
-		previous:    &previous{},
-		description: cview.NewTextView(),
-		backBtn:     newButton("Back"),
+		itemList:   newItemList(nil),
+		selectFunc: selectFunc,
+		artists:    make([]*ArtistCover, 0),
 	}
 	a.paging = NewPageSelector(a.selectPage)
-	a.list = twidgets.NewScrollList(a.selectArtist)
 
 	a.list.SetInputCapture(a.listHandler)
-	a.list.SetBorder(true)
-	a.list.SetBorderColor(config.Color.Border)
 	a.list.Grid.SetColumns(1, -1)
 
-	a.list.SetBackgroundColor(config.Color.Background)
-	a.Grid.SetBackgroundColor(config.Color.Background)
 	a.list.Padding = 1
 	a.list.ItemHeight = 2
 
-	a.SetBorder(true)
-	a.SetBorderColor(config.Color.Border)
-	a.SetBackgroundColor(config.Color.Background)
-	a.SetBorder(true)
-
 	a.pagingEnabled = true
-	btns := []*button{a.backBtn, a.paging.Previous, a.paging.Next}
-	selectables := []twidgets.Selectable{a.backBtn, a.paging.Previous, a.paging.Next, a.list}
-	for _, btn := range btns {
-		btn.SetLabelColor(config.Color.ButtonLabel)
-		btn.SetLabelColorActivated(config.Color.ButtonLabelSelected)
-		btn.SetBackgroundColor(config.Color.ButtonBackground)
-		btn.SetBackgroundColorActivated(config.Color.ButtonBackgroundSelected)
-	}
-
-	a.backBtn.SetSelectedFunc(a.goBack)
+	selectables := []twidgets.Selectable{a.prevBtn, a.paging.Previous, a.paging.Next, a.list}
 	a.Banner.Selectable = selectables
-	a.description.SetBackgroundColor(config.Color.Background)
-	a.description.SetTextColor(config.Color.Text)
-	a.description.SetDynamicColors(true)
 
 	a.Banner.Grid.SetRows(1, 1, 1, 1, -1)
 	a.Banner.Grid.SetColumns(6, 2, 10, -1, 10, -1, 10, -3)
 	a.Banner.Grid.SetMinSize(1, 6)
 
-	a.Banner.Grid.AddItem(a.backBtn, 0, 0, 1, 1, 1, 5, false)
+	a.Banner.Grid.AddItem(a.prevBtn, 0, 0, 1, 1, 1, 5, false)
 	a.Banner.Grid.AddItem(a.description, 0, 2, 2, 6, 1, 10, false)
 	a.Banner.Grid.AddItem(a.paging, 3, 4, 1, 3, 1, 10, true)
 	a.Banner.Grid.AddItem(a.list, 4, 0, 1, 8, 4, 10, false)
@@ -111,11 +81,11 @@ func (a *ArtistList) EnablePaging(enabled bool) {
 	}
 	a.pagingEnabled = enabled
 	if enabled {
-		selectables := []twidgets.Selectable{a.backBtn, a.paging.Previous, a.paging.Next, a.list}
+		selectables := []twidgets.Selectable{a.prevBtn, a.paging.Previous, a.paging.Next, a.list}
 		a.Banner.Selectable = selectables
 		a.Banner.Grid.AddItem(a.paging, 3, 4, 1, 3, 1, 10, true)
 	} else {
-		selectables := []twidgets.Selectable{a.backBtn, a.list}
+		selectables := []twidgets.Selectable{a.prevBtn, a.list}
 		a.Banner.Selectable = selectables
 		a.Banner.Grid.RemoveItem(a.paging)
 		a.page.CurrentPage = 0

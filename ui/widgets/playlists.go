@@ -78,18 +78,10 @@ func (a *PlaylistCover) SetSelected(selected twidgets.Selection) {
 
 //Playlists shows playlists
 type Playlists struct {
-	*twidgets.Banner
-	*previous
-	list           *twidgets.ScrollList
-	listFocused    bool
+	*itemList
 	selectFunc     func(album *models.Playlist)
 	playlistCovers []*PlaylistCover
-
-	name *cview.TextView
-
-	prevBtn  *button
-	playBtn  *button
-	prevFunc func()
+	playBtn        *button
 }
 
 func (a *Playlists) AddAlbum(c *PlaylistCover) {
@@ -114,58 +106,31 @@ func (a *Playlists) SetPlaylists(playlists []*models.Playlist) {
 		a.playlistCovers[i] = cover
 	}
 	a.list.AddItems(items...)
-	a.name.SetText(fmt.Sprintf("Playlists: %d", len(playlists)))
+	a.description.SetText(fmt.Sprintf("Playlists: %d", len(playlists)))
 }
 
 // NewPlaylists constructs new playlist view
 func NewPlaylists(selectPlaylist func(playlist *models.Playlist)) *Playlists {
 	a := &Playlists{
-		Banner:     twidgets.NewBanner(),
-		previous:   &previous{},
+
 		selectFunc: selectPlaylist,
-		name:       cview.NewTextView(),
-		prevBtn:    newButton("Back"),
-		prevFunc:   nil,
 		playBtn:    newButton("Play all"),
 	}
-	a.list = twidgets.NewScrollList(a.selectAlbum)
-	a.list.ItemHeight = 3
-
-	a.SetBorder(true)
-	a.SetBorderColor(config.Color.Border)
-	a.SetBackgroundColor(config.Color.Background)
-	a.list.SetBackgroundColor(config.Color.Background)
-	a.list.SetBorder(true)
-	a.list.SetBorderColor(config.Color.Border)
+	a.itemList = newItemList(a.selectAlbum)
+	a.itemList.list.ItemHeight = 3
 	a.list.Grid.SetColumns(-1, 5)
-	a.SetBorderColor(config.Color.Border)
 
-	btns := []*button{a.prevBtn, a.playBtn}
 	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.list}
-	for _, v := range btns {
-		v.SetBackgroundColor(config.Color.ButtonBackground)
-		v.SetLabelColor(config.Color.ButtonLabel)
-		v.SetBackgroundColorActivated(config.Color.ButtonBackgroundSelected)
-		v.SetLabelColorActivated(config.Color.ButtonLabelSelected)
-	}
-
 	a.prevBtn.SetSelectedFunc(a.goBack)
-
 	a.Banner.Selectable = selectables
-
 	a.Grid.SetRows(1, 1, 1, 1, -1)
 	a.Grid.SetColumns(6, 2, 10, -1, 10, -1, 10, -3)
 	a.Grid.SetMinSize(1, 6)
 	a.Grid.SetBackgroundColor(config.Color.Background)
-	a.name.SetBackgroundColor(config.Color.Background)
-	a.name.SetTextColor(config.Color.Text)
-	a.name.SetText("Playlists")
-	a.name.SetDynamicColors(true)
-
+	a.description.SetText("Playlists")
 	a.list.Grid.SetColumns(1, -1)
-
 	a.Grid.AddItem(a.prevBtn, 0, 0, 1, 1, 1, 5, false)
-	a.Grid.AddItem(a.name, 0, 2, 2, 6, 1, 10, false)
+	a.Grid.AddItem(a.description, 0, 2, 2, 6, 1, 10, false)
 	a.Grid.AddItem(a.playBtn, 3, 2, 1, 1, 1, 10, false)
 	a.Grid.AddItem(a.list, 4, 0, 1, 8, 6, 20, false)
 

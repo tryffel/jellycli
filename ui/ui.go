@@ -18,6 +18,9 @@
 package ui
 
 import (
+	"github.com/gdamore/tcell"
+	"gitlab.com/tslocum/cview"
+	"tryffel.net/go/jellycli/config"
 	player2 "tryffel.net/go/jellycli/player"
 	"tryffel.net/go/jellycli/task"
 	"tryffel.net/go/jellycli/ui/widgets"
@@ -33,6 +36,7 @@ func NewUi(player *player2.Player) *Gui {
 	u := &Gui{
 		player: player,
 	}
+	bindDefaultTheme()
 	u.window = widgets.NewWindow(player, player, player)
 	u.Name = "Gui"
 	u.SetLoop(u.loop)
@@ -61,4 +65,31 @@ func (gui *Gui) loop() {
 			break
 		}
 	}
+}
+
+func bindDefaultTheme() {
+
+	colors := config.Color
+
+	theme := cview.Theme{
+		TitleColor:                  tcell.ColorWhite,
+		BorderColor:                 colors.Border,
+		GraphicsColor:               tcell.ColorWhite,
+		PrimaryTextColor:            colors.Text,
+		SecondaryTextColor:          colors.TextSecondary,
+		TertiaryTextColor:           colors.Modal.Text,
+		InverseTextColor:            0,
+		ContrastSecondaryTextColor:  0,
+		PrimitiveBackgroundColor:    colors.Background,
+		ContrastBackgroundColor:     colors.Background,
+		MoreContrastBackgroundColor: colors.Modal.Background,
+		ContextMenuPaddingTop:       0,
+		ContextMenuPaddingBottom:    0,
+		ContextMenuPaddingLeft:      1,
+		ContextMenuPaddingRight:     1,
+
+		ScrollBarColor: tcell.ColorWhite,
+	}
+
+	cview.Styles = theme
 }

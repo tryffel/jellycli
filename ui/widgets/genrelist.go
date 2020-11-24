@@ -26,59 +26,31 @@ import (
 )
 
 type GenreList struct {
-	*twidgets.Banner
-	list *twidgets.ScrollList
-	*previous
+	*itemList
 	paging         *PageSelector
 	selectFunc     func(genre models.IdName)
 	selectPageFunc func(page interfaces.Paging)
 	genres         []*Genre
 
-	listFocused   bool
-	description   *cview.TextView
-	backBtn       *button
 	pagingEnabled bool
 	page          interfaces.Paging
 }
 
 func NewGenreList() *GenreList {
 	g := &GenreList{
-		Banner:        twidgets.NewBanner(),
-		previous:      &previous{},
-		listFocused:   false,
-		description:   cview.NewTextView(),
-		backBtn:       newButton("Back"),
+
 		pagingEnabled: false,
 		page:          interfaces.Paging{},
 	}
+	g.itemList = newItemList(g.selectGenre)
 
 	g.paging = NewPageSelector(g.selectPage)
-	g.list = twidgets.NewScrollList(g.selectGenre)
-
-	g.list.SetBorder(true)
-	g.list.SetBorderColor(config.Color.Border)
 	g.list.Grid.SetColumns(1, -1)
-
-	g.list.SetBackgroundColor(config.Color.Background)
-	g.Grid.SetBackgroundColor(config.Color.Background)
 	g.list.Padding = 1
 	g.list.ItemHeight = 2
 
-	g.SetBorder(true)
-	g.SetBorderColor(config.Color.Border)
-	g.SetBackgroundColor(config.Color.Background)
-
 	g.pagingEnabled = true
-	btns := []*button{g.backBtn, g.paging.Previous, g.paging.Next}
-	selectables := []twidgets.Selectable{g.backBtn, g.paging.Previous, g.paging.Next, g.list}
-	for _, btn := range btns {
-		btn.SetLabelColor(config.Color.ButtonLabel)
-		btn.SetLabelColorActivated(config.Color.ButtonLabelSelected)
-		btn.SetBackgroundColor(config.Color.ButtonBackground)
-		btn.SetBackgroundColorActivated(config.Color.ButtonBackgroundSelected)
-	}
-
-	g.backBtn.SetSelectedFunc(g.goBack)
+	selectables := []twidgets.Selectable{g.prevBtn, g.paging.Previous, g.paging.Next, g.list}
 	g.Banner.Selectable = selectables
 	g.description.SetBackgroundColor(config.Color.Background)
 	g.description.SetTextColor(config.Color.Text)
@@ -87,7 +59,7 @@ func NewGenreList() *GenreList {
 	g.Banner.Grid.SetColumns(6, 2, 10, -1, 10, -1, 10, -3)
 	g.Banner.Grid.SetMinSize(1, 6)
 
-	g.Banner.Grid.AddItem(g.backBtn, 0, 0, 1, 1, 1, 5, false)
+	g.Banner.Grid.AddItem(g.prevBtn, 0, 0, 1, 1, 1, 5, false)
 	g.Banner.Grid.AddItem(g.description, 0, 2, 2, 6, 1, 10, false)
 	g.Banner.Grid.AddItem(g.paging, 3, 4, 1, 3, 1, 10, true)
 	g.Banner.Grid.AddItem(g.list, 4, 0, 1, 8, 4, 10, false)

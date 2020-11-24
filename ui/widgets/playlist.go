@@ -28,54 +28,37 @@ import (
 
 // AlbumView shows user a header (album name, info, buttons) and list of songs
 type PlaylistView struct {
-	*twidgets.Banner
-	*previous
-	list        *twidgets.ScrollList
-	songs       []*albumSong
-	playlist    *models.Playlist
-	listFocused bool
+	*itemList
+	songs    []*albumSong
+	playlist *models.Playlist
 
 	context contextOperator
 
 	playSongFunc  func(song *models.Song)
 	playSongsFunc func(songs []*models.Song)
 
-	description *cview.TextView
-	prevBtn     *button
-	playBtn     *button
-	options     *dropDown
-	prevFunc    func()
+	playBtn *button
+	options *dropDown
 }
 
 //NewAlbumView initializes new album view
 func NewPlaylistView(playSong func(song *models.Song), playSongs func(songs []*models.Song),
 	operator contextOperator) *PlaylistView {
 	p := &PlaylistView{
-		Banner:        twidgets.NewBanner(),
-		previous:      &previous{},
-		list:          twidgets.NewScrollList(nil),
+		itemList:      newItemList(nil),
 		playSongFunc:  playSong,
 		playSongsFunc: playSongs,
 
-		description: cview.NewTextView(),
-		prevBtn:     newButton("Back"),
-		playBtn:     newButton("Play all"),
-		context:     operator,
-		options:     newDropDown("Options"),
+		playBtn: newButton("Play all"),
+		context: operator,
+		options: newDropDown("Options"),
 	}
 
 	p.list.ItemHeight = 2
 	p.list.Padding = 1
 	p.list.SetInputCapture(p.listHandler)
-	p.list.SetBorder(true)
-	p.list.SetBorderColor(config.Color.Border)
 	p.list.Grid.SetColumns(1, -1)
 
-	p.SetBorder(true)
-	p.SetBorderColor(config.Color.Border)
-	p.list.SetBackgroundColor(config.Color.Background)
-	p.Grid.SetBackgroundColor(config.Color.Background)
-	p.listFocused = false
 	p.playBtn.SetSelectedFunc(p.playAll)
 
 	p.Banner.Grid.SetRows(1, 1, 1, 1, -1)
@@ -88,20 +71,8 @@ func NewPlaylistView(playSong func(song *models.Song), playSongs func(songs []*m
 	p.Banner.Grid.AddItem(p.options, 3, 4, 1, 1, 1, 10, false)
 	p.Banner.Grid.AddItem(p.list, 4, 0, 1, 8, 4, 10, false)
 
-	btns := []*button{p.prevBtn, p.playBtn}
 	selectables := []twidgets.Selectable{p.prevBtn, p.playBtn, p.options, p.list}
-	for _, btn := range btns {
-		btn.SetLabelColor(config.Color.ButtonLabel)
-		btn.SetLabelColorActivated(config.Color.ButtonLabelSelected)
-		btn.SetBackgroundColor(config.Color.ButtonBackground)
-		btn.SetBackgroundColorActivated(config.Color.ButtonBackgroundSelected)
-	}
-
-	p.prevBtn.SetSelectedFunc(p.goBack)
-
 	p.Banner.Selectable = selectables
-	p.description.SetBackgroundColor(config.Color.Background)
-	p.description.SetTextColor(config.Color.Text)
 
 	if p.context != nil {
 		p.list.AddContextItem("Play all from here", 0, func(index int) {

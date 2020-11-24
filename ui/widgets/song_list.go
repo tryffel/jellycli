@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"github.com/gdamore/tcell"
 	"gitlab.com/tslocum/cview"
-	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
 	"tryffel.net/go/twidgets"
@@ -28,43 +27,29 @@ import (
 
 // SongList shows a list of songs and optional paging
 type SongList struct {
-	*twidgets.Banner
-	*previous
-	paging      *PageSelector
-	list        *twidgets.ScrollList
-	songs       []*albumSong
-	listFocused bool
-	title       string
+	*itemList
+	paging *PageSelector
+	songs  []*albumSong
+	title  string
 
 	playSongFunc  func(song *models.Song)
 	playSongsFunc func(songs []*models.Song)
 	showPage      func(paging interfaces.Paging)
 
-	description *cview.TextView
-	prevBtn     *button
-	playBtn     *button
-
+	playBtn *button
 	context contextOperator
-
-	page interfaces.Paging
-
-	prevFunc func()
+	page    interfaces.Paging
 }
 
 // NewSongList initializes new song list
 func NewSongList(playSong func(song *models.Song), playSongs func(songs []*models.Song),
 	operator contextOperator) *SongList {
 	p := &SongList{
-		Banner:        twidgets.NewBanner(),
-		previous:      &previous{},
-		list:          twidgets.NewScrollList(nil),
+		itemList:      newItemList(nil),
 		playSongFunc:  playSong,
 		playSongsFunc: playSongs,
 		context:       operator,
-
-		description: cview.NewTextView(),
-		prevBtn:     newButton("Back"),
-		playBtn:     newButton("Play all"),
+		playBtn:       newButton("Play all"),
 	}
 
 	p.paging = NewPageSelector(p.selectPage)
@@ -72,17 +57,9 @@ func NewSongList(playSong func(song *models.Song), playSongs func(songs []*model
 	p.list.ItemHeight = 2
 	p.list.Padding = 1
 	p.list.SetInputCapture(p.listHandler)
-	p.list.SetBorder(true)
-	p.list.SetBorderColor(config.Color.Border)
 	p.list.Grid.SetColumns(1, -1)
 
-	p.SetBorder(true)
-	p.SetBorderColor(config.Color.Border)
-	p.list.SetBackgroundColor(config.Color.Background)
-	p.Grid.SetBackgroundColor(config.Color.Background)
-	p.listFocused = false
 	p.playBtn.SetSelectedFunc(p.playAll)
-
 	p.Banner.Grid.SetRows(1, 1, 1, 1, -1)
 	p.Banner.Grid.SetColumns(6, 2, 10, -1, 10, -1, 10, -3)
 	p.Banner.Grid.SetMinSize(1, 6)
@@ -93,21 +70,8 @@ func NewSongList(playSong func(song *models.Song), playSongs func(songs []*model
 	p.Banner.Grid.AddItem(p.paging, 3, 4, 1, 3, 1, 10, true)
 	p.Banner.Grid.AddItem(p.list, 4, 0, 1, 8, 4, 10, false)
 
-	btns := []*button{p.prevBtn, p.playBtn, p.paging.Previous, p.paging.Next}
 	selectables := []twidgets.Selectable{p.prevBtn, p.playBtn, p.paging.Previous, p.paging.Next, p.list}
-	for _, btn := range btns {
-		btn.SetLabelColor(config.Color.ButtonLabel)
-		btn.SetLabelColorActivated(config.Color.ButtonLabelSelected)
-		btn.SetBackgroundColor(config.Color.ButtonBackground)
-		btn.SetBackgroundColorActivated(config.Color.ButtonBackgroundSelected)
-	}
-
-	p.prevBtn.SetSelectedFunc(p.goBack)
 	p.Banner.Selectable = selectables
-	p.description.SetBackgroundColor(config.Color.Background)
-	p.description.SetTextColor(config.Color.Text)
-	p.description.SetDynamicColors(true)
-
 	p.title = "All songs"
 
 	if p.context != nil {
@@ -129,13 +93,7 @@ func NewSongList(playSong func(song *models.Song), playSongs func(songs []*model
 
 	}
 
-	p.list.ContextMenuList().SetBorder(true)
-	p.list.ContextMenuList().SetBackgroundColor(config.Color.Background)
-	p.list.ContextMenuList().SetBorderColor(config.Color.BorderFocus)
-	p.list.ContextMenuList().SetSelectedBackgroundColor(config.Color.BackgroundSelected)
-	p.list.ContextMenuList().SetMainTextColor(config.Color.Text)
-	p.list.ContextMenuList().SetSelectedTextColor(config.Color.TextSelected)
-
+	p.itemList.initContextMenuList()
 	return p
 }
 

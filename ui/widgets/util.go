@@ -61,9 +61,14 @@ func (b *button) SetBlurFunc(blur func(key tcell.Key)) {
 }
 
 func newButton(label string) *button {
-	return &button{
+	btn := &button{
 		Button: cview.NewButton(label),
 	}
+	btn.SetLabelColor(config.Color.ButtonLabel)
+	btn.SetLabelColorActivated(config.Color.ButtonLabelSelected)
+	btn.SetBackgroundColor(config.Color.ButtonBackground)
+	btn.SetBackgroundColorActivated(config.Color.ButtonBackgroundSelected)
+	return btn
 }
 
 // a dropdown that implements widgets.Selectable
@@ -87,7 +92,7 @@ func newDropDown(text string) *dropDown {
 
 	d.SetLabelColor(config.Color.ButtonLabel)
 	d.SetBackgroundColor(config.Color.ButtonBackground)
-	d.SetFieldBackgroundColor(config.Color.Background)
+	d.SetFieldBackgroundColor(config.Color.ButtonBackground)
 	d.SetFieldTextColor(config.Color.Text)
 	d.SetBorder(false)
 	d.SetBorderPadding(0, 0, 1, 2)

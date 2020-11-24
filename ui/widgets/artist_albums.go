@@ -117,26 +117,20 @@ func printArtists(artists []string, maxWidth int) string {
 
 //ArtisView as a view that contains
 type AlbumList struct {
-	*twidgets.Banner
-	*previous
+	*itemList
 	context       contextOperator
 	paging        *PageSelector
 	options       *dropDown
 	pagingEnabled bool
 	page          interfaces.Paging
 	artistMode    bool
-	list          *twidgets.ScrollList
-	listFocused   bool
 	selectFunc    func(album *models.Album)
 	albumCovers   []*AlbumCover
 
 	artist *models.Artist
-	name   *cview.TextView
 
-	prevBtn        *button
 	infoBtn        *button
 	playBtn        *button
-	prevFunc       func()
 	selectPageFunc func(paging interfaces.Paging)
 	similarFunc    func(id models.Id)
 	similarEnabled bool
@@ -162,19 +156,19 @@ func (a *AlbumList) SetArtist(artist *models.Artist) {
 			favorite = charFavorite + " "
 		}
 
-		a.name.SetText(fmt.Sprintf("%s%s\nAlbums: %d, Total: %s",
+		a.description.SetText(fmt.Sprintf("%s%s\nAlbums: %d, Total: %s",
 			favorite, a.artist.Name, a.artist.AlbumCount, util.SecToStringApproximate(a.artist.TotalDuration)))
 	} else {
-		a.name.SetText("")
+		a.description.SetText("")
 	}
 }
 
 func (a *AlbumList) SetLabel(label string) {
-	a.name.SetText(label)
+	a.description.SetText(label)
 }
 
 func (a *AlbumList) SetText(text string) {
-	a.name.SetText(text)
+	a.description.SetText(text)
 }
 
 func (a *AlbumList) SetPage(paging interfaces.Paging) {
@@ -245,7 +239,7 @@ func (a *AlbumList) setButtons() {
 	a.Banner.Grid.Clear()
 	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn}
 	a.Grid.AddItem(a.prevBtn, 0, 0, 1, 1, 1, 5, false)
-	a.Grid.AddItem(a.name, 0, 2, 2, 6, 1, 10, false)
+	a.Grid.AddItem(a.description, 0, 2, 2, 6, 1, 10, false)
 	a.Grid.AddItem(a.playBtn, 3, 2, 1, 1, 1, 10, false)
 
 	if a.pagingEnabled {
@@ -268,14 +262,10 @@ func (a *AlbumList) setButtons() {
 //NewAlbumList constructs new albumList view
 func NewAlbumList(selectAlbum func(album *models.Album), context contextOperator) *AlbumList {
 	a := &AlbumList{
-		Banner:     twidgets.NewBanner(),
-		previous:   &previous{},
+		itemList:   newItemList(nil),
 		context:    context,
 		selectFunc: selectAlbum,
 		artist:     &models.Artist{},
-		name:       cview.NewTextView(),
-		prevBtn:    newButton("Back"),
-		prevFunc:   nil,
 		playBtn:    newButton("Play all"),
 		options:    newDropDown("Options"),
 	}
@@ -283,33 +273,15 @@ func NewAlbumList(selectAlbum func(album *models.Album), context contextOperator
 	a.list = newScrollList(a.selectAlbum)
 	a.list.ItemHeight = 3
 
-	a.SetBorder(true)
-	a.SetBorderColor(config.Color.Border)
-	a.SetBackgroundColor(config.Color.Background)
 	a.list.Grid.SetColumns(-1, 5)
-	a.SetBorderColor(config.Color.Border)
 
-	btns := []*button{a.prevBtn, a.playBtn, a.paging.Previous, a.paging.Next}
 	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.options, a.paging.Previous, a.paging.Next, a.list}
-	for _, v := range btns {
-		v.SetBackgroundColor(config.Color.ButtonBackground)
-		v.SetLabelColor(config.Color.ButtonLabel)
-		v.SetBackgroundColorActivated(config.Color.ButtonBackgroundSelected)
-		v.SetLabelColorActivated(config.Color.ButtonLabelSelected)
-	}
-
-	a.prevBtn.SetSelectedFunc(a.goBack)
-
 	a.Banner.Selectable = selectables
 
 	a.Grid.SetRows(1, 1, 1, 1, -1)
 	a.Grid.SetColumns(6, 2, 10, -1, 10, -1, 10, -3)
 	a.Grid.SetMinSize(1, 6)
 	a.Grid.SetBackgroundColor(config.Color.Background)
-	a.name.SetBackgroundColor(config.Color.Background)
-	a.name.SetTextColor(config.Color.Text)
-	a.name.SetDynamicColors(true)
-
 	a.list.Grid.SetColumns(1, -1)
 
 	a.listFocused = false

@@ -173,24 +173,18 @@ func newAlbumSong(s *models.Song, showDiscNum bool, overrideIndex int) *albumSon
 
 // AlbumView shows user a header (album name, info, buttons) and list of songs
 type AlbumView struct {
-	*twidgets.Banner
-	*previous
-	list        *twidgets.ScrollList
-	songs       []*albumSong
-	artist      *models.Artist
-	album       *models.Album
-	listFocused bool
+	*itemList
+	songs  []*albumSong
+	artist *models.Artist
+	album  *models.Album
 
 	playSongFunc  func(song *models.Song)
 	playSongsFunc func(songs []*models.Song)
 
-	description *cview.TextView
-	prevBtn     *button
-	similarBtn  *button
-	playBtn     *button
-	dropDown    *dropDown
+	similarBtn *button
+	playBtn    *button
+	dropDown   *dropDown
 
-	prevFunc    func()
 	similarFunc func(album *models.Album)
 	context     contextOperator
 }
@@ -199,32 +193,22 @@ type AlbumView struct {
 func NewAlbumview(playSong func(song *models.Song),
 	playSongs func(songs []*models.Song), operator contextOperator) *AlbumView {
 	a := &AlbumView{
-		Banner:        twidgets.NewBanner(),
-		previous:      &previous{},
-		list:          twidgets.NewScrollList(nil),
+		itemList:      newItemList(nil),
 		playSongFunc:  playSong,
 		playSongsFunc: playSongs,
 
-		description: cview.NewTextView(),
-		prevBtn:     newButton("Back"),
-		similarBtn:  newButton("Similar"),
-		playBtn:     newButton("Play all"),
-		context:     operator,
-		dropDown:    newDropDown("Options"),
+		similarBtn: newButton("Similar"),
+		playBtn:    newButton("Play all"),
+		context:    operator,
+		dropDown:   newDropDown("Options"),
 	}
 
 	a.list.ItemHeight = 2
 	a.list.Padding = 1
 	a.list.SetInputCapture(a.listHandler)
-	a.list.SetBorder(true)
-	a.list.SetBorderColor(config.Color.Border)
 	a.list.Grid.SetColumns(1, -1)
 
 	a.SetBorder(true)
-	a.SetBorderColor(config.Color.Border)
-	a.list.SetBackgroundColor(config.Color.Background)
-	a.Grid.SetBackgroundColor(config.Color.Background)
-	a.listFocused = false
 	a.playBtn.SetSelectedFunc(a.playAlbum)
 
 	a.Banner.Grid.SetRows(1, 1, 1, 1, -1)
@@ -237,21 +221,9 @@ func NewAlbumview(playSong func(song *models.Song),
 	a.Banner.Grid.AddItem(a.dropDown, 3, 4, 1, 1, 1, 10, false)
 	a.Banner.Grid.AddItem(a.list, 4, 0, 1, 8, 4, 10, false)
 
-	btns := []*button{a.prevBtn, a.playBtn, a.similarBtn}
 	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.dropDown, a.list}
-	for _, btn := range btns {
-		btn.SetLabelColor(config.Color.ButtonLabel)
-		btn.SetLabelColorActivated(config.Color.ButtonLabelSelected)
-		btn.SetBackgroundColor(config.Color.ButtonBackground)
-		btn.SetBackgroundColorActivated(config.Color.ButtonBackgroundSelected)
-	}
-
-	a.prevBtn.SetSelectedFunc(a.goBack)
 	a.similarBtn.SetSelectedFunc(a.showSimilar)
-
 	a.Banner.Selectable = selectables
-	a.description.SetBackgroundColor(config.Color.Background)
-	a.description.SetTextColor(config.Color.Text)
 
 	if a.context != nil {
 		a.list.AddContextItem("Play all from here", 0, func(index int) {
@@ -273,7 +245,6 @@ func NewAlbumview(playSong func(song *models.Song),
 
 	if a.context != nil {
 		a.dropDown.AddOption("Instant mix", func() {
-
 			a.context.InstantMix(a.artist)
 		})
 		a.dropDown.AddOption("View similar", func() {
@@ -284,13 +255,7 @@ func NewAlbumview(playSong func(song *models.Song),
 		})
 	}
 
-	a.list.ContextMenuList().SetBorder(true)
-	a.list.ContextMenuList().SetBackgroundColor(config.Color.Background)
-	a.list.ContextMenuList().SetBorderColor(config.Color.BorderFocus)
-	a.list.ContextMenuList().SetSelectedBackgroundColor(config.Color.BackgroundSelected)
-	a.list.ContextMenuList().SetMainTextColor(config.Color.Text)
-	a.list.ContextMenuList().SetSelectedTextColor(config.Color.TextSelected)
-
+	a.itemList.initContextMenuList()
 	return a
 }
 

@@ -19,7 +19,6 @@ package widgets
 import (
 	"fmt"
 	"github.com/gdamore/tcell"
-	"gitlab.com/tslocum/cview"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
@@ -30,51 +29,31 @@ import (
 // Queue shows a list of songs similar to album.
 // A history view is queue with reverse order and some little tweaks.
 type Queue struct {
-	*twidgets.Banner
-	*previous
-	list        *twidgets.ScrollList
-	songs       []*albumSong
-	listFocused bool
+	*itemList
+	songs []*albumSong
 
 	playSongFunc  func(song *models.Song)
 	playSongsFunc func(songs []*models.Song)
 
 	controller interfaces.QueueController
 
-	description *cview.TextView
-	prevBtn     *button
-	clearBtn    *button
-	prevFunc    func()
-	clearFunc   func()
+	clearBtn  *button
+	clearFunc func()
 }
 
 //NewQueue initializes new album view
 func NewQueue() *Queue {
 	q := &Queue{
-		Banner:   twidgets.NewBanner(),
-		list:     twidgets.NewScrollList(nil),
-		previous: &previous{},
-
-		description: cview.NewTextView(),
-		prevBtn:     newButton("Back"),
-		clearBtn:    newButton("Clear"),
+		itemList: newItemList(nil),
+		clearBtn: newButton("Clear"),
 	}
 
 	q.list.ItemHeight = 2
 	q.list.Padding = 0
 	q.list.SetInputCapture(q.listHandler)
-	q.list.SetBorder(true)
-	q.list.SetBorderColor(config.Color.Border)
 	q.list.Grid.SetColumns(1, -1)
 
 	q.clearBtn.SetSelectedFunc(q.clearQueue)
-
-	q.SetBorder(true)
-	q.SetBorderColor(config.Color.Border)
-	q.list.SetBackgroundColor(config.Color.Background)
-	q.Grid.SetBackgroundColor(config.Color.Background)
-	q.listFocused = false
-
 	q.Banner.Grid.SetRows(1, 1, 1, 1, -1)
 	q.Banner.Grid.SetColumns(6, 2, 10, -1, 10, -1, 10, -3)
 	q.Banner.Grid.SetMinSize(1, 6)
@@ -84,19 +63,8 @@ func NewQueue() *Queue {
 	q.Banner.Grid.AddItem(q.clearBtn, 3, 2, 1, 1, 1, 10, true)
 	q.Banner.Grid.AddItem(q.list, 4, 0, 1, 8, 4, 10, false)
 
-	btns := []*button{q.prevBtn, q.clearBtn}
 	selectables := []twidgets.Selectable{q.prevBtn, q.clearBtn, q.list}
-	for _, btn := range btns {
-		btn.SetLabelColor(config.Color.ButtonLabel)
-		btn.SetLabelColorActivated(config.Color.ButtonLabelSelected)
-		btn.SetBackgroundColor(config.Color.ButtonBackground)
-		btn.SetBackgroundColorActivated(config.Color.ButtonBackgroundSelected)
-	}
-
-	q.prevBtn.SetSelectedFunc(q.goBack)
 	q.Banner.Selectable = selectables
-	q.description.SetBackgroundColor(config.Color.Background)
-	q.description.SetTextColor(config.Color.Text)
 	q.printDescription()
 	return q
 }

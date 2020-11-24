@@ -400,7 +400,7 @@ func (w *Window) showSearchResults(itemType models.ItemType, results []models.It
 			playlists[i], _ = v.(*models.Playlist)
 		}
 		w.playlists.SetPlaylists(playlists)
-		w.playlists.name.SetText(fmt.Sprintf("[yellow::]Search results for '%s'[-::]\n%d playlists", query, len(playlists)))
+		w.playlists.description.SetText(fmt.Sprintf("[yellow::]Search results for '%s'[-::]\n%d playlists", query, len(playlists)))
 	case models.TypeGenre:
 		view = w.genres
 		genres := make([]*models.IdName, len(results))

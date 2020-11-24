@@ -352,6 +352,7 @@ func (w *Window) searchCb(query string) {
 			logrus.Errorf("search items of type %s: %v", itemType, err)
 		}
 	}
+	w.searchResultsTop.ResultsReady()
 }
 
 func (w *Window) showSearchResults(itemType models.ItemType, results []models.Item) {

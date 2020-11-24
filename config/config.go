@@ -71,7 +71,8 @@ type Player struct {
 	EnableRemoteControl bool `yaml:"enable_remote_control"`
 
 	// valid types: artist,album,song,playlist,genre
-	SearchTypes []models.ItemType `yaml:"search_types"`
+	SearchTypes        []models.ItemType `yaml:"search_types"`
+	SearchResultsLimit int               `yaml:"search_results_limit"`
 }
 
 func (p *Player) fillDefaults() {
@@ -99,6 +100,9 @@ func (p *Player) fillDefaults() {
 	}
 	if len(p.SearchTypes) == 0 {
 		p.SearchTypes = []models.ItemType{models.TypeArtist, models.TypeAlbum, models.TypeSong, models.TypePlaylist}
+	}
+	if p.SearchResultsLimit == 0 {
+		p.SearchResultsLimit = 30
 	}
 }
 

@@ -28,6 +28,7 @@ const (
 	colorShortcut        = tcell.Color214
 	TextSecondary        = tcell.Color179
 	TextDisabled         = tcell.Color241
+	TextDisabled2        = tcell.Color247
 )
 
 var Color = defaultColors()
@@ -43,6 +44,7 @@ type AppColor struct {
 	Text                     tcell.Color
 	TextSecondary            tcell.Color
 	TextDisabled             tcell.Color
+	TextDisabled2            tcell.Color
 	BackgroundSelected       tcell.Color
 	TextSelected             tcell.Color
 	TextSongPlaying          tcell.Color
@@ -63,6 +65,7 @@ func defaultColors() AppColor {
 		Text:                     colorText,
 		TextSecondary:            TextSecondary,
 		TextDisabled:             TextDisabled,
+		TextDisabled2:            TextDisabled2,
 		BackgroundSelected:       tcell.Color23,
 		TextSelected:             tcell.Color252,
 		TextSongPlaying:          colorShortcut,

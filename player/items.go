@@ -36,7 +36,7 @@ func newItems(api *api.Api) *Items {
 }
 
 func (i *Items) Search(itemType models.ItemType, query string) ([]models.Item, error) {
-	return i.api.Search(query, itemType, 40)
+	return i.api.Search(query, itemType, config.AppConfig.Player.SearchResultsLimit)
 }
 
 func (i *Items) GetArtists(paging interfaces.Paging) ([]*models.Artist, int, error) {

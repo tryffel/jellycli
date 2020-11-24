@@ -106,6 +106,7 @@ func NewSongList(playSong func(song *models.Song), playSongs func(songs []*model
 	p.Banner.Selectable = selectables
 	p.description.SetBackgroundColor(config.Color.Background)
 	p.description.SetTextColor(config.Color.Text)
+	p.description.SetDynamicColors(true)
 
 	p.title = "All songs"
 

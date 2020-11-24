@@ -308,6 +308,7 @@ func NewAlbumList(selectAlbum func(album *models.Album), context contextOperator
 	a.Grid.SetBackgroundColor(config.Color.Background)
 	a.name.SetBackgroundColor(config.Color.Background)
 	a.name.SetTextColor(config.Color.Text)
+	a.name.SetDynamicColors(true)
 
 	a.list.Grid.SetColumns(1, -1)
 

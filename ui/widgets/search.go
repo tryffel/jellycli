@@ -173,7 +173,7 @@ type SearchTopList struct {
 	list          *twidgets.ScrollList
 	listFocused   bool
 	selectFunc    func(itemType models.ItemType)
-	showMediafunc func(itemType models.ItemType, items []models.Item)
+	showMediafunc func(itemType models.ItemType, items []models.Item, query string)
 
 	results []*searchListItem
 
@@ -181,7 +181,7 @@ type SearchTopList struct {
 	prevFunc func()
 }
 
-func NewSearchTopList(searchFunc func(string), selectMediaFunc func(itemType models.ItemType, items []models.Item)) *SearchTopList {
+func NewSearchTopList(searchFunc func(string), selectMediaFunc func(itemType models.ItemType, items []models.Item, query string)) *SearchTopList {
 	stp := &SearchTopList{
 		Banner:        twidgets.NewBanner(),
 		previous:      &previous{},
@@ -250,7 +250,7 @@ func (s *SearchTopList) selectItem(index int) {
 		itemType = items[0].GetType()
 	}
 
-	s.showMediafunc(itemType, items)
+	s.showMediafunc(itemType, items, s.searchInput.GetText())
 }
 
 func (s *SearchTopList) ClearResults() {

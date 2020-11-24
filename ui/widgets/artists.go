@@ -84,6 +84,7 @@ func NewArtistList(selectFunc func(artist *models.Artist)) *ArtistList {
 	a.Banner.Selectable = selectables
 	a.description.SetBackgroundColor(config.Color.Background)
 	a.description.SetTextColor(config.Color.Text)
+	a.description.SetDynamicColors(true)
 
 	a.Banner.Grid.SetRows(1, 1, 1, 1, -1)
 	a.Banner.Grid.SetColumns(6, 2, 10, -1, 10, -1, 10, -3)

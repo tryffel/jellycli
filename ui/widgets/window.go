@@ -355,7 +355,7 @@ func (w *Window) searchCb(query string) {
 	w.searchResultsTop.ResultsReady()
 }
 
-func (w *Window) showSearchResults(itemType models.ItemType, results []models.Item) {
+func (w *Window) showSearchResults(itemType models.ItemType, results []models.Item, query string) {
 	var view Previous
 
 	switch itemType {
@@ -368,7 +368,7 @@ func (w *Window) showSearchResults(itemType models.ItemType, results []models.It
 		}
 		w.albumList.Clear()
 		w.albumList.EnablePaging(false)
-		w.albumList.SetLabel(fmt.Sprintf("Search results: %d albums", len(results)))
+		w.albumList.SetLabel(fmt.Sprintf("[yellow::]Search results for '%s'[-::]\n%d albums", query, len(results)))
 		w.albumList.SetAlbums(albums)
 		w.albumList.EnableSimilar(false)
 	case models.TypeArtist:
@@ -378,7 +378,7 @@ func (w *Window) showSearchResults(itemType models.ItemType, results []models.It
 		for i, v := range results {
 			artists[i], _ = v.(*models.Artist)
 		}
-
+		w.artistList.SetText(fmt.Sprintf("[yellow::]Search results: for '%s'[-::]\n%d artists", query, len(artists)))
 		w.artistList.Clear()
 		w.artistList.EnablePaging(false)
 		w.artistList.AddArtists(artists)
@@ -390,8 +390,8 @@ func (w *Window) showSearchResults(itemType models.ItemType, results []models.It
 			songs[i], _ = v.(*models.Song)
 		}
 
-		w.songs.setTitle(fmt.Sprintf("Search results: %d songs", len(songs)))
 		w.songs.SetSongs(songs, interfaces.DefaultPaging())
+		w.songs.description.SetText(fmt.Sprintf("[yellow::]Search results for '%s'[-::]\n%d songs", query, len(songs)))
 	case models.TypePlaylist:
 		view = w.playlists
 		playlists := make([]*models.Playlist, len(results))
@@ -399,11 +399,12 @@ func (w *Window) showSearchResults(itemType models.ItemType, results []models.It
 		for i, v := range results {
 			playlists[i], _ = v.(*models.Playlist)
 		}
-
 		w.playlists.SetPlaylists(playlists)
+		w.playlists.name.SetText(fmt.Sprintf("[yellow::]Search results for '%s'[-::]\n%d playlists", query, len(playlists)))
 	case models.TypeGenre:
 		view = w.genres
 		genres := make([]*models.IdName, len(results))
+		w.genres.description.SetText(fmt.Sprintf("[yellow::]Search results for '%s'[-::]\n%d genres", query, len(genres)))
 		w.genres.setGenres(genres)
 	}
 

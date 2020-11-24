@@ -160,6 +160,7 @@ func NewPlaylists(selectPlaylist func(playlist *models.Playlist)) *Playlists {
 	a.name.SetBackgroundColor(config.Color.Background)
 	a.name.SetTextColor(config.Color.Text)
 	a.name.SetText("Playlists")
+	a.name.SetDynamicColors(true)
 
 	a.list.Grid.SetColumns(1, -1)
 

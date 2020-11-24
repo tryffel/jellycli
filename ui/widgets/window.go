@@ -162,10 +162,10 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 
 	w.mediaPlayer.AddStatusCallback(w.statusCb)
 
-	navBarLabels := []string{"Help", "Search", "Queue", "History"}
+	navBarLabels := []string{"Help", "Queue", "History", "Search"}
 
 	sc := config.KeyBinds.NavigationBar
-	navBarShortucts := []tcell.Key{sc.Help, sc.Search, sc.Queue, sc.History}
+	navBarShortucts := []tcell.Key{sc.Help, sc.Queue, sc.History, sc.Search}
 
 	for i, v := range navBarLabels {
 		btn := cview.NewButton(v)

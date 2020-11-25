@@ -105,6 +105,7 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 	w.playlists = NewPlaylists(w.selectPlaylist)
 	w.playlist = NewPlaylistView(w.playSong, w.playSongs, &w)
 	w.playlist.SetBackCallback(w.goBack)
+	w.playlists.SetBackCallback(w.goBack)
 
 	w.genres = NewGenreList()
 	w.genres.SetBackCallback(w.goBack)

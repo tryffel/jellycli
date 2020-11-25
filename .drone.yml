@@ -8,7 +8,7 @@ platform:
 
 steps:
 - name: tests
-  image: tryffel/golang-alsa:13.7
+  image: tryffel/golang-alsa:1.15.5
   volumes:
   - name: deps
     path: /go
@@ -50,7 +50,7 @@ steps:
     - git fetch --tags
 
 - name: release
-  image: tryffel/golang-alsa:13.7
+  image: tryffel/golang-alsa:1.15.5
   environment:
     GITHUB_TOKEN:
       from_secret: github_token

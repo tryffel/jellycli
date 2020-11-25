@@ -44,6 +44,7 @@ type NavigationBarBindings struct {
 	Queue    tcell.Key
 	History  tcell.Key
 	Settings tcell.Key
+	Dump     tcell.Key
 }
 
 // MovingBindings control moving cursor inside panel
@@ -88,6 +89,7 @@ func DefaultKeyBindings() KeyBindings {
 			Search:  tcell.KeyCtrlF,
 			Queue:   tcell.KeyF2,
 			History: tcell.KeyF3,
+			Dump:    tcell.KeyCtrlW,
 		},
 		Moving: MovingBindings{
 			Up:    tcell.KeyUp,

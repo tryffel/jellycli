@@ -60,6 +60,7 @@ type Player struct {
 	PageSize            int    `yaml:"page_size"`
 	LogFile             string `yaml:"log_file"`
 	LogLevel            string `yaml:"log_level"`
+	DebugMode           bool   `yaml:"debug_mode"`
 	LimitRecentlyPlayed bool   `yaml:"limit_recent_songs"`
 	MouseEnabled        bool   `yaml:"enable_mouse"`
 	DoubleClickMs       int    `yaml:"mouse_double_click_interval_ms"`

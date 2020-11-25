@@ -24,6 +24,9 @@ player:
   # Allowed values: trace|debug|info|warning|error|fatal
   log_level: warning
 
+  # debug mode. When enabled, a new shortcut is added for creating debug dump.
+  debug_mode: false
+
   # Limit recent songs to a sensible value.
   # When set to false, 'recent songs' are actually
   # all songs ever listened on this account

@@ -28,6 +28,7 @@ import (
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
 	"tryffel.net/go/jellycli/ui/widgets/modal"
+	"tryffel.net/go/jellycli/util"
 	"tryffel.net/go/twidgets"
 )
 
@@ -172,6 +173,11 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 		w.navBar.AddButton(btn, navBarShortucts[i])
 	}
 
+	if config.AppConfig.Player.DebugMode {
+		btn := cview.NewButton("Debug dump")
+		w.navBar.AddButton(btn, sc.Dump)
+	}
+
 	return w
 }
 
@@ -306,6 +312,8 @@ func (w *Window) navBarCtrl(key tcell.Key) bool {
 		for _, v := range items {
 			duration += v.Duration
 		}
+	case navBar.Dump:
+		w.debugDump()
 	default:
 		return false
 	}
@@ -798,4 +806,12 @@ func (w *Window) showGenrePage(paging interfaces.Paging) {
 	w.genres.SetPage(paging)
 	w.genres.setGenres(genres)
 	w.setViewWidget(w.genres, true)
+}
+
+func (w *Window) debugDump() {
+	logrus.Info("Dump goroutines")
+	err := util.DumpGoroutines()
+	if err != nil {
+		logrus.Errorf("Write debug dump: %v", err)
+	}
 }

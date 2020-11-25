@@ -102,5 +102,9 @@ func DefaultKeybindings()
 ```
 edit that function as you like. 
 
+To create debug goroutine dumps, enable 'player.debug_mode' 
+and then press Ctrl+W to write a text file that's located in log directory. 
+
+
 ## Acknowledgements
 Thanks [natsukagami](https://github.com/natsukagami/mpd-mpris) for implementing Mpris-interface.

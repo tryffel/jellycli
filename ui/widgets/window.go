@@ -539,7 +539,7 @@ func (w *Window) selectMedia(m MediaSelect) {
 			} else {
 				w.songs.showPage = w.selectSongs
 				w.mediaNav.SetCount(m, count)
-				w.songs.setTitle("All albums")
+				w.songs.setTitle("All songs")
 			}
 		} else {
 			songs, count, err = w.mediaItems.GetRecentlyPlayed(page)
@@ -806,6 +806,7 @@ func (w *Window) showGenrePage(paging interfaces.Paging) {
 	paging.SetTotalItems(n)
 	w.genres.SetPage(paging)
 	w.genres.setGenres(genres)
+	w.genres.description.SetText(fmt.Sprintf("Genres: total %d", n))
 	w.setViewWidget(w.genres, true)
 }
 

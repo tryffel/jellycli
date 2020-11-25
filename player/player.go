@@ -25,7 +25,7 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"tryffel.net/go/jellycli/api"
+	"tryffel.net/go/jellycli/api/jellyfin"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
 	"tryffel.net/go/jellycli/task"
@@ -59,13 +59,13 @@ type Player struct {
 
 	nextSong *songMetadata
 
-	api *api.Api
+	api *jellyfin.Api
 
 	lastApiReport time.Time
 }
 
 // initialize new player. This also initializes faiface.Speaker, which should be initialized only once.
-func NewPlayer(api *api.Api) (*Player, error) {
+func NewPlayer(api *jellyfin.Api) (*Player, error) {
 	var err error
 	p := &Player{
 		lock:           &sync.RWMutex{},

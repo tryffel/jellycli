@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-// Package api implements connection to Jellyfin server.
+// Package jellyfin implements connection to Jellyfin server.
 // It supports websocket for receiving commands from server and updating status via http post.
-package api
+package jellyfin
 
 import (
 	"crypto/rand"

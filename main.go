@@ -32,7 +32,7 @@ import (
 	"sync"
 	"syscall"
 	"time"
-	"tryffel.net/go/jellycli/api"
+	"tryffel.net/go/jellycli/api/jellyfin"
 	"tryffel.net/go/jellycli/config"
 	mpris2 "tryffel.net/go/jellycli/mpris"
 	"tryffel.net/go/jellycli/player"
@@ -51,7 +51,7 @@ func main() {
 // Application is the root struct for interactive player
 type Application struct {
 	conf        *config.Config
-	api         *api.Api
+	api         *jellyfin.Api
 	gui         *ui.Gui
 	player      *player.Player
 	mpris       *mpris2.MediaController
@@ -195,7 +195,7 @@ func (a *Application) initApi() error {
 		configChanged = true
 	}
 
-	a.api, err = api.NewApi(a.conf.Server.Url, a.conf.Player.EnableRemoteControl)
+	a.api, err = jellyfin.NewApi(a.conf.Server.Url, a.conf.Player.EnableRemoteControl)
 	if err != nil {
 		return fmt.Errorf("api init: %v", err)
 	}

@@ -18,7 +18,7 @@ package player
 
 import (
 	"runtime"
-	"tryffel.net/go/jellycli/api"
+	"tryffel.net/go/jellycli/api/jellyfin"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
@@ -26,10 +26,10 @@ import (
 
 // Items implements interfaces.ItemController
 type Items struct {
-	api *api.Api
+	api *jellyfin.Api
 }
 
-func newItems(api *api.Api) *Items {
+func newItems(api *jellyfin.Api) *Items {
 	return &Items{
 		api: api,
 	}

@@ -26,8 +26,8 @@ Terminal music player for Jellyfin (works with Emby too).
 * [x] Linux 32 bit (armv7 / raspi 2)
 * [ ] MacOS
 
-Jellycli (headless & Gui) should work on Windows. However, there are some limitations, 
-namely poor colors and some keybindings
+Jellycli (headless & Gui) has been tested and works with Windows. However, there are some limitations, 
+namely poor colors, missing characters and some keybindings
 might not work as expected. Windows Console works better than Cmd.
 
 On raspi 2 you need to increase audio buffer duration in config file to somewhere around 400.
@@ -84,6 +84,10 @@ All this is stored in configuration file:
 * C:\Users\<user>\AppData\Roaming\jellycli\jellycli.yaml
 
 See config.sample.yaml for more info and up-to-date version of config file.
+
+When Jellycli upgrades existing config file to new version, some values, especially
+new boolean have default value 'false', even when the value should be true. 
+Be sure to check those values after upgrading application.
 
 Configuration file location is also visible in help page. 
 You can use multiple config files by providing argument:

@@ -16,7 +16,9 @@
 
 package models
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // Stats are application-wide statistics and usage info
 type Stats struct {
@@ -24,24 +26,15 @@ type Stats struct {
 	Heap int
 	// CacheObjects tells how many items are in cache at the moment
 	CacheObjects int
-	// ServerName is jellyfin server name
-	ServerName string
-	// ServerVersion server version
-	ServerVersion string
 
-	ServerId string
-
-	ServerRestartPending  bool
-	ServerShutdownPending bool
-	// WebSocket boolean if websocket is supported and connected
-	WebSocket bool
-
-	RemoteControl bool
 	//LogFile contains log file location
 	LogFile string
 
 	// ConfigFile contains config file location
 	ConfigFile string
+
+	// ServerInfo contains remote server information
+	ServerInfo *ServerInfo
 }
 
 // HeapString returns heap usage in human-readable format
@@ -60,4 +53,24 @@ func (s *Stats) HeapString() string {
 		return fmt.Sprintf("%d GiB", bytes/1024/1024/1024)
 	}
 	return ""
+}
+
+// ServerInfo contains general info on server and connection to it.
+type ServerInfo struct {
+	// ServerType describes protocol/server type.
+	ServerType string
+	// Name is server instance name, if it has one.
+	Name string
+
+	// Id is server instance id, if it has one.
+	Id string
+
+	// Version is server version.
+	Version string
+
+	// Message contains server message, if any.
+	Message string
+
+	// Misc contains any non-standard information, that use might be interested in.
+	Misc map[string]string
 }

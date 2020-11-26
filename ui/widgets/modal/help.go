@@ -186,20 +186,22 @@ func formatBytes(bytes uint64) string {
 
 func (h *Help) statsPage() string {
 	text := "[yellow]Server info[-]\n"
-	text += fmt.Sprintf("Name: %s\nVersion: %s\nIdentity: %s\n"+
-		"Restart pending: %t\nShutdown pending: %t\n"+
-		"Websocket enabled: %t\nRemote control enabled: %t",
-		h.stats.ServerName, h.stats.ServerVersion, h.stats.ServerId,
-		h.stats.ServerRestartPending, h.stats.ServerShutdownPending,
-		h.stats.WebSocket, h.stats.RemoteControl)
+	if h.stats.ServerInfo != nil {
+		text += fmt.Sprintf("Server type: %s\nName: %s\nVersion: %s\nMessage: %s",
+			h.stats.ServerInfo.ServerType,
+			h.stats.ServerInfo.Name,
+			h.stats.ServerInfo.Version,
+			h.stats.ServerInfo.Message,
+		)
+	}
 
 	text += "\n\n[yellow]Configuration[-]\n"
 	text += fmt.Sprintf("Log file: %s\nConfig file: %s",
 		h.stats.LogFile, h.stats.ConfigFile)
 
 	text += "\n\n[yellow]Statistics[-]\n"
-	text += fmt.Sprintf("Cache items: %d\nMemory allocated: %s\nWebsocket enabled: %t",
-		h.stats.CacheObjects, h.stats.HeapString(), h.stats.WebSocket)
+	text += fmt.Sprintf("Cache items: %d\nMemory allocated: %s",
+		h.stats.CacheObjects, h.stats.HeapString())
 	return text
 }
 

@@ -24,7 +24,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
 )
 
@@ -41,6 +43,41 @@ type Subsonic struct {
 
 	favoriteArtists []*models.Artist
 	favoriteAlbums  []*models.Album
+}
+
+func (s *Subsonic) Stream(Song *models.Song) (io.ReadCloser, interfaces.AudioFormat, error) {
+	return nil, interfaces.AudioFormatNil, errors.New("not implemented")
+}
+
+func (s *Subsonic) Download(Song *models.Song) (io.ReadCloser, interfaces.AudioFormat, error) {
+	return nil, interfaces.AudioFormatNil, errors.New("not implemented")
+}
+
+func (s *Subsonic) GetInfo() (*models.ServerInfo, error) {
+	info := &models.ServerInfo{
+		ServerType: "Subsonic",
+	}
+
+	resp, err := s.get("/ping", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	info.Id = resp.Type
+	info.Name = resp.Type
+	info.Version = resp.ServerVersion
+	return info, nil
+}
+
+func (s *Subsonic) ConnectionOk() error {
+	return errors.New("not implemented")
+}
+
+func (s *Subsonic) AuthOk() error {
+	return errors.New("not implemented")
+}
+
+func (s *Subsonic) Login(username, password string) {
 }
 
 func NewSubsonic(url, user, salt, token string) (*Subsonic, error) {

@@ -17,6 +17,7 @@
 package player
 
 import (
+	"github.com/sirupsen/logrus"
 	"runtime"
 	"tryffel.net/go/jellycli/api"
 	"tryffel.net/go/jellycli/config"
@@ -64,15 +65,12 @@ func (i *Items) GetPlaylists() ([]*models.Playlist, error) {
 }
 
 func (i *Items) GetPlaylistSongs(playlist *models.Playlist) error {
-	panic("adsf")
-	/*
-		songs, err := i.browser.GetPlaylistSongs(playlist.Id)
-		if err != nil {
-			return err
-		}
-		playlist.Songs = songs
+	songs, err := i.browser.GetPlaylistSongs(playlist.Id)
+	if err != nil {
+		return err
+	}
+	playlist.Songs = songs
 
-	*/
 	return nil
 }
 
@@ -123,11 +121,15 @@ func (i *Items) GetStatistics() models.Stats {
 		//	ServerRestartPending:  restart,
 		//	ServerShutdownPending: shutdown,
 		//	WebSocket:             i.browser.WebsocketOk(),
-		RemoteControl: config.AppConfig.Player.EnableRemoteControl,
-		LogFile:       config.LogFile,
-		ConfigFile:    config.ConfigFile,
+		LogFile:    config.LogFile,
+		ConfigFile: config.ConfigFile,
 	}
 
+	var err error
+	stats.ServerInfo, err = i.browser.GetInfo()
+	if err != nil {
+		logrus.Errorf("get server info: %v", err)
+	}
 	return stats
 }
 

@@ -32,9 +32,9 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"tryffel.net/go/jellycli/api"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
+	"tryffel.net/go/jellycli/models"
 	"tryffel.net/go/jellycli/task"
 )
 
@@ -70,8 +70,8 @@ type Jellyfin struct {
 	enableRemoteControl bool
 }
 
-func (jf *Jellyfin) GetServerInfo() api.ServerInfo {
-	return api.ServerInfo{Name: "Jellyfin"}
+func (jf *Jellyfin) GetServerInfo() models.ServerInfo {
+	return models.ServerInfo{Name: "Jellyfin"}
 }
 
 func (jf *Jellyfin) RemoteControlEnabled() error {

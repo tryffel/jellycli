@@ -23,26 +23,6 @@ import (
 	"tryffel.net/go/jellycli/models"
 )
 
-// ServerInfo contains general info on server and connection to it.
-type ServerInfo struct {
-	// ServerType describes protocol/server type.
-	ServerType string
-	// Name is server instance name, if it has one.
-	Name string
-
-	// Id is server instance id, if it has one.
-	Id string
-
-	// Version is server version.
-	Version string
-
-	// Message contains server message, if any.
-	Message string
-
-	// Misc contains any non-standard information, that use might be interested in.
-	Misc map[string]string
-}
-
 // MediaServer combines minimal interfaces for browsing and playing songs from remote server.
 // Mediaserver can additionally implement RemoteController, if server supports it.
 type MediaServer interface {
@@ -99,9 +79,6 @@ type Browser interface {
 	// GetRecentlyPlayed returns songs that have been played last.
 	GetRecentlyPlayed(paging interfaces.Paging) ([]*models.Song, int, error)
 
-	// GetStatistics returns application statistics
-	GetServerInfo() ServerInfo
-
 	// GetSongs returns songs by paging. It also returns total number of songs.
 	GetSongs(page, pageSize int) ([]*models.Song, int, error)
 
@@ -151,7 +128,7 @@ type RemoteController interface {
 // RemoteServer contains general methods for getting server connection status
 type RemoteServer interface {
 	// GetInfo returns general info
-	GetInfo() (*ServerInfo, error)
+	GetInfo() (*models.ServerInfo, error)
 
 	// ConnectionOk returns nil of connection ok, else returns description for failure.
 	ConnectionOk() error

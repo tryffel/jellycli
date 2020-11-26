@@ -20,7 +20,6 @@ package subsonic
 import (
 	"errors"
 	"strconv"
-	"tryffel.net/go/jellycli/api"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
 )
@@ -125,11 +124,11 @@ func (s *Subsonic) GetAlbumSongs(album models.Id) ([]*models.Song, error) {
 }
 
 func (s *Subsonic) GetPlaylists() ([]*models.Playlist, error) {
-	panic("implement me")
+	return nil, errors.New("not implemented")
 }
 
 func (s *Subsonic) GetPlaylistSongs(playlist models.Id) ([]*models.Song, error) {
-	panic("implement me")
+	return nil, errors.New("not implemented")
 }
 
 func (s *Subsonic) GetFavoriteArtists() ([]*models.Artist, error) {
@@ -143,35 +142,31 @@ func (s *Subsonic) GetFavoriteAlbums(paging interfaces.Paging) ([]*models.Album,
 }
 
 func (s *Subsonic) GetSimilarArtists(artist models.Id) ([]*models.Artist, error) {
-	panic("implement me")
+	return nil, errors.New("not implemented")
 }
 
 func (s *Subsonic) GetSimilarAlbums(album models.Id) ([]*models.Album, error) {
-	panic("implement me")
+	return nil, errors.New("not implemented")
 }
 
 func (s *Subsonic) GetLatestAlbums() ([]*models.Album, error) {
-	panic("implement me")
+	return nil, errors.New("not implemented")
 }
 
 func (s *Subsonic) GetRecentlyPlayed(paging interfaces.Paging) ([]*models.Song, int, error) {
-	panic("implement me")
-}
-
-func (s *Subsonic) GetServerInfo() api.ServerInfo {
-	panic("implement me")
+	return nil, 0, errors.New("not implemented")
 }
 
 func (s *Subsonic) GetSongs(page, pageSize int) ([]*models.Song, int, error) {
-	panic("implement me")
+	return nil, 0, errors.New("not implemented")
 }
 
 func (s *Subsonic) GetGenres(paging interfaces.Paging) ([]*models.IdName, int, error) {
-	panic("implement me")
+	return nil, 0, errors.New("not implemented")
 }
 
 func (s *Subsonic) GetGenreAlbums(genre models.IdName) ([]*models.Album, error) {
-	panic("implement me")
+	return nil, errors.New("not implemented")
 }
 
 func (s *Subsonic) GetAlbumArtist(album *models.Album) (*models.Artist, error) {
@@ -219,11 +214,11 @@ func (s *Subsonic) GetSongArtistAlbum(song *models.Song) (*models.Album, *models
 }
 
 func (s *Subsonic) GetInstantMix(item models.Item) ([]*models.Song, error) {
-	panic("implement me")
+	return nil, errors.New("not implemented")
 }
 
 func (s *Subsonic) GetLink(item models.Item) string {
-	panic("implement me")
+	return ""
 }
 
 func (s *Subsonic) Search(query string, itemType models.ItemType, maxResults int) ([]models.Item, error) {
@@ -273,4 +268,16 @@ func (s *Subsonic) Search(query string, itemType models.ItemType, maxResults int
 	}
 
 	return items, nil
+}
+
+func (s *Subsonic) GetAlbum(id models.Id) (*models.Album, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (s *Subsonic) GetArtist(id models.Id) (*models.Artist, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (s *Subsonic) ImageUrl(item models.Id, itemType models.ItemType) string {
+	return ""
 }

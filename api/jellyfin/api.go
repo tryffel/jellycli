@@ -140,10 +140,22 @@ func NewJellyfin(conf *config.Jellyfin, provider config.KeyValueProvider) (*Jell
 		}
 	}
 
-	if err := jf.TokenOk(); err != nil {
+	var password string
+	if jf.token == "" {
+		password, err = provider.Get("Password", true, "")
+		if err != nil {
+			return jf, err
+		}
+		err = jf.login(jf.userId, password)
+		if err != nil {
+			return jf, err
+		}
+	}
+
+	if err = jf.TokenOk(); err != nil {
 		if strings.Contains(err.Error(), "invalid token") {
 			logrus.Warningf("Authentication required")
-			password, err := provider.Get("Password", true, "")
+			password, err = provider.Get("Password", true, "")
 			if err != nil {
 				return jf, err
 			}
@@ -185,6 +197,9 @@ func (jf *Jellyfin) ConnectionOk() error {
 }
 
 func (jf *Jellyfin) TokenOk() error {
+	if jf.token == "" {
+		return errors.New("invalid token")
+	}
 	type serverInfo struct {
 		SystemUpdateLevel string `json:"SystemUpdateLevel"`
 		RestartPending    bool   `json:"HasPendingRestart"`

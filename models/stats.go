@@ -24,8 +24,6 @@ import (
 type Stats struct {
 	// Heap describes memory allocation in bytes
 	Heap int
-	// CacheObjects tells how many items are in cache at the moment
-	CacheObjects int
 
 	//LogFile contains log file location
 	LogFile string

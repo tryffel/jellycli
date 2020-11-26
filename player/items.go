@@ -107,20 +107,11 @@ func (i *Items) GetGenreAlbums(genre models.IdName) ([]*models.Album, error) {
 }
 
 func (i *Items) GetStatistics() models.Stats {
-	//cache := i.browser.GetCacheItems()
-	//name, version, id, restart, shutdown, _ := i.browser.GetServerVersion()
 	runStats := runtime.MemStats{}
 	runtime.ReadMemStats(&runStats)
 
 	stats := models.Stats{
-		Heap: int(runStats.Alloc),
-		//	CacheObjects:          cache,
-		//	ServerName:            name,
-		//	ServerVersion:         version,
-		//	ServerId:              id,
-		//	ServerRestartPending:  restart,
-		//	ServerShutdownPending: shutdown,
-		//	WebSocket:             i.browser.WebsocketOk(),
+		Heap:       int(runStats.Alloc),
 		LogFile:    config.LogFile,
 		ConfigFile: config.ConfigFile,
 	}

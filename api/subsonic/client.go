@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"tryffel.net/go/jellycli/api"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
 )
@@ -46,11 +47,28 @@ type Subsonic struct {
 }
 
 func (s *Subsonic) Stream(Song *models.Song) (io.ReadCloser, interfaces.AudioFormat, error) {
-	return nil, interfaces.AudioFormatNil, errors.New("not implemented")
+	params := &params{}
+	params.setId(Song.Id.String())
+	(*params)["estimateContentLength"] = "true"
+	(*params)["s"] = s.salt
+	(*params)["t"] = s.token
+	(*params)["u"] = s.user
+	(*params)["c"] = s.client
+	(*params)["v"] = s.apiversion
+
+	url := s.host + "/stream"
+
+	stream, err := api.NewStreamDownload(url, nil, *params, http.DefaultClient, Song.Duration)
+	if err != nil {
+		return nil, interfaces.AudioFormatNil, err
+	}
+
+	format, err := stream.AudioFormat()
+	return stream, format, err
 }
 
 func (s *Subsonic) Download(Song *models.Song) (io.ReadCloser, interfaces.AudioFormat, error) {
-	return nil, interfaces.AudioFormatNil, errors.New("not implemented")
+	return s.Stream(Song)
 }
 
 func (s *Subsonic) GetInfo() (*models.ServerInfo, error) {

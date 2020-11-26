@@ -271,11 +271,29 @@ func (s *Subsonic) Search(query string, itemType models.ItemType, maxResults int
 }
 
 func (s *Subsonic) GetAlbum(id models.Id) (*models.Album, error) {
-	return nil, errors.New("not implemented")
+	params := &params{}
+	params.setId(id.String())
+
+	resp, err := s.get("/getAlbum", params)
+	if err != nil {
+		return nil, err
+	}
+
+	album := resp.Albums.toAlbum()
+	return album, nil
 }
 
 func (s *Subsonic) GetArtist(id models.Id) (*models.Artist, error) {
-	return nil, errors.New("not implemented")
+	params := &params{}
+	params.setId(id.String())
+
+	resp, err := s.get("/getArtist", params)
+	if err != nil {
+		return nil, err
+	}
+
+	artist := resp.Artist.toArtist()
+	return artist, nil
 }
 
 func (s *Subsonic) ImageUrl(item models.Id, itemType models.ItemType) string {

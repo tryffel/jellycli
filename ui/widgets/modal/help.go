@@ -185,7 +185,7 @@ func formatBytes(bytes uint64) string {
 }
 
 func (h *Help) statsPage() string {
-	text := "[yellow]Server info[-]\n"
+	text := "[yellow]Server Info[-]\n"
 	if h.stats.ServerInfo != nil {
 		text += fmt.Sprintf("Server type: %s\nName: %s\nVersion: %s\nMessage: %s",
 			h.stats.ServerInfo.ServerType,
@@ -193,6 +193,13 @@ func (h *Help) statsPage() string {
 			h.stats.ServerInfo.Version,
 			h.stats.ServerInfo.Message,
 		)
+
+		if len(h.stats.ServerInfo.Misc) > 0 {
+			text += "\n\n"
+			for key, value := range h.stats.ServerInfo.Misc {
+				text += key + ": " + value + "\n"
+			}
+		}
 	}
 
 	text += "\n\n[yellow]Configuration[-]\n"
@@ -200,8 +207,8 @@ func (h *Help) statsPage() string {
 		h.stats.LogFile, h.stats.ConfigFile)
 
 	text += "\n\n[yellow]Statistics[-]\n"
-	text += fmt.Sprintf("Cache items: %d\nMemory allocated: %s",
-		h.stats.CacheObjects, h.stats.HeapString())
+	text += fmt.Sprintf("Memory allocated: %s",
+		h.stats.HeapString())
 	return text
 }
 

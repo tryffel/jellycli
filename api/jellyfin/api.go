@@ -68,7 +68,7 @@ type Jellyfin struct {
 	socket      *websocket.Conn
 	socketState socketState
 
-	enableRemoteControl bool
+	remoteControlEnabled bool
 }
 
 func (jf *Jellyfin) AuthOk() error {
@@ -76,11 +76,42 @@ func (jf *Jellyfin) AuthOk() error {
 }
 
 func (jf *Jellyfin) GetInfo() (*models.ServerInfo, error) {
-	return &models.ServerInfo{Name: "Jellyfin"}, nil
+	info := &models.ServerInfo{
+		ServerType: "Jellyfin",
+	}
+
+	resp, err := jf.getserverInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	info.Name = resp.ServerName
+	info.Id = resp.Id
+	info.Version = resp.Version
+
+	if resp.ShutdownPending {
+		info.Message = "Shutdown pending"
+	} else if resp.RestartPending {
+		info.Message = "Restart pending"
+	}
+
+	info.Misc = map[string]string{}
+
+	remoteErr := jf.RemoteControlEnabled()
+	var remoteStatus string
+	if remoteErr != nil {
+		remoteStatus = remoteErr.Error()
+	} else {
+		remoteStatus = "connected"
+	}
+
+	info.Misc["Cached objects"] = strconv.Itoa(jf.GetCacheItems())
+	info.Misc["Remote control"] = remoteStatus
+	return info, nil
 }
 
 func (jf *Jellyfin) RemoteControlEnabled() error {
-	if !jf.enableRemoteControl {
+	if !jf.remoteControlEnabled {
 		return errors.New("disabled by user")
 	}
 
@@ -175,6 +206,7 @@ func NewJellyfin(conf *config.Jellyfin, provider config.KeyValueProvider) (*Jell
 }
 
 func (jf *Jellyfin) SetPlayer(p interfaces.Player) {
+	jf.remoteControlEnabled = true
 	jf.player = p
 }
 
@@ -183,7 +215,7 @@ func (jf *Jellyfin) SetQueue(q interfaces.QueueController) {
 }
 
 func (jf *Jellyfin) ConnectionOk() error {
-	name, version, _, _, _, err := jf.GetServerVersion()
+	info, err := jf.getserverInfo()
 	if err != nil {
 		return err
 	}
@@ -192,7 +224,7 @@ func (jf *Jellyfin) ConnectionOk() error {
 		return err
 	}
 
-	logrus.Debugf("Connected to %s version %s", name, version)
+	logrus.Debugf("Connected to %s version %s", info.ServerName, info.Version)
 	return nil
 }
 
@@ -298,6 +330,14 @@ func (jf *Jellyfin) Connect() error {
 	}
 
 	return nil
+}
+
+func (jf *Jellyfin) Start() error {
+	err := jf.Connect()
+	if err != nil {
+		return err
+	}
+	return jf.Task.Start()
 }
 
 func (jf *Jellyfin) loop() {

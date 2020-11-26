@@ -44,30 +44,28 @@ type infoResponse struct {
 	ShutdownPending bool   `json:"HasShutdownPending"`
 }
 
-// GetServerVersion returns name, version, id and possible error
-func (jf *Jellyfin) GetServerVersion() (string, string, string, bool, bool, error) {
+func (jf *Jellyfin) getserverInfo() (*infoResponse, error) {
 	body, err := jf.get("/System/Info/Public", nil)
 	if err != nil {
-		return "", "", "", false, false, fmt.Errorf("request failed: %v", err)
+		return nil, err
 	}
 
-	response := infoResponse{}
-	err = json.NewDecoder(body).Decode(&response)
+	response := &infoResponse{}
+	err = json.NewDecoder(body).Decode(response)
 	if err != nil {
-		return "", "", "", false, false, fmt.Errorf("response read failed: %v", err)
+		return nil, err
 	}
-
-	return response.ServerName, response.Version, response.Id, response.RestartPending, response.ShutdownPending, nil
+	return response, nil
 }
 
 func (jf *Jellyfin) VerifyServerId() error {
-	_, _, id, _, _, err := jf.GetServerVersion()
+	info, err := jf.getserverInfo()
 	if err != nil {
 		return err
 	}
 
-	if jf.serverId != id {
-		return fmt.Errorf("server id has changed: expected %s, got %s", jf.serverId, id)
+	if jf.serverId != info.Id {
+		return fmt.Errorf("server id has changed: expected %s, got %s", jf.serverId, info.Id)
 	}
 	return nil
 }
@@ -206,7 +204,7 @@ func (jf *Jellyfin) ReportCapabilities() error {
 		"ToggleMute",
 		"SetVolume",
 	}
-	data["SupportsMediaControl"] = jf.enableRemoteControl
+	data["SupportsMediaControl"] = jf.remoteControlEnabled
 	data["SupportsPersistentIdentifier"] = false
 	data["ApplicationVersion"] = config.Version
 	data["Client"] = config.AppName

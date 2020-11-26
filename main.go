@@ -27,12 +27,13 @@ import (
 	"os"
 	"os/signal"
 	"path"
-	"strconv"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
+	"tryffel.net/go/jellycli/api"
 	"tryffel.net/go/jellycli/api/jellyfin"
+	"tryffel.net/go/jellycli/api/subsonic"
 	"tryffel.net/go/jellycli/config"
 	mpris2 "tryffel.net/go/jellycli/mpris"
 	"tryffel.net/go/jellycli/player"
@@ -51,7 +52,7 @@ func main() {
 // Application is the root struct for interactive player
 type Application struct {
 	conf        *config.Config
-	api         *jellyfin.Api
+	api         api.MediaServer
 	gui         *ui.Gui
 	player      *player.Player
 	mpris       *mpris2.MediaController
@@ -86,42 +87,26 @@ func NewApplication(configFile string) (*Application, error) {
 	if err != nil {
 		return a, err
 	}
-	err = a.login()
-	if err != nil {
-		return a, err
-	}
-	err = a.initApiView()
-	if err != nil {
-		return a, err
-	}
-
-	err = a.api.VerifyServerId()
-	if err != nil {
-		logrus.Fatalf("api error: %v", err)
-		os.Exit(1)
-	}
-
 	err = config.SaveConfig(a.conf)
 	if err != nil {
 		logrus.Errorf("save config file: %v", err)
 	}
 
 	config.AppConfig = a.conf
-
 	err = a.initApplication()
 	return a, err
 }
 
 func (a *Application) Start() error {
-	var err error
-	err = a.api.Connect()
-	if err != nil {
-		return fmt.Errorf("connect to server: %v", err)
+	if a.conf.Player.EnableRemoteControl {
+		remoteController, ok := a.api.(api.RemoteController)
+		if ok {
+			logrus.Debug("Enable remote control")
+			remoteController.SetPlayer(a.player)
+			remoteController.SetQueue(a.player)
+		}
 	}
-
-	a.api.SetPlayer(a.player)
-	a.api.SetQueue(a.player)
-
+	var err error
 	tasks := []task.Tasker{a.player, a.api}
 
 	for _, v := range tasks {
@@ -186,124 +171,37 @@ func (a *Application) initConfig(configFile string) error {
 
 func (a *Application) initApi() error {
 	var err error
-	if a.conf.Server.Url == "" {
-		url, err := config.ReadUserInput("full jellyfin url", false)
-		if err != nil {
-			return fmt.Errorf("get server url: %v", err)
-		}
-		a.conf.Server.Url = url
-		configChanged = true
+	switch strings.ToLower(a.conf.Player.Server) {
+	case "jellyfin":
+		a.api, err = jellyfin.NewJellyfin(&a.conf.Jellyfin, &config.StdinConfigProvider{})
+		a.conf.Player.Server = "jellyfin"
+	case "subsonic":
+		a.api, err = subsonic.NewSubsonic(&a.conf.Subsonic, &config.StdinConfigProvider{})
+		a.conf.Player.Server = "subsonic"
+	default:
+		return fmt.Errorf("unsupported backend: '%s'", a.conf.Player.Server)
 	}
-
-	a.api, err = jellyfin.NewApi(a.conf.Server.Url, a.conf.Player.EnableRemoteControl)
 	if err != nil {
 		return fmt.Errorf("api init: %v", err)
 	}
 	if err := a.api.ConnectionOk(); err != nil {
 		return fmt.Errorf("no connection to server: %v", err)
 	}
+
+	conf := a.api.GetConfig()
+	if a.conf.Player.Server == "jellyfin" {
+		jfConfig, ok := conf.(*config.Jellyfin)
+		if ok {
+			a.conf.Jellyfin = *jfConfig
+		}
+	}
+	if a.conf.Player.Server == "subsonic" {
+		subConfig, ok := conf.(*config.Subsonic)
+		if ok {
+			a.conf.Subsonic = *subConfig
+		}
+	}
 	return nil
-}
-
-func (a *Application) login() error {
-
-	login := func() error {
-		configChanged = true
-		username, err := config.ReadUserInput("username", false)
-		if err != nil {
-			return fmt.Errorf("failed read username: %v", err)
-		}
-
-		password, err := config.ReadUserInput("password", true)
-		if err != nil {
-			return fmt.Errorf("failed to read password: %v", err)
-		}
-
-		err = a.api.Login(username, password)
-		if err == nil && a.api.IsLoggedIn() {
-			a.conf.Server.Token = a.api.Token()
-			a.conf.Server.UserId = a.api.UserId()
-			a.conf.Server.DeviceId = a.api.DeviceId
-			a.conf.Server.ServerId = a.api.ServerId()
-
-			err = config.SaveConfig(a.conf)
-			if err != nil {
-				logrus.Fatalf("save config file: %v", err)
-			}
-
-		} else {
-			return fmt.Errorf("login failed")
-		}
-		return nil
-	}
-	if a.conf.Server.Token == "" {
-		logrus.Warning("login required")
-		return login()
-	} else {
-		err := a.api.SetToken(a.conf.Server.Token)
-		if err != nil {
-			if strings.Contains(err.Error(), "invalid token") {
-				// renew token
-				logrus.Warning(err.Error())
-				a.conf.Server.Token = ""
-				return login()
-			} else {
-				return fmt.Errorf("set token: %v", err)
-			}
-		}
-		a.api.SetUserId(a.conf.Server.UserId)
-		a.api.DeviceId = a.conf.Server.DeviceId
-		a.api.SetServerId(a.conf.Server.ServerId)
-		return nil
-	}
-}
-
-func (a *Application) initApiView() error {
-	view := a.conf.Server.MusicView
-	if view != "" {
-		a.api.SetDefaultMusicview(view)
-		return nil
-	} else {
-		views, err := a.api.GetViews()
-		if err != nil {
-			return fmt.Errorf("get user views: %v", err)
-		}
-		if len(views) == 0 {
-			return fmt.Errorf("no views to use")
-		}
-
-		fmt.Println("Found collections: ")
-		for i, v := range views {
-			fmt.Printf("%d. %s (%s)\n", i+1, v.Name, v.Type)
-		}
-
-		// Loop for as long as user gives valid input for default view
-		for {
-			number, err := config.ReadUserInput("Default music view (number)", false)
-			if err != nil {
-				fmt.Println("Must be a valid number")
-			} else {
-				num, err := strconv.Atoi(number)
-				if err != nil {
-					fmt.Println("Must be a valid number")
-				} else {
-					id := ""
-					if num < len(views)+1 && num > 0 {
-						id = views[num-1].Id.String()
-						a.conf.Server.MusicView = id
-						configChanged = true
-						a.api.SetDefaultMusicview(id)
-						if err != nil {
-							return err
-						}
-						return nil
-					} else {
-						fmt.Println("Must be in range")
-					}
-				}
-			}
-		}
-	}
 }
 
 func (a *Application) initApplication() error {

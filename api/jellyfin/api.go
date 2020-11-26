@@ -19,7 +19,6 @@
 package jellyfin
 
 import (
-	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -29,6 +28,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -36,6 +36,7 @@ import (
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
 	"tryffel.net/go/jellycli/task"
+	"tryffel.net/go/jellycli/util"
 )
 
 type socketState int
@@ -70,8 +71,12 @@ type Jellyfin struct {
 	enableRemoteControl bool
 }
 
-func (jf *Jellyfin) GetServerInfo() models.ServerInfo {
-	return models.ServerInfo{Name: "Jellyfin"}
+func (jf *Jellyfin) AuthOk() error {
+	return jf.TokenOk()
+}
+
+func (jf *Jellyfin) GetInfo() (*models.ServerInfo, error) {
+	return &models.ServerInfo{Name: "Jellyfin"}, nil
 }
 
 func (jf *Jellyfin) RemoteControlEnabled() error {
@@ -94,29 +99,67 @@ func (jf *Jellyfin) RemoteControlEnabled() error {
 	return errors.New("failure")
 }
 
-func NewApi(host string, allowRemoteControl bool) (*Jellyfin, error) {
-	a := &Jellyfin{
-		host:                host,
-		token:               "",
-		client:              &http.Client{},
-		enableRemoteControl: allowRemoteControl,
+func NewJellyfin(conf *config.Jellyfin, provider config.KeyValueProvider) (*Jellyfin, error) {
+	jf := &Jellyfin{
+		client: &http.Client{},
+	}
+
+	if conf != nil {
+		jf.host = conf.Url
+		jf.token = conf.Token
+		jf.userId = conf.UserId
+		jf.serverId = conf.ServerId
+		jf.musicView = conf.MusicView
 	}
 
 	id, err := machineid.ProtectedID(config.AppName)
 	if err != nil {
-		return a, fmt.Errorf("failed to get unique host id: %v", err)
+		return jf, fmt.Errorf("failed to get unique host id: %v", err)
 	}
-	a.DeviceId = id
-	a.SessionId = randomKey(15)
-	a.Name = "api"
-	a.SetLoop(a.loop)
+	jf.DeviceId = id
+	jf.SessionId = util.RandomKey(15)
+	jf.Name = "api"
+	jf.SetLoop(jf.loop)
 
-	a.cache, err = NewCache()
+	jf.cache, err = NewCache()
 	if err != nil {
-		return a, fmt.Errorf("create cache: %v", err)
+		return jf, fmt.Errorf("create cache: %v", err)
 	}
 
-	return a, nil
+	if jf.host == "" {
+		jf.host, err = provider.Get("jellyfin host", false, "")
+		if err != nil {
+			return jf, err
+		}
+	}
+
+	if jf.token == "" {
+		jf.userId, err = provider.Get("username", false, "")
+		if err != nil {
+			return jf, err
+		}
+	}
+
+	if err := jf.TokenOk(); err != nil {
+		if strings.Contains(err.Error(), "invalid token") {
+			logrus.Warningf("Authentication required")
+			password, err := provider.Get("Password", true, "")
+			if err != nil {
+				return jf, err
+			}
+			err = jf.login(jf.userId, password)
+			if err != nil {
+				return jf, err
+			}
+		}
+	}
+
+	err = jf.selectDefaultMusicView(provider)
+	if err != nil {
+		return jf, err
+	}
+
+	return jf, err
 }
 
 func (jf *Jellyfin) SetPlayer(p interfaces.Player) {
@@ -127,46 +170,12 @@ func (jf *Jellyfin) SetQueue(q interfaces.QueueController) {
 	jf.queue = q
 }
 
-func (jf *Jellyfin) Host() string {
-	return jf.host
-}
-
-func (jf *Jellyfin) Token() string {
-	return jf.token
-}
-
-//Login performs username based login
-func (jf *Jellyfin) Login(username, password string) error {
-	return jf.login(username, password)
-}
-
-//SetToken sets existing token
-func (jf *Jellyfin) SetToken(token string) error {
-	jf.token = token
-	return jf.TokenOk()
-}
-
-func (jf *Jellyfin) tokenExists() error {
-	if jf.token == "" {
-		return errors.New("not logged in")
-	}
-	return nil
-}
-
-func (jf *Jellyfin) SetUserId(id string) {
-	jf.userId = id
-}
-
-func (jf *Jellyfin) UserId() string {
-	return jf.userId
-}
-
-func (jf *Jellyfin) IsLoggedIn() bool {
-	return jf.loggedIn
-}
-
 func (jf *Jellyfin) ConnectionOk() error {
 	name, version, _, _, _, err := jf.GetServerVersion()
+	if err != nil {
+		return err
+	}
+	err = jf.VerifyServerId()
 	if err != nil {
 		return err
 	}
@@ -208,6 +217,49 @@ func (jf *Jellyfin) DefaultMusicView() string {
 
 func (jf *Jellyfin) SetDefaultMusicview(id string) {
 	jf.musicView = id
+}
+
+func (jf *Jellyfin) selectDefaultMusicView(provider config.KeyValueProvider) error {
+	if jf.musicView != "" {
+		return nil
+	}
+	views, err := jf.GetViews()
+	if err != nil {
+		return fmt.Errorf("get user views: %v", err)
+	}
+	if len(views) == 0 {
+		return fmt.Errorf("no views to use")
+	}
+
+	fmt.Println("Found collections: ")
+	for i, v := range views {
+		fmt.Printf("%d. %s (%s)\n", i+1, v.Name, v.Type)
+	}
+
+	// Loop for as long as user gives valid input for default view
+	for {
+		number, err := provider.Get("Default music view (enter number)", false, "")
+		if err != nil {
+			fmt.Println("Must be a valid number")
+		} else {
+			num, err := strconv.Atoi(number)
+			if err != nil {
+				fmt.Println("Must be a valid number")
+			} else {
+				id := ""
+				if num < len(views)+1 && num > 0 {
+					id = views[num-1].Id.String()
+					jf.musicView = id
+					if err != nil {
+						return err
+					}
+					return nil
+				} else {
+					fmt.Println("Must be in range")
+				}
+			}
+		}
+	}
 }
 
 func (jf *Jellyfin) ServerId() string {
@@ -317,17 +369,4 @@ func getBodyMsg(body io.ReadCloser) string {
 	}
 
 	return string(bytes)
-}
-
-const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
-
-func randomKey(length int) string {
-	r := rand.Reader
-	data := make([]byte, length)
-	r.Read(data)
-
-	for i, b := range data {
-		data[i] = letters[b%byte(len(letters))]
-	}
-	return string(data)
 }

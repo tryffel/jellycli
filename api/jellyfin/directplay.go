@@ -23,6 +23,7 @@ import (
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
+	"tryffel.net/go/jellycli/util"
 )
 
 func (jf *Jellyfin) Download(song *models.Song) (io.ReadCloser, interfaces.AudioFormat, error) {
@@ -44,7 +45,7 @@ func (jf *Jellyfin) Stream(song *models.Song) (rc io.ReadCloser, format interfac
 	}
 	ptr["Container"] = formats
 	// Every new request requires new playsession
-	jf.SessionId = randomKey(20)
+	jf.SessionId = util.RandomKey(20)
 	ptr["PlaySessionId"] = jf.SessionId
 	url := jf.host + "/Audio/" + song.Id.String() + "/universal"
 	var stream *api.StreamBuffer

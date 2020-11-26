@@ -35,8 +35,9 @@ import (
 var AppConfig *Config
 
 type Config struct {
-	Server Server `yaml:"server"`
-	Player Player `yaml:"player"`
+	Jellyfin Jellyfin `yaml:"jellyfin"`
+	Subsonic Subsonic `yaml:"subsonic"`
+	Player   Player   `yaml:"player"`
 
 	configFile string
 	configDir  string
@@ -46,17 +47,9 @@ func (c *Config) ConfigFile() string {
 	return c.configFile
 }
 
-type Server struct {
-	Url       string `yaml:"server_url"`
-	Username  string `yaml:"username"`
-	Token     string `yaml:"token"`
-	UserId    string `yaml:"user_id"`
-	DeviceId  string `yaml:"device_id"`
-	ServerId  string `yaml:"server_id"`
-	MusicView string `yaml:"music_view"`
-}
-
 type Player struct {
+	Server string `yaml:"server"`
+
 	PageSize            int    `yaml:"page_size"`
 	LogFile             string `yaml:"log_file"`
 	LogLevel            string `yaml:"log_level"`
@@ -120,10 +113,10 @@ func (c *Config) initNewConfig() {
 
 // can config file be considered empty / not configured
 func (c *Config) isEmptyConfig() bool {
-	return c.Server.UserId == "" &&
-		c.Server.ServerId == "" &&
-		c.Server.MusicView == "" &&
-		c.Server.Token == ""
+	return c.Jellyfin.UserId == "" &&
+		c.Jellyfin.ServerId == "" &&
+		c.Jellyfin.MusicView == "" &&
+		c.Jellyfin.Token == ""
 }
 
 // ReadUserInput reads value from stdin. Name is printed like 'Enter <name>. If mask is true, input is masked.

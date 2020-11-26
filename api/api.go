@@ -19,6 +19,7 @@ package api
 
 import (
 	"io"
+	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
 )
@@ -119,6 +120,8 @@ type RemoteController interface {
 	// then be controlled remotely.
 	SetPlayer(player interfaces.Player)
 
+	SetQueue(q interfaces.QueueController)
+
 	// ReportProgress reports player progress to remote controller.
 	ReportProgress(state *interfaces.ApiPlaybackState) error
 
@@ -133,9 +136,12 @@ type RemoteServer interface {
 	// ConnectionOk returns nil of connection ok, else returns description for failure.
 	ConnectionOk() error
 
-	// AuthOk returns nil if auth is ok, else returns reason.
-	AuthOk() error
+	// GetConfig returns backend config that is saved to config file.
+	GetConfig() config.Backend
 
-	// Login attempts to login to remote server.
-	Login(username, password string)
+	// Start starts background service for remote server, if any.
+	Start() error
+
+	// Stop stops background service for remote server, if any.
+	Stop() error
 }

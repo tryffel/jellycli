@@ -29,6 +29,7 @@ import (
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
+	"tryffel.net/go/jellycli/util"
 )
 
 const (
@@ -235,7 +236,7 @@ func (jf *Jellyfin) authHeader() string {
 	id, err := machineid.ProtectedID(config.AppName)
 	if err != nil {
 		logrus.Errorf("get unique host id: %v", err)
-		id = randomKey(30)
+		id = util.RandomKey(30)
 	}
 	hostname := jf.deviceName()
 

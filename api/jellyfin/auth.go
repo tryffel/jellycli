@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"tryffel.net/go/jellycli/config"
 )
 
 type loginResponse struct {
@@ -91,4 +92,15 @@ func (jf *Jellyfin) login(username, password string) error {
 		}
 	}
 	return nil
+}
+
+func (jf *Jellyfin) GetConfig() config.Backend {
+	return &config.Jellyfin{
+		Url:       jf.host,
+		Token:     jf.token,
+		UserId:    jf.userId,
+		DeviceId:  jf.DeviceId,
+		ServerId:  jf.ServerId(),
+		MusicView: jf.musicView,
+	}
 }

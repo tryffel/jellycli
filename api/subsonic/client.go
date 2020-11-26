@@ -21,14 +21,19 @@
 package subsonic
 
 import (
+	"crypto/md5"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
+	"time"
 	"tryffel.net/go/jellycli/api"
+	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
+	"tryffel.net/go/jellycli/util"
 )
 
 // Subsonic implements subsonic api.
@@ -39,6 +44,9 @@ type Subsonic struct {
 	user       string
 	apiversion string
 	client     string
+
+	connectionStatus string
+	connectionError  *subError
 
 	musicFolder int
 
@@ -56,7 +64,7 @@ func (s *Subsonic) Stream(Song *models.Song) (io.ReadCloser, interfaces.AudioFor
 	(*params)["c"] = s.client
 	(*params)["v"] = s.apiversion
 
-	url := s.host + "/stream"
+	url := s.host + "/rest/stream"
 
 	stream, err := api.NewStreamDownload(url, nil, *params, http.DefaultClient, Song.Duration)
 	if err != nil {
@@ -88,28 +96,46 @@ func (s *Subsonic) GetInfo() (*models.ServerInfo, error) {
 }
 
 func (s *Subsonic) ConnectionOk() error {
-	return errors.New("not implemented")
+	if s.connectionError != nil {
+		return fmt.Errorf("subsonic error: (%d): %s", s.connectionError.Code, s.connectionError.Message)
+	}
+	return nil
 }
 
-func (s *Subsonic) AuthOk() error {
-	return errors.New("not implemented")
-}
-
-func (s *Subsonic) Login(username, password string) {
-}
-
-func NewSubsonic(url, user, salt, token string) (*Subsonic, error) {
+func NewSubsonic(conf *config.Subsonic, provider config.KeyValueProvider) (*Subsonic, error) {
 	s := &Subsonic{
-		host:       url,
-		salt:       salt,
-		token:      token,
-		user:       user,
+		host:       conf.Url,
+		salt:       conf.Salt,
+		token:      conf.Token,
+		user:       conf.Username,
 		apiversion: "1.16.1",
 		client:     "Jellycli",
 	}
+
+	if s.host == "" {
+		host, err := provider.Get("subsonic host", false, "")
+		if err != nil {
+			return s, err
+		}
+		if host != "" {
+			s.host = host
+		} else {
+			return s, errors.New("subsonic host cannot be empty")
+		}
+	}
+
 	err := s.checkConnection()
 	if err != nil {
-		return s, err
+		loginErr := s.login(provider)
+		if loginErr != nil {
+
+			return s, loginErr
+		}
+
+		connErr := s.checkConnection()
+		if connErr != nil {
+			return s, err
+		}
 	}
 
 	resp, err := s.get("/getMusicFolders", nil)
@@ -126,11 +152,14 @@ func NewSubsonic(url, user, salt, token string) (*Subsonic, error) {
 	}
 
 	s.musicFolder = resp.MusicFolders.Folders[0].Id
+	s.connectionError = nil
 	return s, nil
 }
 
 func (s *Subsonic) get(url string, params *params) (*response, error) {
-	req, _ := http.NewRequest(http.MethodGet, s.host+url, nil)
+	fullUrl := s.host + "/rest" + url
+	start := time.Now()
+	req, _ := http.NewRequest(http.MethodGet, fullUrl, nil)
 
 	q := req.URL.Query()
 	q.Add("s", s.salt)
@@ -149,9 +178,13 @@ func (s *Subsonic) get(url string, params *params) (*response, error) {
 	req.URL.RawQuery = q.Encode()
 
 	resp, err := http.DefaultClient.Do(req)
+	took := time.Now().Sub(start)
 	if err != nil {
+		logrus.Warningf("Get %s failed", "/rest"+url)
 		return nil, err
 	}
+
+	logrus.Debugf("Get %s status: %d, took: %d ms", "/rest"+url, resp.StatusCode, took.Milliseconds())
 	defer resp.Body.Close()
 	dto := &subResponse{}
 	err = json.NewDecoder(resp.Body).Decode(dto)
@@ -170,6 +203,9 @@ func (s *Subsonic) get(url string, params *params) (*response, error) {
 func (s *Subsonic) checkConnection() error {
 	resp, err := s.get("/ping", nil)
 	if err != nil {
+		if resp != nil {
+			s.connectionError = resp.Error
+		}
 		return err
 	}
 
@@ -179,8 +215,44 @@ func (s *Subsonic) checkConnection() error {
 	return fmt.Errorf("invalid server status: %s, expected 'ok'", resp.Status)
 }
 
+func (s *Subsonic) login(provider config.KeyValueProvider) error {
+
+	logrus.Warning("Authentication required for Subsonic")
+
+	username, err := provider.Get("username", false, "")
+	if err != nil {
+		return err
+	}
+	password, err := provider.Get("password", true, "")
+	if err != nil {
+		return err
+	}
+
+	s.user = username
+	s.salt = util.RandomKey(15)
+	s.token = fmt.Sprintf("%x", md5.Sum([]byte(password+s.salt)))
+	return nil
+}
+
 type params map[string]string
 
 func (p *params) setId(id string) {
 	(*p)["id"] = id
+}
+
+func (s *Subsonic) GetConfig() config.Backend {
+	return &config.Subsonic{
+		Url:      s.host,
+		Username: s.user,
+		Salt:     s.salt,
+		Token:    s.token,
+	}
+}
+
+func (s *Subsonic) Start() error {
+	return nil
+}
+
+func (s *Subsonic) Stop() error {
+	return nil
 }

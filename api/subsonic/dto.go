@@ -70,19 +70,22 @@ type subResponse struct {
 }
 
 type response struct {
-	Status        string        `json:"status"`
-	Version       string        `json:"version"`
-	Type          string        `json:"type"`
-	ServerVersion string        `json:"serverVersion"`
-	Error         *subError     `json:"error"`
-	MusicFolders  *musicFolders `json:"musicFolders,omitempty"`
-	Indexes       *indexes      `json:"indexes,omitempty"`
-	Artists       *indexes      `json:"artists,omitempty"`
-	Artist        *artistAlbums `json:"artist,omitempty"`
-	AlbumList     *albumList    `json:"albumList2,omitempty"`
-	Albums        *albumSongs   `json:"album,omitempty"`
-	Favorites     *favorites    `json:"starred2,omitempty"`
-	Search        *searchResp   `json:"searchResult3,omitempty"`
+	Status        string         `json:"status"`
+	Version       string         `json:"version"`
+	Type          string         `json:"type"`
+	ServerVersion string         `json:"serverVersion"`
+	Error         *subError      `json:"error"`
+	MusicFolders  *musicFolders  `json:"musicFolders,omitempty"`
+	Indexes       *indexes       `json:"indexes,omitempty"`
+	Artists       *indexes       `json:"artists,omitempty"`
+	Artist        *artistAlbums  `json:"artist,omitempty"`
+	AlbumList     *albumList     `json:"albumList2,omitempty"`
+	Albums        *albumSongs    `json:"album,omitempty"`
+	Favorites     *favorites     `json:"starred2,omitempty"`
+	Search        *searchResp    `json:"searchResult3,omitempty"`
+	Playlists     *playlists     `json:"playlists,omitempty"`
+	Playlist      *playlistSongs `json:"playlist,omitempty"`
+	Genres        *genres        `json:"genres"`
 }
 
 type musicFolder struct {
@@ -220,4 +223,45 @@ type searchResp struct {
 type favorites struct {
 	Artists []artist `json:"artist,omitempty"`
 	Albums  []child  `json:"album,omitempty"`
+}
+
+type playlists struct {
+	Playlists []playlist `json:"playlist"`
+}
+
+type playlist struct {
+	Id        string `json:"id"`
+	Name      string `json:"name"`
+	SongCount int    `json:"songCount"`
+	Duration  int    `json:"duration"`
+}
+
+func (p *playlist) toPlaylist() *models.Playlist {
+	return &models.Playlist{
+		Id:        models.Id(p.Id),
+		Name:      p.Name,
+		Duration:  p.Duration,
+		SongCount: p.SongCount,
+	}
+}
+
+type playlistSongs struct {
+	Songs []child `json:"entry"`
+}
+
+type genres struct {
+	Genres []genre `json:"genre"`
+}
+
+type genre struct {
+	Name       string `json:"value"`
+	SongCount  int    `json:"songCount"`
+	AlbumCount int    `json:"albumCount"`
+}
+
+func (g *genre) toGenre() *models.IdName {
+	return &models.IdName{
+		Id:   models.Id(g.Name),
+		Name: g.Name,
+	}
 }

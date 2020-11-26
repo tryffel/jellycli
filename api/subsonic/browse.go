@@ -67,16 +67,10 @@ func (s *Subsonic) GetAlbumArtists(paging interfaces.Paging) ([]*models.Artist, 
 	return s.GetArtists(paging)
 }
 
-func (s *Subsonic) GetAlbums(paging interfaces.Paging) ([]*models.Album, int, error) {
-
-	params := &params{}
-	(*params)["type"] = "alphabeticalByName"
-	(*params)["offset"] = strconv.Itoa(paging.Offset())
-	(*params)["size"] = strconv.Itoa(paging.PageSize)
-
+func (s *Subsonic) getAlbums(params *params) ([]*models.Album, error) {
 	resp, err := s.get("/getAlbumList2", params)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
 	albums := make([]*models.Album, len(resp.AlbumList.Albums))
@@ -84,7 +78,16 @@ func (s *Subsonic) GetAlbums(paging interfaces.Paging) ([]*models.Album, int, er
 	for i, v := range resp.AlbumList.Albums {
 		albums[i] = v.toAlbum()
 	}
-	return albums, len(albums), nil
+	return albums, nil
+}
+
+func (s *Subsonic) GetAlbums(paging interfaces.Paging) ([]*models.Album, int, error) {
+	params := &params{}
+	(*params)["type"] = "alphabeticalByName"
+	(*params)["offset"] = strconv.Itoa(paging.Offset())
+	(*params)["size"] = strconv.Itoa(paging.PageSize)
+	albums, err := s.getAlbums(params)
+	return albums, len(albums), err
 }
 
 func (s *Subsonic) GetArtistAlbums(artist models.Id) (albums []*models.Album, err error) {
@@ -124,11 +127,29 @@ func (s *Subsonic) GetAlbumSongs(album models.Id) ([]*models.Song, error) {
 }
 
 func (s *Subsonic) GetPlaylists() ([]*models.Playlist, error) {
-	return nil, errors.New("not implemented")
+	resp, err := s.get("/getPlaylists", nil)
+	if err != nil {
+		return nil, err
+	}
+	playlists := make([]*models.Playlist, len(resp.Playlists.Playlists))
+	for i, v := range resp.Playlists.Playlists {
+		playlists[i] = v.toPlaylist()
+	}
+	return playlists, nil
 }
 
 func (s *Subsonic) GetPlaylistSongs(playlist models.Id) ([]*models.Song, error) {
-	return nil, errors.New("not implemented")
+	params := &params{}
+	params.setId(playlist.String())
+	resp, err := s.get("/getPlaylist", params)
+	if err != nil {
+		return nil, err
+	}
+	songs := make([]*models.Song, len(resp.Playlist.Songs))
+	for i, v := range resp.Playlist.Songs {
+		songs[i] = v.toSong()
+	}
+	return songs, nil
 }
 
 func (s *Subsonic) GetFavoriteArtists() ([]*models.Artist, error) {
@@ -142,6 +163,7 @@ func (s *Subsonic) GetFavoriteAlbums(paging interfaces.Paging) ([]*models.Album,
 }
 
 func (s *Subsonic) GetSimilarArtists(artist models.Id) ([]*models.Artist, error) {
+
 	return nil, errors.New("not implemented")
 }
 
@@ -150,7 +172,9 @@ func (s *Subsonic) GetSimilarAlbums(album models.Id) ([]*models.Album, error) {
 }
 
 func (s *Subsonic) GetLatestAlbums() ([]*models.Album, error) {
-	return nil, errors.New("not implemented")
+	params := &params{}
+	(*params)["type"] = "newest"
+	return s.getAlbums(params)
 }
 
 func (s *Subsonic) GetRecentlyPlayed(paging interfaces.Paging) ([]*models.Song, int, error) {
@@ -162,11 +186,23 @@ func (s *Subsonic) GetSongs(page, pageSize int) ([]*models.Song, int, error) {
 }
 
 func (s *Subsonic) GetGenres(paging interfaces.Paging) ([]*models.IdName, int, error) {
-	return nil, 0, errors.New("not implemented")
+	resp, err := s.get("/getGenres", nil)
+	if err != nil {
+		return nil, 0, err
+	}
+	genres := make([]*models.IdName, len(resp.Genres.Genres))
+	for i, v := range resp.Genres.Genres {
+		genres[i] = v.toGenre()
+	}
+	return genres, len(genres), nil
 }
 
 func (s *Subsonic) GetGenreAlbums(genre models.IdName) ([]*models.Album, error) {
-	return nil, errors.New("not implemented")
+	params := &params{}
+	(*params)["type"] = "byGenre"
+	(*params)["genre"] = genre.Name
+	albums, err := s.getAlbums(params)
+	return albums, err
 }
 
 func (s *Subsonic) GetAlbumArtist(album *models.Album) (*models.Artist, error) {

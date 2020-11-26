@@ -36,7 +36,7 @@ type userResponse struct {
 	UserId   string `json:"Id"`
 }
 
-func (a *Api) login(username, password string) error {
+func (a *Jellyfin) login(username, password string) error {
 	body := map[string]string{}
 	body["Username"] = username
 	body["PW"] = password

@@ -44,7 +44,7 @@ type infoResponse struct {
 }
 
 // GetServerVersion returns name, version, id and possible error
-func (a *Api) GetServerVersion() (string, string, string, bool, bool, error) {
+func (a *Jellyfin) GetServerVersion() (string, string, string, bool, bool, error) {
 	body, err := a.get("/System/Info/Public", nil)
 	if err != nil {
 		return "", "", "", false, false, fmt.Errorf("request failed: %v", err)
@@ -59,7 +59,7 @@ func (a *Api) GetServerVersion() (string, string, string, bool, bool, error) {
 	return response.ServerName, response.Version, response.Id, response.RestartPending, response.ShutdownPending, nil
 }
 
-func (a *Api) VerifyServerId() error {
+func (a *Jellyfin) VerifyServerId() error {
 	_, _, id, _, _, err := a.GetServerVersion()
 	if err != nil {
 		return err
@@ -110,7 +110,7 @@ type playbackProgress struct {
 }
 
 // ReportProgress reports playback status to server
-func (a *Api) ReportProgress(state *interfaces.ApiPlaybackState) error {
+func (a *Jellyfin) ReportProgress(state *interfaces.ApiPlaybackState) error {
 	var err error
 	var report interface{}
 	var url string
@@ -183,16 +183,16 @@ func (a *Api) ReportProgress(state *interfaces.ApiPlaybackState) error {
 	}
 }
 
-func (a *Api) GetCacheItems() int {
+func (a *Jellyfin) GetCacheItems() int {
 	return a.cache.Count()
 }
 
 //ImageUrl returns primary image url for item, if there is one. Otherwise return empty
-func (a *Api) ImageUrl(item, imageTag string) string {
+func (a *Jellyfin) ImageUrl(item, imageTag string) string {
 	return fmt.Sprintf("%s/Items/%s/Images/Primary?maxHeight=500&tag=%s&quality=90", a.host, item, imageTag)
 }
 
-func (a *Api) ReportCapabilities() error {
+func (a *Jellyfin) ReportCapabilities() error {
 	data := map[string]interface{}{}
 	data["PlayableMediaTypes"] = []string{"Audio"}
 	data["QueueableMediaTypes"] = []string{"Audio"}
@@ -230,7 +230,7 @@ func (a *Api) ReportCapabilities() error {
 	return nil
 }
 
-func (a *Api) authHeader() string {
+func (a *Jellyfin) authHeader() string {
 	id, err := machineid.ProtectedID(config.AppName)
 	if err != nil {
 		logrus.Errorf("get unique host id: %v", err)
@@ -243,7 +243,7 @@ func (a *Api) authHeader() string {
 	return auth
 }
 
-func (a *Api) deviceName() string {
+func (a *Jellyfin) deviceName() string {
 	hostname, err := os.Hostname()
 	if err != nil {
 		switch runtime.GOOS {
@@ -256,7 +256,7 @@ func (a *Api) deviceName() string {
 	return hostname
 }
 
-func (a *Api) GetLink(item models.Item) string {
+func (a *Jellyfin) GetLink(item models.Item) string {
 	// http://host/jellyfin/web/index.html#!/details.html?id=id&serverId=serverId
 	url := fmt.Sprintf("%s/web/index.html#!/details?id=%s", a.host, item.GetId())
 	if a.serverId != "" {

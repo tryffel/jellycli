@@ -65,7 +65,7 @@ func searchDtoToItems(rc io.ReadCloser, target mediaItemType) ([]models.Item, er
 }
 
 //Search searches audio items
-func (a *Api) Search(query string, itemType models.ItemType, limit int) ([]models.Item, error) {
+func (a *Jellyfin) Search(query string, itemType models.ItemType, limit int) ([]models.Item, error) {
 	if limit == 0 {
 		limit = 40
 	}

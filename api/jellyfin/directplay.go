@@ -30,7 +30,7 @@ import (
 	"tryffel.net/go/jellycli/models"
 )
 
-func (a *Api) GetSongUniversal(song *models.Song) (rc io.ReadCloser, format interfaces.AudioFormat, err error) {
+func (a *Jellyfin) GetSongUniversal(song *models.Song) (rc io.ReadCloser, format interfaces.AudioFormat, err error) {
 	format = interfaces.AudioFormatNil
 	params := a.defaultParams()
 	ptr := params.ptr()

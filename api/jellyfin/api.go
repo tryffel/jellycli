@@ -32,6 +32,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"tryffel.net/go/jellycli/api"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/task"
@@ -46,7 +47,7 @@ const (
 	socketAwaitsReconnecting
 )
 
-type Api struct {
+type Jellyfin struct {
 	task.Task
 	cache     *Cache
 	host      string
@@ -69,8 +70,12 @@ type Api struct {
 	enableRemoteControl bool
 }
 
-func NewApi(host string, allowRemoteControl bool) (*Api, error) {
-	a := &Api{
+func (a *Jellyfin) GetServerInfo() api.ServerInfo {
+	return api.ServerInfo{Name: "Jellyfin"}
+}
+
+func NewApi(host string, allowRemoteControl bool) (*Jellyfin, error) {
+	a := &Jellyfin{
 		host:                host,
 		token:               "",
 		client:              &http.Client{},
@@ -94,53 +99,53 @@ func NewApi(host string, allowRemoteControl bool) (*Api, error) {
 	return a, nil
 }
 
-func (a *Api) SetPlayer(p interfaces.Player) {
+func (a *Jellyfin) SetPlayer(p interfaces.Player) {
 	a.player = p
 }
 
-func (a *Api) SetQueue(q interfaces.QueueController) {
+func (a *Jellyfin) SetQueue(q interfaces.QueueController) {
 	a.queue = q
 }
 
-func (a *Api) Host() string {
+func (a *Jellyfin) Host() string {
 	return a.host
 }
 
-func (a *Api) Token() string {
+func (a *Jellyfin) Token() string {
 	return a.token
 }
 
 //Login performs username based login
-func (a *Api) Login(username, password string) error {
+func (a *Jellyfin) Login(username, password string) error {
 	return a.login(username, password)
 }
 
 //SetToken sets existing token
-func (a *Api) SetToken(token string) error {
+func (a *Jellyfin) SetToken(token string) error {
 	a.token = token
 	return a.TokenOk()
 }
 
-func (a *Api) tokenExists() error {
+func (a *Jellyfin) tokenExists() error {
 	if a.token == "" {
 		return errors.New("not logged in")
 	}
 	return nil
 }
 
-func (a *Api) SetUserId(id string) {
+func (a *Jellyfin) SetUserId(id string) {
 	a.userId = id
 }
 
-func (a *Api) UserId() string {
+func (a *Jellyfin) UserId() string {
 	return a.userId
 }
 
-func (a *Api) IsLoggedIn() bool {
+func (a *Jellyfin) IsLoggedIn() bool {
 	return a.loggedIn
 }
 
-func (a *Api) ConnectionOk() error {
+func (a *Jellyfin) ConnectionOk() error {
 	name, version, _, _, _, err := a.GetServerVersion()
 	if err != nil {
 		return err
@@ -150,7 +155,7 @@ func (a *Api) ConnectionOk() error {
 	return nil
 }
 
-func (a *Api) TokenOk() error {
+func (a *Jellyfin) TokenOk() error {
 	type serverInfo struct {
 		SystemUpdateLevel string `json:"SystemUpdateLevel"`
 		RestartPending    bool   `json:"HasPendingRestart"`
@@ -177,25 +182,25 @@ func (a *Api) TokenOk() error {
 	return nil
 }
 
-func (a *Api) DefaultMusicView() string {
+func (a *Jellyfin) DefaultMusicView() string {
 	return a.musicView
 }
 
-func (a *Api) SetDefaultMusicview(id string) {
+func (a *Jellyfin) SetDefaultMusicview(id string) {
 	a.musicView = id
 }
 
-func (a *Api) ServerId() string {
+func (a *Jellyfin) ServerId() string {
 	return a.serverId
 }
 
-func (a *Api) SetServerId(id string) {
+func (a *Jellyfin) SetServerId(id string) {
 	a.serverId = id
 }
 
 // Connect opens a connection to server. If websockets are supported, use that. Report capabilities to server.
 // This should be called before streaming any media
-func (a *Api) Connect() error {
+func (a *Jellyfin) Connect() error {
 	err := a.ReportCapabilities()
 	if err != nil {
 		return fmt.Errorf("report capabilities: %v", err)
@@ -208,7 +213,7 @@ func (a *Api) Connect() error {
 	return nil
 }
 
-func (a *Api) loop() {
+func (a *Jellyfin) loop() {
 	if a.socket == nil {
 		return
 	}

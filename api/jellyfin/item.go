@@ -50,7 +50,7 @@ func getItemType(dto *map[string]interface{}) (models.ItemType, error) {
 	}
 }
 
-func (a *Api) GetItem(id models.Id) (models.Item, error) {
+func (a *Jellyfin) GetItem(id models.Id) (models.Item, error) {
 	item, found := a.cache.Get(id)
 	if found && item != nil {
 		return item, nil
@@ -119,16 +119,16 @@ func (a *Api) GetItem(id models.Id) (models.Item, error) {
 	return item, nil
 }
 
-func (a *Api) GetChildItems(id models.Id) ([]models.Item, error) {
+func (a *Jellyfin) GetChildItems(id models.Id) ([]models.Item, error) {
 	// get users/<uid>/items/<id>?parentid=<pid>
 	return nil, nil
 }
 
-func (a *Api) GetParentItem(id models.Id) (models.Item, error) {
+func (a *Jellyfin) GetParentItem(id models.Id) (models.Item, error) {
 	return nil, nil
 }
 
-func (a *Api) GetArtist(id models.Id) (models.Artist, error) {
+func (a *Jellyfin) GetArtist(id models.Id) (models.Artist, error) {
 	item, found := a.cache.Get(id)
 	// Return cached value if both artist and albums exist
 	if found && item != nil {
@@ -185,7 +185,7 @@ func (a *Api) GetArtist(id models.Id) (models.Artist, error) {
 }
 
 //GetArtistAlbums retrieves albums for given artist.
-func (a *Api) GetArtistAlbums(id models.Id) ([]*models.Album, error) {
+func (a *Jellyfin) GetArtistAlbums(id models.Id) ([]*models.Album, error) {
 	params := *a.defaultParams()
 	params.setIncludeTypes(mediaTypeAlbum)
 	params.enableRecursive()
@@ -203,7 +203,7 @@ func (a *Api) GetArtistAlbums(id models.Id) ([]*models.Album, error) {
 	return albums, nil
 }
 
-func (a *Api) GetAlbum(id models.Id) (models.Album, error) {
+func (a *Jellyfin) GetAlbum(id models.Id) (models.Album, error) {
 	item, found := a.cache.Get(id)
 	// Return cached value if both artist and albums exist
 	if found && item != nil {
@@ -263,7 +263,7 @@ func (a *Api) GetAlbum(id models.Id) (models.Album, error) {
 }
 
 //GetAlbumSongs gets songs for given album.
-func (a *Api) GetAlbumSongs(album models.Id) ([]*models.Song, error) {
+func (a *Jellyfin) GetAlbumSongs(album models.Id) ([]*models.Song, error) {
 	params := *a.defaultParams()
 	params.enableRecursive()
 	params.setParentId(album.String())
@@ -292,7 +292,7 @@ func (a *Api) GetAlbumSongs(album models.Id) ([]*models.Song, error) {
 	return songs, nil
 }
 
-func (a *Api) GetFavoriteArtists() ([]*models.Artist, error) {
+func (a *Jellyfin) GetFavoriteArtists() ([]*models.Artist, error) {
 	params := *a.defaultParams()
 	params["IsFavorite"] = "true"
 
@@ -319,7 +319,7 @@ func (a *Api) GetFavoriteArtists() ([]*models.Artist, error) {
 	return artists, nil
 }
 
-func (a *Api) GetFavoriteAlbums(paging interfaces.Paging) ([]*models.Album, int, error) {
+func (a *Jellyfin) GetFavoriteAlbums(paging interfaces.Paging) ([]*models.Album, int, error) {
 	params := a.defaultParams()
 	params.enableRecursive()
 	params.setParentId(a.musicView)
@@ -341,7 +341,7 @@ func (a *Api) GetFavoriteAlbums(paging interfaces.Paging) ([]*models.Album, int,
 
 // GetPlaylists retrieves all playlists. Each playlists song count is known, but songs must be
 // retrieved separately
-func (a *Api) GetPlaylists() ([]*models.Playlist, error) {
+func (a *Jellyfin) GetPlaylists() ([]*models.Playlist, error) {
 	params := *a.defaultParams()
 	params.setParentId(a.musicView)
 	params.setIncludeTypes(mediaTypePlaylist)
@@ -374,7 +374,7 @@ func (a *Api) GetPlaylists() ([]*models.Playlist, error) {
 }
 
 // GetPlaylistSongs returns songs for playlist id
-func (a *Api) GetPlaylistSongs(playlist models.Id) ([]*models.Song, error) {
+func (a *Jellyfin) GetPlaylistSongs(playlist models.Id) ([]*models.Song, error) {
 	params := *a.defaultParams()
 	params.setParentId(playlist.String())
 
@@ -402,7 +402,7 @@ func (a *Api) GetPlaylistSongs(playlist models.Id) ([]*models.Song, error) {
 }
 
 // GetSongs returns songs by paging, and returns total number of songs
-func (a *Api) GetSongs(page, pageSize int) ([]*models.Song, int, error) {
+func (a *Jellyfin) GetSongs(page, pageSize int) ([]*models.Song, int, error) {
 	params := *a.defaultParams()
 	params.setIncludeTypes(mediaTypeSong)
 	params.enableRecursive()
@@ -437,7 +437,7 @@ func (a *Api) GetSongs(page, pageSize int) ([]*models.Song, int, error) {
 	return songs, dto.TotalSongs, nil
 }
 
-func (a *Api) GetSongsById(ids []models.Id) ([]*models.Song, error) {
+func (a *Jellyfin) GetSongsById(ids []models.Id) ([]*models.Song, error) {
 	params := *a.defaultParams()
 	params.setIncludeTypes(mediaTypeSong)
 	params.enableRecursive()
@@ -483,7 +483,7 @@ func (a *Api) GetSongsById(ids []models.Id) ([]*models.Song, error) {
 }
 
 // GetArtists return artists defined by paging and total number of artists
-func (a *Api) GetArtists(paging interfaces.Paging) (artistList []*models.Artist, numRecords int, err error) {
+func (a *Jellyfin) GetArtists(paging interfaces.Paging) (artistList []*models.Artist, numRecords int, err error) {
 	params := *a.defaultParams()
 	params.enableRecursive()
 	params.setSorting("SortName", "Ascending")
@@ -499,7 +499,7 @@ func (a *Api) GetArtists(paging interfaces.Paging) (artistList []*models.Artist,
 	return a.parseArtists(resp)
 }
 
-func (a *Api) GetAlbumArtists(paging interfaces.Paging) (artistList []*models.Artist, numRecords int, err error) {
+func (a *Jellyfin) GetAlbumArtists(paging interfaces.Paging) (artistList []*models.Artist, numRecords int, err error) {
 	params := *a.defaultParams()
 	params.enableRecursive()
 	params.setSorting("SortName", "Ascending")
@@ -514,7 +514,7 @@ func (a *Api) GetAlbumArtists(paging interfaces.Paging) (artistList []*models.Ar
 	return a.parseArtists(resp)
 }
 
-func (a *Api) parseArtists(resp io.Reader) (artistList []*models.Artist, numRecords int, err error) {
+func (a *Jellyfin) parseArtists(resp io.Reader) (artistList []*models.Artist, numRecords int, err error) {
 	dto := &artists{}
 	err = json.NewDecoder(resp).Decode(&dto)
 	if err != nil {
@@ -532,7 +532,7 @@ func (a *Api) parseArtists(resp io.Reader) (artistList []*models.Artist, numReco
 	return
 }
 
-func (a *Api) parseAlbums(resp io.Reader) (albumList []*models.Album, numRecords int, err error) {
+func (a *Jellyfin) parseAlbums(resp io.Reader) (albumList []*models.Album, numRecords int, err error) {
 	dto := albums{}
 	err = json.NewDecoder(resp).Decode(&dto)
 	if err != nil {
@@ -550,7 +550,7 @@ func (a *Api) parseAlbums(resp io.Reader) (albumList []*models.Album, numRecords
 }
 
 // GetAlbums returns albums with given paging. It also returns number of all albums
-func (a *Api) GetAlbums(paging interfaces.Paging) (albumList []*models.Album, numRecords int, err error) {
+func (a *Jellyfin) GetAlbums(paging interfaces.Paging) (albumList []*models.Album, numRecords int, err error) {
 	params := *a.defaultParams()
 	params.enableRecursive()
 	params.setSorting("SortName", "Ascending")
@@ -567,7 +567,7 @@ func (a *Api) GetAlbums(paging interfaces.Paging) (albumList []*models.Album, nu
 	return a.parseAlbums(resp)
 }
 
-func (a *Api) GetSimilarArtists(artist models.Id) ([]*models.Artist, error) {
+func (a *Jellyfin) GetSimilarArtists(artist models.Id) ([]*models.Artist, error) {
 	params := *a.defaultParams()
 	params.enableRecursive()
 	params.setSorting("SortName", "Ascending")
@@ -584,7 +584,7 @@ func (a *Api) GetSimilarArtists(artist models.Id) ([]*models.Artist, error) {
 	return artists, err
 }
 
-func (a *Api) GetSimilarAlbums(album models.Id) ([]*models.Album, error) {
+func (a *Jellyfin) GetSimilarAlbums(album models.Id) ([]*models.Album, error) {
 	params := *a.defaultParams()
 	params.enableRecursive()
 	params.setSorting("SortName", "Ascending")
@@ -602,7 +602,7 @@ func (a *Api) GetSimilarAlbums(album models.Id) ([]*models.Album, error) {
 
 }
 
-func (a *Api) GetGenres(paging interfaces.Paging) ([]*models.IdName, int, error) {
+func (a *Jellyfin) GetGenres(paging interfaces.Paging) ([]*models.IdName, int, error) {
 	params := a.defaultParams()
 	params.enableRecursive()
 	params.setSorting("SortName", "Ascending")
@@ -637,7 +637,7 @@ func (a *Api) GetGenres(paging interfaces.Paging) ([]*models.IdName, int, error)
 	return ids, body.Count, nil
 }
 
-func (a *Api) GetGenreAlbums(genre models.IdName) ([]*models.Album, error) {
+func (a *Jellyfin) GetGenreAlbums(genre models.IdName) ([]*models.Album, error) {
 	params := a.defaultParams()
 	params.enableRecursive()
 	params.setSorting("SortName", "Ascending")
@@ -658,7 +658,7 @@ func (a *Api) GetGenreAlbums(genre models.IdName) ([]*models.Album, error) {
 	return albums, err
 }
 
-func (a *Api) GetAlbumArtist(album *models.Album) (*models.Artist, error) {
+func (a *Jellyfin) GetAlbumArtist(album *models.Album) (*models.Artist, error) {
 	artist := a.cache.GetArtist(album.Id)
 	if artist == nil {
 		artist, err := a.GetArtist(album.Artist)
@@ -671,7 +671,7 @@ func (a *Api) GetAlbumArtist(album *models.Album) (*models.Artist, error) {
 	return artist, nil
 }
 
-func (a *Api) GetSongArtistAlbum(song *models.Song) (*models.Album, *models.Artist, error) {
+func (a *Jellyfin) GetSongArtistAlbum(song *models.Song) (*models.Album, *models.Artist, error) {
 	var artist *models.Artist
 	var album *models.Album
 	var ok bool

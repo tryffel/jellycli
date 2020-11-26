@@ -37,7 +37,7 @@ const (
 	pingPeriod  = (pongTimeout * 9) / 10
 )
 
-func (a *Api) connectSocket() error {
+func (a *Jellyfin) connectSocket() error {
 	if a.token == "" {
 		return fmt.Errorf("no access token")
 	}
@@ -77,7 +77,7 @@ func (a *Api) connectSocket() error {
 	return nil
 }
 
-func (a *Api) handleSocketOutbount(msg interface{}) error {
+func (a *Jellyfin) handleSocketOutbount(msg interface{}) error {
 	if a.socket == nil {
 		return fmt.Errorf("socket not open")
 	}
@@ -85,7 +85,7 @@ func (a *Api) handleSocketOutbount(msg interface{}) error {
 }
 
 // read next message from socket in blocking mode. Messages are read as long as socket connection is ok
-func (a *Api) readMessage() {
+func (a *Jellyfin) readMessage() {
 	if a.WebsocketOk() {
 		msgType, buff, err := a.socket.ReadMessage()
 		if err != nil {
@@ -109,7 +109,7 @@ type controlCommand struct {
 	Arguments interface{}
 }
 
-func (a *Api) parseInboudMessage(buff *[]byte) error {
+func (a *Jellyfin) parseInboudMessage(buff *[]byte) error {
 	msg := webSocketInboudMsg{}
 	err := json.Unmarshal(*buff, &msg)
 	if err != nil {
@@ -185,7 +185,7 @@ func (a *Api) parseInboudMessage(buff *[]byte) error {
 	return err
 }
 
-func (a *Api) pushCommand(cmd string) error {
+func (a *Jellyfin) pushCommand(cmd string) error {
 	if a.player == nil {
 		return nil
 	}
@@ -214,7 +214,7 @@ func (a *Api) pushCommand(cmd string) error {
 }
 
 // handle errors and try reconnecting
-func (a *Api) handleSocketError(err error) {
+func (a *Jellyfin) handleSocketError(err error) {
 	if err == nil {
 		return
 	}
@@ -248,14 +248,14 @@ func (a *Api) handleSocketError(err error) {
 }
 
 // WebsocketOk returns true if websocket connection is ok
-func (a *Api) WebsocketOk() bool {
+func (a *Jellyfin) WebsocketOk() bool {
 	a.socketLock.RLock()
 	defer a.socketLock.RUnlock()
 	return a.socketState == socketConnected
 }
 
 // try reconnecting socket. Return true if success
-func (a *Api) reconnectSocket() bool {
+func (a *Jellyfin) reconnectSocket() bool {
 	a.socketLock.Lock()
 	a.socketState = socketReConnecting
 	var err error
@@ -279,7 +279,7 @@ func (a *Api) reconnectSocket() bool {
 }
 
 // push songs to queue.
-func (a *Api) pushSongsToQueue(items []string, mode string) {
+func (a *Jellyfin) pushSongsToQueue(items []string, mode string) {
 	ids := []models.Id{}
 	for _, v := range items {
 		ids = append(ids, models.Id(v))

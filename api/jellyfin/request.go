@@ -35,14 +35,14 @@ const (
 	errForbidden            = "forbidden"
 )
 
-func (a *Api) defaultParams() *params {
+func (a *Jellyfin) defaultParams() *params {
 	params := *(&params{})
 	params["UserId"] = a.userId
 	params["DeviceId"] = a.DeviceId
 	return &params
 }
 
-func (a *Api) get(url string, params *params) (io.ReadCloser, error) {
+func (a *Jellyfin) get(url string, params *params) (io.ReadCloser, error) {
 	resp, err := a.makeRequest("GET", url, nil, params, nil)
 	if resp != nil {
 		return resp.Body, err
@@ -50,7 +50,7 @@ func (a *Api) get(url string, params *params) (io.ReadCloser, error) {
 	return nil, err
 }
 
-func (a *Api) post(url string, body *[]byte, params *params) (io.ReadCloser, error) {
+func (a *Jellyfin) post(url string, body *[]byte, params *params) (io.ReadCloser, error) {
 	resp, err := a.makeRequest("POST", url, body, params, nil)
 	if resp != nil {
 		return resp.Body, err
@@ -61,7 +61,7 @@ func (a *Api) post(url string, body *[]byte, params *params) (io.ReadCloser, err
 //Construct request
 // Set authorization header and build url query
 // Make request, parse response code and raise error if needed. Else return response body
-func (a *Api) makeRequest(method, url string, body *[]byte, params *params,
+func (a *Jellyfin) makeRequest(method, url string, body *[]byte, params *params,
 	headers map[string]string) (*http.Response, error) {
 	var reader *bytes.Buffer
 	var req *http.Request

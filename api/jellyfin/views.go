@@ -24,7 +24,7 @@ import (
 	"tryffel.net/go/jellycli/models"
 )
 
-func (a *Api) GetViews() ([]*models.View, error) {
+func (a *Jellyfin) GetViews() ([]*models.View, error) {
 	params := *a.defaultParams()
 
 	url := fmt.Sprintf("/Users/%s/Views", a.userId)
@@ -46,7 +46,7 @@ func (a *Api) GetViews() ([]*models.View, error) {
 	return views, nil
 }
 
-func (a *Api) GetLatestAlbums() ([]*models.Album, error) {
+func (a *Jellyfin) GetLatestAlbums() ([]*models.Album, error) {
 	params := *a.defaultParams()
 	params["UserId"] = a.userId
 	params.setParentId(a.musicView)
@@ -72,7 +72,7 @@ func (a *Api) GetLatestAlbums() ([]*models.Album, error) {
 	return albums, nil
 }
 
-func (a *Api) GetRecentlyPlayed(paging interfaces.Paging) ([]*models.Song, int, error) {
+func (a *Jellyfin) GetRecentlyPlayed(paging interfaces.Paging) ([]*models.Song, int, error) {
 	params := *a.defaultParams()
 
 	params.setIncludeTypes(mediaTypeSong)
@@ -115,7 +115,7 @@ func (a *Api) GetRecentlyPlayed(paging interfaces.Paging) ([]*models.Song, int, 
 }
 
 // GetInstantMix returns instant mix for given item.
-func (a *Api) GetInstantMix(item models.Item) ([]*models.Song, error) {
+func (a *Jellyfin) GetInstantMix(item models.Item) ([]*models.Song, error) {
 	params := *a.defaultParams()
 	params.setIncludeTypes(mediaTypeSong)
 	params["UserId"] = a.userId

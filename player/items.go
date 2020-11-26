@@ -18,7 +18,7 @@ package player
 
 import (
 	"runtime"
-	"tryffel.net/go/jellycli/api/jellyfin"
+	"tryffel.net/go/jellycli/api"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
@@ -26,124 +26,128 @@ import (
 
 // Items implements interfaces.ItemController
 type Items struct {
-	api *jellyfin.Api
+	browser api.MediaServer
 }
 
-func newItems(api *jellyfin.Api) *Items {
+func newItems(api api.MediaServer) *Items {
 	return &Items{
-		api: api,
+		browser: api,
 	}
 }
 
 func (i *Items) Search(itemType models.ItemType, query string) ([]models.Item, error) {
-	return i.api.Search(query, itemType, config.AppConfig.Player.SearchResultsLimit)
+	return i.browser.Search(query, itemType, config.AppConfig.Player.SearchResultsLimit)
 }
 
 func (i *Items) GetArtists(paging interfaces.Paging) ([]*models.Artist, int, error) {
-	return i.api.GetArtists(paging)
+	return i.browser.GetArtists(paging)
 }
 
 func (i *Items) GetAlbumArtists(paging interfaces.Paging) ([]*models.Artist, int, error) {
-	return i.api.GetAlbumArtists(paging)
+	return i.browser.GetAlbumArtists(paging)
 }
 
 func (i *Items) GetAlbums(paging interfaces.Paging) ([]*models.Album, int, error) {
-	return i.api.GetAlbums(paging)
+	return i.browser.GetAlbums(paging)
 }
 
 func (i *Items) GetArtistAlbums(artist models.Id) ([]*models.Album, error) {
-	return i.api.GetArtistAlbums(artist)
+	return i.browser.GetArtistAlbums(artist)
 }
 
 func (i *Items) GetAlbumSongs(album models.Id) ([]*models.Song, error) {
-	return i.api.GetAlbumSongs(album)
+	return i.browser.GetAlbumSongs(album)
 }
 
 func (i *Items) GetPlaylists() ([]*models.Playlist, error) {
-	return i.api.GetPlaylists()
+	return i.browser.GetPlaylists()
 }
 
 func (i *Items) GetPlaylistSongs(playlist *models.Playlist) error {
-	songs, err := i.api.GetPlaylistSongs(playlist.Id)
-	if err != nil {
-		return err
-	}
-	playlist.Songs = songs
+	panic("adsf")
+	/*
+		songs, err := i.browser.GetPlaylistSongs(playlist.Id)
+		if err != nil {
+			return err
+		}
+		playlist.Songs = songs
+
+	*/
 	return nil
 }
 
 func (i *Items) GetFavoriteArtists() ([]*models.Artist, error) {
-	return i.api.GetFavoriteArtists()
+	return i.browser.GetFavoriteArtists()
 }
 
 func (i *Items) GetFavoriteAlbums(paging interfaces.Paging) ([]*models.Album, int, error) {
-	return i.api.GetFavoriteAlbums(paging)
+	return i.browser.GetFavoriteAlbums(paging)
 }
 
 func (i *Items) GetLatestAlbums() ([]*models.Album, error) {
-	return i.api.GetLatestAlbums()
+	return i.browser.GetLatestAlbums()
 }
 
 func (i *Items) GetRecentlyPlayed(paging interfaces.Paging) ([]*models.Song, int, error) {
-	return i.api.GetRecentlyPlayed(paging)
+	return i.browser.GetRecentlyPlayed(paging)
 }
 
 func (i *Items) GetSimilarArtists(artist models.Id) ([]*models.Artist, error) {
-	return i.api.GetSimilarArtists(artist)
+	return i.browser.GetSimilarArtists(artist)
 }
 
 func (i *Items) GetSimilarAlbums(album models.Id) ([]*models.Album, error) {
-	return i.api.GetSimilarAlbums(album)
+	return i.browser.GetSimilarAlbums(album)
 }
 
 func (i *Items) GetGenres(paging interfaces.Paging) ([]*models.IdName, int, error) {
-	return i.api.GetGenres(paging)
+	return i.browser.GetGenres(paging)
 }
 
 func (i *Items) GetGenreAlbums(genre models.IdName) ([]*models.Album, error) {
-	return i.api.GetGenreAlbums(genre)
+	return i.browser.GetGenreAlbums(genre)
 }
 
 func (i *Items) GetStatistics() models.Stats {
-	cache := i.api.GetCacheItems()
-	name, version, id, restart, shutdown, _ := i.api.GetServerVersion()
+	//cache := i.browser.GetCacheItems()
+	//name, version, id, restart, shutdown, _ := i.browser.GetServerVersion()
 	runStats := runtime.MemStats{}
 	runtime.ReadMemStats(&runStats)
 
 	stats := models.Stats{
-		Heap:                  int(runStats.Alloc),
-		CacheObjects:          cache,
-		ServerName:            name,
-		ServerVersion:         version,
-		ServerId:              id,
-		ServerRestartPending:  restart,
-		ServerShutdownPending: shutdown,
-		WebSocket:             i.api.WebsocketOk(),
-		RemoteControl:         config.AppConfig.Player.EnableRemoteControl,
-		LogFile:               config.LogFile,
-		ConfigFile:            config.ConfigFile,
+		Heap: int(runStats.Alloc),
+		//	CacheObjects:          cache,
+		//	ServerName:            name,
+		//	ServerVersion:         version,
+		//	ServerId:              id,
+		//	ServerRestartPending:  restart,
+		//	ServerShutdownPending: shutdown,
+		//	WebSocket:             i.browser.WebsocketOk(),
+		RemoteControl: config.AppConfig.Player.EnableRemoteControl,
+		LogFile:       config.LogFile,
+		ConfigFile:    config.ConfigFile,
 	}
 
 	return stats
 }
 
 func (i *Items) GetSongs(page, pageSize int) ([]*models.Song, int, error) {
-	return i.api.GetSongs(page, pageSize)
+	return i.browser.GetSongs(page, pageSize)
 }
 
 func (i *Items) GetAlbumArtist(album *models.Album) (*models.Artist, error) {
-	return i.api.GetAlbumArtist(album)
+	return i.browser.GetAlbumArtist(album)
 }
 
 func (i *Items) GetSongArtistAlbum(song *models.Song) (*models.Album, *models.Artist, error) {
-	return i.api.GetSongArtistAlbum(song)
+	return i.browser.GetSongArtistAlbum(song)
 }
 
 func (i *Items) GetInstantMix(item models.Item) ([]*models.Song, error) {
-	return i.api.GetInstantMix(item)
+	return i.browser.GetInstantMix(item)
 }
 
 func (i *Items) GetLink(item models.Item) string {
-	return i.api.GetLink(item)
+	return i.browser.GetLink(item)
 
 }

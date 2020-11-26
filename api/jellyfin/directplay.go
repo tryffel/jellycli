@@ -30,9 +30,13 @@ import (
 	"tryffel.net/go/jellycli/models"
 )
 
-func (a *Jellyfin) GetSongUniversal(song *models.Song) (rc io.ReadCloser, format interfaces.AudioFormat, err error) {
+func (jf *Jellyfin) Download(song *models.Song) (io.ReadCloser, interfaces.AudioFormat, error) {
+	return jf.Stream(song)
+}
+
+func (jf *Jellyfin) Stream(song *models.Song) (rc io.ReadCloser, format interfaces.AudioFormat, err error) {
 	format = interfaces.AudioFormatNil
-	params := a.defaultParams()
+	params := jf.defaultParams()
 	ptr := params.ptr()
 	ptr["MaxStreamingBitrate"] = "140000000"
 	ptr["AudioSamplingRate"] = fmt.Sprint(config.AudioSamplingRate)
@@ -45,11 +49,11 @@ func (a *Jellyfin) GetSongUniversal(song *models.Song) (rc io.ReadCloser, format
 	}
 	ptr["Container"] = formats
 	// Every new request requires new playsession
-	a.SessionId = randomKey(20)
-	ptr["PlaySessionId"] = a.SessionId
-	url := a.host + "/Audio/" + song.Id.String() + "/universal"
+	jf.SessionId = randomKey(20)
+	ptr["PlaySessionId"] = jf.SessionId
+	url := jf.host + "/Audio/" + song.Id.String() + "/universal"
 	var stream *streamBuffer
-	stream, err = NewStreamDownload(url, map[string]string{"X-Emby-Token": a.token}, *params, a.client, song.Duration)
+	stream, err = NewStreamDownload(url, map[string]string{"X-Emby-Token": jf.token}, *params, jf.client, song.Duration)
 	rc = stream
 	format, err = mimeToAudioFormat(stream.resp.Header.Get("Content-Type"))
 	return

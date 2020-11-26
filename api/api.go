@@ -18,15 +18,48 @@
 package api
 
 import (
+	"io"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
 )
 
+// ServerInfo contains general info on server and connection to it.
 type ServerInfo struct {
-	Name                 string
-	Version              string
-	Message              string
-	RemoteControlEnabled bool
+	// ServerType describes protocol/server type.
+	ServerType string
+	// Name is server instance name, if it has one.
+	Name string
+
+	// Id is server instance id, if it has one.
+	Id string
+
+	// Version is server version.
+	Version string
+
+	// Message contains server message, if any.
+	Message string
+
+	// Misc contains any non-standard information, that use might be interested in.
+	Misc map[string]string
+}
+
+// MediaServer combines minimal interfaces for browsing and playing songs from remote server.
+// Mediaserver can additionally implement RemoteController, if server supports it.
+type MediaServer interface {
+	Streamer
+	Browser
+	RemoteServer
+}
+
+// Streamer contains methods for streaming audio from remote location.
+type Streamer interface {
+
+	// Stream streams song. If server does not implement separate streaming endpoint,
+	// implementcation can wrap Download.
+	Stream(Song *models.Song) (io.ReadCloser, interfaces.AudioFormat, error)
+
+	// Download downloads original audio file.
+	Download(Song *models.Song) (io.ReadCloser, interfaces.AudioFormat, error)
 }
 
 // Browser implements item-based viewing for music artists,albums,playlists etc.
@@ -94,6 +127,12 @@ type Browser interface {
 	// Search returns values matching query and itemType, limited by number of maxResults,
 	// Only items of itemType should ne returned.
 	Search(query string, itemType models.ItemType, maxResults int) ([]models.Item, error)
+
+	GetAlbum(id models.Id) (*models.Album, error)
+
+	GetArtist(id models.Id) (*models.Artist, error)
+
+	ImageUrl(item models.Id, itemType models.ItemType) string
 }
 
 // RemoteController implents controlling audio player remotely as well as
@@ -105,4 +144,21 @@ type RemoteController interface {
 
 	// ReportProgress reports player progress to remote controller.
 	ReportProgress(state *interfaces.ApiPlaybackState) error
+
+	RemoteControlEnabled() error
+}
+
+// RemoteServer contains general methods for getting server connection status
+type RemoteServer interface {
+	// GetInfo returns general info
+	GetInfo() (*ServerInfo, error)
+
+	// ConnectionOk returns nil of connection ok, else returns description for failure.
+	ConnectionOk() error
+
+	// AuthOk returns nil if auth is ok, else returns reason.
+	AuthOk() error
+
+	// Login attempts to login to remote server.
+	Login(username, password string)
 }

@@ -35,23 +35,23 @@ const (
 	errForbidden            = "forbidden"
 )
 
-func (a *Jellyfin) defaultParams() *params {
+func (jf *Jellyfin) defaultParams() *params {
 	params := *(&params{})
-	params["UserId"] = a.userId
-	params["DeviceId"] = a.DeviceId
+	params["UserId"] = jf.userId
+	params["DeviceId"] = jf.DeviceId
 	return &params
 }
 
-func (a *Jellyfin) get(url string, params *params) (io.ReadCloser, error) {
-	resp, err := a.makeRequest("GET", url, nil, params, nil)
+func (jf *Jellyfin) get(url string, params *params) (io.ReadCloser, error) {
+	resp, err := jf.makeRequest("GET", url, nil, params, nil)
 	if resp != nil {
 		return resp.Body, err
 	}
 	return nil, err
 }
 
-func (a *Jellyfin) post(url string, body *[]byte, params *params) (io.ReadCloser, error) {
-	resp, err := a.makeRequest("POST", url, body, params, nil)
+func (jf *Jellyfin) post(url string, body *[]byte, params *params) (io.ReadCloser, error) {
+	resp, err := jf.makeRequest("POST", url, body, params, nil)
 	if resp != nil {
 		return resp.Body, err
 	}
@@ -61,16 +61,16 @@ func (a *Jellyfin) post(url string, body *[]byte, params *params) (io.ReadCloser
 //Construct request
 // Set authorization header and build url query
 // Make request, parse response code and raise error if needed. Else return response body
-func (a *Jellyfin) makeRequest(method, url string, body *[]byte, params *params,
+func (jf *Jellyfin) makeRequest(method, url string, body *[]byte, params *params,
 	headers map[string]string) (*http.Response, error) {
 	var reader *bytes.Buffer
 	var req *http.Request
 	var err error
 	if body != nil {
 		reader = bytes.NewBuffer(*body)
-		req, err = http.NewRequest(method, a.host+url, reader)
+		req, err = http.NewRequest(method, jf.host+url, reader)
 	} else {
-		req, err = http.NewRequest(method, a.host+url, nil)
+		req, err = http.NewRequest(method, jf.host+url, nil)
 	}
 
 	if err != nil {
@@ -79,7 +79,7 @@ func (a *Jellyfin) makeRequest(method, url string, body *[]byte, params *params,
 	if method == "POST" {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	req.Header.Set("X-Emby-Token", a.token)
+	req.Header.Set("X-Emby-Token", jf.token)
 
 	if len(headers) > 0 {
 		for k, v := range headers {
@@ -95,7 +95,7 @@ func (a *Jellyfin) makeRequest(method, url string, body *[]byte, params *params,
 		req.URL.RawQuery = q.Encode()
 	}
 	start := time.Now()
-	resp, err := a.client.Do(req)
+	resp, err := jf.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed make request: %v", err)
 	}

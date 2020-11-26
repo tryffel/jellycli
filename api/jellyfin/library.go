@@ -31,8 +31,8 @@ type MediaLibrary struct {
 	Id       string `json:"Id"`
 }
 
-func (a *Jellyfin) GetUserViews() {
-	body, err := a.get("/Users/"+a.userId+"/Views", nil)
+func (jf *Jellyfin) GetUserViews() {
+	body, err := jf.get("/Users/"+jf.userId+"/Views", nil)
 	if err != nil {
 		println(fmt.Errorf("failed to get views: %v", err))
 	}

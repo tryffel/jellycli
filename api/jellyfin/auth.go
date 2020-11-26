@@ -36,7 +36,7 @@ type userResponse struct {
 	UserId   string `json:"Id"`
 }
 
-func (a *Jellyfin) login(username, password string) error {
+func (jf *Jellyfin) login(username, password string) error {
 	body := map[string]string{}
 	body["Username"] = username
 	body["PW"] = password
@@ -44,8 +44,8 @@ func (a *Jellyfin) login(username, password string) error {
 	b := &bytes.Buffer{}
 	err := json.NewEncoder(b).Encode(body)
 
-	auth := a.authHeader()
-	req, err := http.NewRequest("POST", a.host+"/Users/authenticatebyname", b)
+	auth := jf.authHeader()
+	req, err := http.NewRequest("POST", jf.host+"/Users/authenticatebyname", b)
 	if err != nil {
 		return fmt.Errorf("failed to login: %v", err)
 	}
@@ -53,7 +53,7 @@ func (a *Jellyfin) login(username, password string) error {
 	req.Header.Set("X-Emby-Authorization", auth)
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := a.client.Do(req)
+	resp, err := jf.client.Do(req)
 	if resp.Body != nil {
 		defer resp.Body.Close()
 	}
@@ -63,17 +63,17 @@ func (a *Jellyfin) login(username, password string) error {
 
 	switch resp.StatusCode {
 	case http.StatusOK:
-		a.loggedIn = true
+		jf.loggedIn = true
 		dto := loginResponse{}
 		err := json.NewDecoder(resp.Body).Decode(&dto)
 		if err != nil {
 			return fmt.Errorf("invalid login response: %v", err)
 		}
 
-		a.token = dto.Token
-		a.serverId = dto.ServerId
-		a.userId = dto.User.UserId
-		a.loggedIn = true
+		jf.token = dto.Token
+		jf.serverId = dto.ServerId
+		jf.userId = dto.User.UserId
+		jf.loggedIn = true
 		break
 	case http.StatusBadRequest:
 		reason, err := ioutil.ReadAll(resp.Body)

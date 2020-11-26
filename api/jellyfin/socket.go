@@ -37,11 +37,11 @@ const (
 	pingPeriod  = (pongTimeout * 9) / 10
 )
 
-func (a *Jellyfin) connectSocket() error {
-	if a.token == "" {
+func (jf *Jellyfin) connectSocket() error {
+	if jf.token == "" {
 		return fmt.Errorf("no access token")
 	}
-	u, err := url.Parse(a.host)
+	u, err := url.Parse(jf.host)
 	host := u.Host + u.Path
 	scheme := "wss"
 	if u.Scheme == "http" {
@@ -54,48 +54,48 @@ func (a *Jellyfin) connectSocket() error {
 	}
 	logrus.Debug("connecting websocket to ", host)
 	socket, _, err := dialer.Dial(
-		fmt.Sprintf("%s://%s/socket?api_key=%s&deviceId=%s", scheme, host, a.token, a.DeviceId), nil)
+		fmt.Sprintf("%s://%s/socket?api_key=%s&deviceId=%s", scheme, host, jf.token, jf.DeviceId), nil)
 	if err != nil {
-		a.socketState = socketDisconnected
+		jf.socketState = socketDisconnected
 		return fmt.Errorf("websocket connection failed: %v", err)
 	}
-	a.socketLock.Lock()
-	defer a.socketLock.Unlock()
+	jf.socketLock.Lock()
+	defer jf.socketLock.Unlock()
 	logrus.Debugf("websocket connected")
-	a.socket = socket
+	jf.socket = socket
 
-	err = a.socket.SetReadDeadline(time.Now().Add(pongTimeout))
+	err = jf.socket.SetReadDeadline(time.Now().Add(pongTimeout))
 	if err != nil {
 		logrus.Errorf("set socket read deadline: %v", err)
 	}
-	a.socket.SetPongHandler(func(string) error {
+	jf.socket.SetPongHandler(func(string) error {
 		logrus.Trace("Websocket received pong")
-		return a.socket.SetReadDeadline(time.Now().Add(pongTimeout))
+		return jf.socket.SetReadDeadline(time.Now().Add(pongTimeout))
 	})
 
-	a.socketState = socketConnected
+	jf.socketState = socketConnected
 	return nil
 }
 
-func (a *Jellyfin) handleSocketOutbount(msg interface{}) error {
-	if a.socket == nil {
+func (jf *Jellyfin) handleSocketOutbount(msg interface{}) error {
+	if jf.socket == nil {
 		return fmt.Errorf("socket not open")
 	}
-	return a.socket.WriteJSON(msg)
+	return jf.socket.WriteJSON(msg)
 }
 
 // read next message from socket in blocking mode. Messages are read as long as socket connection is ok
-func (a *Jellyfin) readMessage() {
-	if a.WebsocketOk() {
-		msgType, buff, err := a.socket.ReadMessage()
+func (jf *Jellyfin) readMessage() {
+	if jf.WebsocketOk() {
+		msgType, buff, err := jf.socket.ReadMessage()
 		if err != nil {
-			a.handleSocketError(err)
+			jf.handleSocketError(err)
 		}
 		if msgType == websocket.TextMessage {
-			err = a.parseInboudMessage(&buff)
-			a.handleSocketError(err)
+			err = jf.parseInboudMessage(&buff)
+			jf.handleSocketError(err)
 		}
-		go a.readMessage()
+		go jf.readMessage()
 	}
 }
 
@@ -109,7 +109,7 @@ type controlCommand struct {
 	Arguments interface{}
 }
 
-func (a *Jellyfin) parseInboudMessage(buff *[]byte) error {
+func (jf *Jellyfin) parseInboudMessage(buff *[]byte) error {
 	msg := webSocketInboudMsg{}
 	err := json.Unmarshal(*buff, &msg)
 	if err != nil {
@@ -142,19 +142,19 @@ func (a *Jellyfin) parseInboudMessage(buff *[]byte) error {
 					logrus.Error("Invalid volume parameter")
 				} else {
 					volume := interfaces.AudioVolume(volume)
-					a.player.SetVolume(volume)
+					jf.player.SetVolume(volume)
 				}
 			default:
 				logrus.Warning("unknown socket command: ", name)
 			}
 		} else {
-			logrus.Error("unexpected command format from websocket, expected general command args map[string]interface, got", a)
+			logrus.Error("unexpected command format from websocket, expected general command args map[string]interface, got", jf)
 		}
 	} else if cmd == "playstate" {
 		rawCmd := dataMap["Command"]
 		cmd, ok := rawCmd.(string)
 		if ok {
-			err = a.pushCommand(cmd)
+			err = jf.pushCommand(cmd)
 		}
 	} else if cmd == "play" {
 		var items []string
@@ -179,34 +179,34 @@ func (a *Jellyfin) parseInboudMessage(buff *[]byte) error {
 		if !ok {
 			logrus.Error("Received play command, but command is not string: ", msg.Data)
 		} else {
-			go a.pushSongsToQueue(items[startIndex:], command)
+			go jf.pushSongsToQueue(items[startIndex:], command)
 		}
 	}
 	return err
 }
 
-func (a *Jellyfin) pushCommand(cmd string) error {
-	if a.player == nil {
+func (jf *Jellyfin) pushCommand(cmd string) error {
+	if jf.player == nil {
 		return nil
 	}
 
 	switch cmd {
 	case "PlayPause":
-		a.player.PlayPause()
+		jf.player.PlayPause()
 	case "NextTrack":
-		a.player.Next()
+		jf.player.Next()
 	case "PreviousTrack":
-		a.player.Previous()
+		jf.player.Previous()
 	case "Pause":
-		a.player.Pause()
+		jf.player.Pause()
 	case "Unpause":
-		a.player.Continue()
+		jf.player.Continue()
 	case "StopMedia":
-		a.player.StopMedia()
-		a.queue.ClearQueue(true)
+		jf.player.StopMedia()
+		jf.queue.ClearQueue(true)
 	case "Stop":
-		a.player.StopMedia()
-		a.queue.ClearQueue(true)
+		jf.player.StopMedia()
+		jf.queue.ClearQueue(true)
 	default:
 		logrus.Info("Unknown websocket playstate command: ", cmd)
 	}
@@ -214,20 +214,20 @@ func (a *Jellyfin) pushCommand(cmd string) error {
 }
 
 // handle errors and try reconnecting
-func (a *Jellyfin) handleSocketError(err error) {
+func (jf *Jellyfin) handleSocketError(err error) {
 	if err == nil {
 		return
 	}
 
-	a.socketLock.Lock()
-	defer a.socketLock.Unlock()
-	if a.socketState == socketReConnecting {
+	jf.socketLock.Lock()
+	defer jf.socketLock.Unlock()
+	if jf.socketState == socketReConnecting {
 		return
 	}
 
 	awaitReconnect := func(reason string) {
-		if a.socketState == socketConnected {
-			a.socketState = socketAwaitsReconnecting
+		if jf.socketState == socketConnected {
+			jf.socketState = socketAwaitsReconnecting
 			logrus.Warning("Websocket closed: ", reason)
 		}
 	}
@@ -248,28 +248,28 @@ func (a *Jellyfin) handleSocketError(err error) {
 }
 
 // WebsocketOk returns true if websocket connection is ok
-func (a *Jellyfin) WebsocketOk() bool {
-	a.socketLock.RLock()
-	defer a.socketLock.RUnlock()
-	return a.socketState == socketConnected
+func (jf *Jellyfin) WebsocketOk() bool {
+	jf.socketLock.RLock()
+	defer jf.socketLock.RUnlock()
+	return jf.socketState == socketConnected
 }
 
 // try reconnecting socket. Return true if success
-func (a *Jellyfin) reconnectSocket() bool {
-	a.socketLock.Lock()
-	a.socketState = socketReConnecting
+func (jf *Jellyfin) reconnectSocket() bool {
+	jf.socketLock.Lock()
+	jf.socketState = socketReConnecting
 	var err error
-	if a.socket != nil {
-		err = a.socket.Close()
+	if jf.socket != nil {
+		err = jf.socket.Close()
 		if err != nil {
 			logrus.Debugf("reconnect socket: close socket: %v", err)
 		} else {
-			a.socket = nil
+			jf.socket = nil
 		}
 	}
 
-	a.socketLock.Unlock()
-	err = a.connectSocket()
+	jf.socketLock.Unlock()
+	err = jf.connectSocket()
 	if err != nil {
 		logrus.Debugf("reconnect socket: %v", err)
 		return false
@@ -279,7 +279,7 @@ func (a *Jellyfin) reconnectSocket() bool {
 }
 
 // push songs to queue.
-func (a *Jellyfin) pushSongsToQueue(items []string, mode string) {
+func (jf *Jellyfin) pushSongsToQueue(items []string, mode string) {
 	ids := []models.Id{}
 	for _, v := range items {
 		ids = append(ids, models.Id(v))
@@ -299,7 +299,7 @@ func (a *Jellyfin) pushSongsToQueue(items []string, mode string) {
 				to = len(ids)
 			}
 			logrus.Debugf("Download songs [%d, %d]", from, to)
-			s, err := a.GetSongsById(ids[from:to])
+			s, err := jf.GetSongsById(ids[from:to])
 			if err != nil {
 				logrus.Errorf("download songs: %v", err)
 			}
@@ -309,7 +309,7 @@ func (a *Jellyfin) pushSongsToQueue(items []string, mode string) {
 			logrus.Errorf("some songs were not downloaded: expect %d, got %d", len(ids), len(songs))
 		}
 	} else {
-		songs, err = a.GetSongsById(ids)
+		songs, err = jf.GetSongsById(ids)
 	}
 
 	if err != nil {
@@ -320,15 +320,15 @@ func (a *Jellyfin) pushSongsToQueue(items []string, mode string) {
 
 	// some modes are swapped in other clients, use those for consistency
 	if mode == "PlayNow" {
-		a.player.StopMedia()
-		a.queue.ClearQueue(true)
-		a.queue.PlayNext(songs)
+		jf.player.StopMedia()
+		jf.queue.ClearQueue(true)
+		jf.queue.PlayNext(songs)
 	} else if mode == "PlayLast" {
 		//} else if mode == "PlayNext" {
-		a.queue.PlayNext(songs)
+		jf.queue.PlayNext(songs)
 	} else if mode == "PlayNext" {
 		//} else if mode == "PlayLast" {
-		a.queue.AddSongs(songs)
+		jf.queue.AddSongs(songs)
 	} else {
 		logrus.Errorf("unknown remote play mode: %s", mode)
 	}

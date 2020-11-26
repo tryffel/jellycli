@@ -25,7 +25,7 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"tryffel.net/go/jellycli/api/jellyfin"
+	"tryffel.net/go/jellycli/api"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
 	"tryffel.net/go/jellycli/task"
@@ -59,29 +59,34 @@ type Player struct {
 
 	nextSong *songMetadata
 
-	api *jellyfin.Api
+	api              api.MediaServer
+	remoteController api.RemoteController
 
 	lastApiReport time.Time
 }
 
 // initialize new player. This also initializes faiface.Speaker, which should be initialized only once.
-func NewPlayer(api *jellyfin.Api) (*Player, error) {
+func NewPlayer(browser api.MediaServer) (*Player, error) {
 	var err error
 	p := &Player{
 		lock:           &sync.RWMutex{},
 		songComplete:   make(chan bool, 3),
 		audioUpdated:   make(chan interfaces.AudioStatus, 3),
 		songDownloaded: make(chan songMetadata, 3),
-		api:            api,
+		api:            browser,
 	}
 	p.Name = "Player"
 	p.Task.SetLoop(p.loop)
 
 	p.Audio = newAudio()
 	p.Queue = newQueue()
-	p.Items = newItems(api)
+	p.Items = newItems(browser)
 	if err != nil {
 		return p, err
+	}
+	if remoteController, ok := browser.(api.RemoteController); ok {
+		p.remoteController = remoteController
+		p.remoteController.SetPlayer(p)
 	}
 
 	err = initAudio()
@@ -173,13 +178,13 @@ func (p *Player) downloadSong(index int) {
 	p.lock.Unlock()
 	ok := false
 
-	reader, format, err := p.api.GetSongUniversal(song)
+	reader, format, err := p.api.Stream(song)
 	if err != nil {
 		if strings.Contains(err.Error(), "A task was canceled") {
 			// server task may fail sometimes, retry
 			logrus.Warningf("Failed to download song, retrying: %v", err)
 			time.Sleep(time.Second)
-			reader, format, err = p.api.GetSongUniversal(song)
+			reader, format, err = p.api.Stream(song)
 			if err == nil {
 				ok = true
 			} else {
@@ -195,15 +200,15 @@ func (p *Player) downloadSong(index int) {
 		// fill metadata
 		albumId := song.GetParent()
 		album, err := p.api.GetAlbum(albumId)
-		artist := models.Artist{Name: "unknown artist"}
+		artist := &models.Artist{Name: "unknown artist"}
 		var imageId string
 		var imageUrl string
 		if err != nil {
 			logrus.Error("Failed to get album by id: ", err.Error())
-			album = models.Album{Name: "unknown album"}
+			album = &models.Album{Name: "unknown album"}
 		} else {
 			imageId = album.ImageId
-			imageUrl = p.api.ImageUrl(album.Id.String(), imageId)
+			imageUrl = p.api.ImageUrl(album.Id, models.TypeAlbum)
 		}
 		a, err := p.api.GetArtist(album.GetParent())
 		if err != nil {
@@ -213,8 +218,8 @@ func (p *Player) downloadSong(index int) {
 			f := func() {
 				metadata := songMetadata{
 					song:          song,
-					album:         &album,
-					artist:        &artist,
+					album:         album,
+					artist:        artist,
 					albumImageUrl: imageUrl,
 					albumImageId:  imageId,
 					reader:        reader,
@@ -303,7 +308,7 @@ func (p *Player) audioCallback(status interfaces.AudioStatus) {
 		}
 	default:
 		apiStatus.Event = interfaces.EventTimeUpdate
-		logrus.Warningf("cannot map audio state to api event: %v", status.Action)
+		logrus.Warningf("cannot map audio state to browser event: %v", status.Action)
 	}
 
 	songs := p.GetQueue()
@@ -319,9 +324,11 @@ func (p *Player) audioCallback(status interfaces.AudioStatus) {
 		apiStatus.PlaylistLength = status.Song.Duration
 	}
 	f := func() {
-		err := p.api.ReportProgress(apiStatus)
-		if err != nil {
-			logrus.Errorf("report audio progress to server: %v", err)
+		if p.remoteController != nil {
+			err := p.remoteController.ReportProgress(apiStatus)
+			if err != nil {
+				logrus.Errorf("report audio progress to server: %v", err)
+			}
 		}
 	}
 	go f()

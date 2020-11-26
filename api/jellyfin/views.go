@@ -24,11 +24,11 @@ import (
 	"tryffel.net/go/jellycli/models"
 )
 
-func (a *Jellyfin) GetViews() ([]*models.View, error) {
-	params := *a.defaultParams()
+func (jf *Jellyfin) GetViews() ([]*models.View, error) {
+	params := *jf.defaultParams()
 
-	url := fmt.Sprintf("/Users/%s/Views", a.userId)
-	resp, err := a.get(url, &params)
+	url := fmt.Sprintf("/Users/%s/Views", jf.userId)
+	resp, err := jf.get(url, &params)
 	if err != nil {
 		return nil, fmt.Errorf("get views: %v", err)
 	}
@@ -46,12 +46,12 @@ func (a *Jellyfin) GetViews() ([]*models.View, error) {
 	return views, nil
 }
 
-func (a *Jellyfin) GetLatestAlbums() ([]*models.Album, error) {
-	params := *a.defaultParams()
-	params["UserId"] = a.userId
-	params.setParentId(a.musicView)
+func (jf *Jellyfin) GetLatestAlbums() ([]*models.Album, error) {
+	params := *jf.defaultParams()
+	params["UserId"] = jf.userId
+	params.setParentId(jf.musicView)
 
-	resp, err := a.get(fmt.Sprintf("/Users/%s/Items/Latest", a.userId), &params)
+	resp, err := jf.get(fmt.Sprintf("/Users/%s/Items/Latest", jf.userId), &params)
 	if err != nil {
 		return nil, fmt.Errorf("request latest albums: %v", err)
 	}
@@ -68,18 +68,18 @@ func (a *Jellyfin) GetLatestAlbums() ([]*models.Album, error) {
 		albums[i] = v.toAlbum()
 		ids[i] = albums[i].Id
 	}
-	a.cache.PutList("latest_music", ids)
+	jf.cache.PutList("latest_music", ids)
 	return albums, nil
 }
 
-func (a *Jellyfin) GetRecentlyPlayed(paging interfaces.Paging) ([]*models.Song, int, error) {
-	params := *a.defaultParams()
+func (jf *Jellyfin) GetRecentlyPlayed(paging interfaces.Paging) ([]*models.Song, int, error) {
+	params := *jf.defaultParams()
 
 	params.setIncludeTypes(mediaTypeSong)
 	params.setSorting("DatePlayed", "Descending")
 	params.enableRecursive()
-	params["UserId"] = a.userId
-	params.setParentId(a.musicView)
+	params["UserId"] = jf.userId
+	params.setParentId(jf.musicView)
 
 	if config.LimitRecentlyPlayed {
 		paging = interfaces.Paging{
@@ -89,7 +89,7 @@ func (a *Jellyfin) GetRecentlyPlayed(paging interfaces.Paging) ([]*models.Song, 
 	}
 	params.setPaging(paging)
 
-	resp, err := a.get(fmt.Sprintf("/Users/%s/Items", a.userId), &params)
+	resp, err := jf.get(fmt.Sprintf("/Users/%s/Items", jf.userId), &params)
 	if err != nil {
 		return nil, 0, fmt.Errorf("request latest albums: %v", err)
 	}
@@ -115,14 +115,14 @@ func (a *Jellyfin) GetRecentlyPlayed(paging interfaces.Paging) ([]*models.Song, 
 }
 
 // GetInstantMix returns instant mix for given item.
-func (a *Jellyfin) GetInstantMix(item models.Item) ([]*models.Song, error) {
-	params := *a.defaultParams()
+func (jf *Jellyfin) GetInstantMix(item models.Item) ([]*models.Song, error) {
+	params := *jf.defaultParams()
 	params.setIncludeTypes(mediaTypeSong)
-	params["UserId"] = a.userId
-	params.setParentId(a.musicView)
+	params["UserId"] = jf.userId
+	params.setParentId(jf.musicView)
 
 	url := fmt.Sprintf("/Items/%s/InstantMix", item.GetId().String())
-	resp, err := a.get(url, &params)
+	resp, err := jf.get(url, &params)
 	if resp != nil {
 		defer resp.Close()
 	}

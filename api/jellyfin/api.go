@@ -70,8 +70,28 @@ type Jellyfin struct {
 	enableRemoteControl bool
 }
 
-func (a *Jellyfin) GetServerInfo() api.ServerInfo {
+func (jf *Jellyfin) GetServerInfo() api.ServerInfo {
 	return api.ServerInfo{Name: "Jellyfin"}
+}
+
+func (jf *Jellyfin) RemoteControlEnabled() error {
+	if !jf.enableRemoteControl {
+		return errors.New("disabled by user")
+	}
+
+	jf.socketLock.RLock()
+	defer jf.socketLock.RUnlock()
+
+	switch jf.socketState {
+	case socketAwaitsReconnecting, socketReConnecting:
+		return errors.New("connecting")
+	case socketConnected:
+		return nil
+	case socketDisconnected:
+		return errors.New("unable to connect")
+	}
+
+	return errors.New("failure")
 }
 
 func NewApi(host string, allowRemoteControl bool) (*Jellyfin, error) {
@@ -99,54 +119,54 @@ func NewApi(host string, allowRemoteControl bool) (*Jellyfin, error) {
 	return a, nil
 }
 
-func (a *Jellyfin) SetPlayer(p interfaces.Player) {
-	a.player = p
+func (jf *Jellyfin) SetPlayer(p interfaces.Player) {
+	jf.player = p
 }
 
-func (a *Jellyfin) SetQueue(q interfaces.QueueController) {
-	a.queue = q
+func (jf *Jellyfin) SetQueue(q interfaces.QueueController) {
+	jf.queue = q
 }
 
-func (a *Jellyfin) Host() string {
-	return a.host
+func (jf *Jellyfin) Host() string {
+	return jf.host
 }
 
-func (a *Jellyfin) Token() string {
-	return a.token
+func (jf *Jellyfin) Token() string {
+	return jf.token
 }
 
 //Login performs username based login
-func (a *Jellyfin) Login(username, password string) error {
-	return a.login(username, password)
+func (jf *Jellyfin) Login(username, password string) error {
+	return jf.login(username, password)
 }
 
 //SetToken sets existing token
-func (a *Jellyfin) SetToken(token string) error {
-	a.token = token
-	return a.TokenOk()
+func (jf *Jellyfin) SetToken(token string) error {
+	jf.token = token
+	return jf.TokenOk()
 }
 
-func (a *Jellyfin) tokenExists() error {
-	if a.token == "" {
+func (jf *Jellyfin) tokenExists() error {
+	if jf.token == "" {
 		return errors.New("not logged in")
 	}
 	return nil
 }
 
-func (a *Jellyfin) SetUserId(id string) {
-	a.userId = id
+func (jf *Jellyfin) SetUserId(id string) {
+	jf.userId = id
 }
 
-func (a *Jellyfin) UserId() string {
-	return a.userId
+func (jf *Jellyfin) UserId() string {
+	return jf.userId
 }
 
-func (a *Jellyfin) IsLoggedIn() bool {
-	return a.loggedIn
+func (jf *Jellyfin) IsLoggedIn() bool {
+	return jf.loggedIn
 }
 
-func (a *Jellyfin) ConnectionOk() error {
-	name, version, _, _, _, err := a.GetServerVersion()
+func (jf *Jellyfin) ConnectionOk() error {
+	name, version, _, _, _, err := jf.GetServerVersion()
 	if err != nil {
 		return err
 	}
@@ -155,7 +175,7 @@ func (a *Jellyfin) ConnectionOk() error {
 	return nil
 }
 
-func (a *Jellyfin) TokenOk() error {
+func (jf *Jellyfin) TokenOk() error {
 	type serverInfo struct {
 		SystemUpdateLevel string `json:"SystemUpdateLevel"`
 		RestartPending    bool   `json:"HasPendingRestart"`
@@ -163,7 +183,7 @@ func (a *Jellyfin) TokenOk() error {
 	}
 
 	// check token validity
-	body, err := a.get("/System/Info", nil)
+	body, err := jf.get("/System/Info", nil)
 	if body != nil {
 		defer body.Close()
 	}
@@ -182,30 +202,30 @@ func (a *Jellyfin) TokenOk() error {
 	return nil
 }
 
-func (a *Jellyfin) DefaultMusicView() string {
-	return a.musicView
+func (jf *Jellyfin) DefaultMusicView() string {
+	return jf.musicView
 }
 
-func (a *Jellyfin) SetDefaultMusicview(id string) {
-	a.musicView = id
+func (jf *Jellyfin) SetDefaultMusicview(id string) {
+	jf.musicView = id
 }
 
-func (a *Jellyfin) ServerId() string {
-	return a.serverId
+func (jf *Jellyfin) ServerId() string {
+	return jf.serverId
 }
 
-func (a *Jellyfin) SetServerId(id string) {
-	a.serverId = id
+func (jf *Jellyfin) SetServerId(id string) {
+	jf.serverId = id
 }
 
 // Connect opens a connection to server. If websockets are supported, use that. Report capabilities to server.
 // This should be called before streaming any media
-func (a *Jellyfin) Connect() error {
-	err := a.ReportCapabilities()
+func (jf *Jellyfin) Connect() error {
+	err := jf.ReportCapabilities()
 	if err != nil {
 		return fmt.Errorf("report capabilities: %v", err)
 	}
-	err = a.connectSocket()
+	err = jf.connectSocket()
 	if err != nil {
 		logrus.Infof("No websocket connection: %v", err)
 	}
@@ -213,8 +233,8 @@ func (a *Jellyfin) Connect() error {
 	return nil
 }
 
-func (a *Jellyfin) loop() {
-	if a.socket == nil {
+func (jf *Jellyfin) loop() {
+	if jf.socket == nil {
 		return
 	}
 
@@ -225,33 +245,33 @@ func (a *Jellyfin) loop() {
 	// backoff for reconnecting socket
 	socketBackOff := time.Second
 
-	go a.readMessage()
+	go jf.readMessage()
 	for true {
 		select {
-		case <-a.StopChan():
+		case <-jf.StopChan():
 			break
 		case <-pingTicker.C:
 			logrus.Tracef("Websocket send ping")
 			timeout := time.Now().Add(time.Second * 15)
-			a.socketLock.Lock()
-			if a.socketState == socketConnected {
-				err := a.socket.SetWriteDeadline(timeout)
+			jf.socketLock.Lock()
+			if jf.socketState == socketConnected {
+				err := jf.socket.SetWriteDeadline(timeout)
 				if err != nil {
 					logrus.Errorf("set socket write deadline: %v", err)
-					a.handleSocketError(err)
+					jf.handleSocketError(err)
 				}
-				err = a.socket.WriteControl(websocket.PingMessage, []byte{}, timeout)
+				err = jf.socket.WriteControl(websocket.PingMessage, []byte{}, timeout)
 				if err != nil {
 					logrus.Errorf("send ping to socket: %v", err)
-					a.handleSocketError(err)
+					jf.handleSocketError(err)
 				}
 			}
-			a.socketLock.Unlock()
+			jf.socketLock.Unlock()
 		// keep websocket connected if possible
 		case <-socketTimer.C:
-			a.socketLock.RLock()
-			state := a.socketState
-			a.socketLock.RUnlock()
+			jf.socketLock.RLock()
+			state := jf.socketState
+			jf.socketLock.RUnlock()
 			if state == socketConnected {
 				// no worries
 				socketTimer.Reset(time.Second * 2)
@@ -263,11 +283,11 @@ func (a *Jellyfin) loop() {
 			} else if state == socketAwaitsReconnecting || state == socketDisconnected {
 				// start reconnection
 
-				ok := a.reconnectSocket()
+				ok := jf.reconnectSocket()
 				if ok {
 					socketTimer.Reset(time.Second)
 					socketBackOff = 0
-					go a.readMessage()
+					go jf.readMessage()
 				} else {
 					socketBackOff *= 2
 					if socketBackOff > time.Second*30 {
@@ -280,7 +300,7 @@ func (a *Jellyfin) loop() {
 		}
 	}
 
-	err := a.socket.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+	err := jf.socket.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 	if err != nil {
 		logrus.Errorf("close websocket: %v", err)
 	}

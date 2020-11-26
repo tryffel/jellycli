@@ -44,8 +44,8 @@ type infoResponse struct {
 }
 
 // GetServerVersion returns name, version, id and possible error
-func (a *Jellyfin) GetServerVersion() (string, string, string, bool, bool, error) {
-	body, err := a.get("/System/Info/Public", nil)
+func (jf *Jellyfin) GetServerVersion() (string, string, string, bool, bool, error) {
+	body, err := jf.get("/System/Info/Public", nil)
 	if err != nil {
 		return "", "", "", false, false, fmt.Errorf("request failed: %v", err)
 	}
@@ -59,14 +59,14 @@ func (a *Jellyfin) GetServerVersion() (string, string, string, bool, bool, error
 	return response.ServerName, response.Version, response.Id, response.RestartPending, response.ShutdownPending, nil
 }
 
-func (a *Jellyfin) VerifyServerId() error {
-	_, _, id, _, _, err := a.GetServerVersion()
+func (jf *Jellyfin) VerifyServerId() error {
+	_, _, id, _, _, err := jf.GetServerVersion()
 	if err != nil {
 		return err
 	}
 
-	if a.serverId != id {
-		return fmt.Errorf("server id has changed: expected %s, got %s", a.serverId, id)
+	if jf.serverId != id {
+		return fmt.Errorf("server id has changed: expected %s, got %s", jf.serverId, id)
 	}
 	return nil
 }
@@ -110,7 +110,7 @@ type playbackProgress struct {
 }
 
 // ReportProgress reports playback status to server
-func (a *Jellyfin) ReportProgress(state *interfaces.ApiPlaybackState) error {
+func (jf *Jellyfin) ReportProgress(state *interfaces.ApiPlaybackState) error {
 	var err error
 	var report interface{}
 	var url string
@@ -125,7 +125,7 @@ func (a *Jellyfin) ReportProgress(state *interfaces.ApiPlaybackState) error {
 		IsPaused:            state.IsPaused,
 		IsMuted:             state.IsPaused,
 		PlayMethod:          "DirectPlay",
-		PlaySessionId:       a.SessionId,
+		PlaySessionId:       jf.SessionId,
 		LiveStreamId:        "",
 		PlaylistLength:      int64(state.PlaylistLength) * ticksToSecond,
 		Queue:               idsToQueue(state.Queue),
@@ -146,14 +146,14 @@ func (a *Jellyfin) ReportProgress(state *interfaces.ApiPlaybackState) error {
 	}
 
 	// webui does not accept websocket response for now, so fall back to http posts. No p
-	//if a.socket == nil || state.Event == interfaces.EventStart || state.Event == interfaces.EventStop {
-	params := *a.defaultParams()
+	//if jf.socket == nil || state.Event == interfaces.EventStart || state.Event == interfaces.EventStop {
+	params := *jf.defaultParams()
 	body, err := json.Marshal(&report)
 	if err != nil {
 		return fmt.Errorf("json marshaling failed: %v", err)
 	}
 	var resp io.ReadCloser
-	resp, err = a.post(url, &body, &params)
+	resp, err = jf.post(url, &body, &params)
 	if resp != nil {
 		resp.Close()
 	}
@@ -164,10 +164,10 @@ func (a *Jellyfin) ReportProgress(state *interfaces.ApiPlaybackState) error {
 			content["MessageType"] = "ReportPlaybackStatus"
 			content["Data"] = report
 
-			a.socketLock.Lock()
-			a.socket.SetWriteDeadline(time.Now().Add(time.Second * 15))
-			err = a.socket.WriteJSON(content)
-			a.socketLock.Unlock()
+			jf.socketLock.Lock()
+			jf.socket.SetWriteDeadline(time.Now().Add(time.Second * 15))
+			err = jf.socket.WriteJSON(content)
+			jf.socketLock.Unlock()
 			if err != nil {
 				logrus.Errorf("Send playback status via websocket: %v", err)
 			}
@@ -183,16 +183,17 @@ func (a *Jellyfin) ReportProgress(state *interfaces.ApiPlaybackState) error {
 	}
 }
 
-func (a *Jellyfin) GetCacheItems() int {
-	return a.cache.Count()
+func (jf *Jellyfin) GetCacheItems() int {
+	return jf.cache.Count()
 }
 
 //ImageUrl returns primary image url for item, if there is one. Otherwise return empty
-func (a *Jellyfin) ImageUrl(item, imageTag string) string {
-	return fmt.Sprintf("%s/Items/%s/Images/Primary?maxHeight=500&tag=%s&quality=90", a.host, item, imageTag)
+func (jf *Jellyfin) ImageUrl(item models.Id, itemType models.ItemType) string {
+	return ""
+	//return fmt.Sprintf("%s/Items/%s/Images/Primary?maxHeight=500&tag=%s&quality=90", jf.host, item, imageTag)
 }
 
-func (a *Jellyfin) ReportCapabilities() error {
+func (jf *Jellyfin) ReportCapabilities() error {
 	data := map[string]interface{}{}
 	data["PlayableMediaTypes"] = []string{"Audio"}
 	data["QueueableMediaTypes"] = []string{"Audio"}
@@ -204,15 +205,15 @@ func (a *Jellyfin) ReportCapabilities() error {
 		"ToggleMute",
 		"SetVolume",
 	}
-	data["SupportsMediaControl"] = a.enableRemoteControl
+	data["SupportsMediaControl"] = jf.enableRemoteControl
 	data["SupportsPersistentIdentifier"] = false
 	data["ApplicationVersion"] = config.Version
 	data["Client"] = config.AppName
 
-	data["DeviceName"] = a.deviceName()
-	data["DeviceId"] = a.DeviceId
+	data["DeviceName"] = jf.deviceName()
+	data["DeviceId"] = jf.DeviceId
 
-	params := *a.defaultParams()
+	params := *jf.defaultParams()
 
 	body, err := json.Marshal(data)
 	if err != nil {
@@ -221,8 +222,8 @@ func (a *Jellyfin) ReportCapabilities() error {
 
 	url := "/Sessions/Capabilities/Full"
 
-	resp, err := a.makeRequest(http.MethodPost, url, &body, &params,
-		map[string]string{"X-Emby-Authorization": a.authHeader()})
+	resp, err := jf.makeRequest(http.MethodPost, url, &body, &params,
+		map[string]string{"X-Emby-Authorization": jf.authHeader()})
 	if err != nil {
 		return err
 	}
@@ -230,20 +231,20 @@ func (a *Jellyfin) ReportCapabilities() error {
 	return nil
 }
 
-func (a *Jellyfin) authHeader() string {
+func (jf *Jellyfin) authHeader() string {
 	id, err := machineid.ProtectedID(config.AppName)
 	if err != nil {
 		logrus.Errorf("get unique host id: %v", err)
 		id = randomKey(30)
 	}
-	hostname := a.deviceName()
+	hostname := jf.deviceName()
 
 	auth := fmt.Sprintf("MediaBrowser Client=\"%s\", Device=\"%s\", DeviceId=\"%s\", Version=\"%s\"",
 		config.AppName, hostname, id, config.Version)
 	return auth
 }
 
-func (a *Jellyfin) deviceName() string {
+func (jf *Jellyfin) deviceName() string {
 	hostname, err := os.Hostname()
 	if err != nil {
 		switch runtime.GOOS {
@@ -256,11 +257,11 @@ func (a *Jellyfin) deviceName() string {
 	return hostname
 }
 
-func (a *Jellyfin) GetLink(item models.Item) string {
+func (jf *Jellyfin) GetLink(item models.Item) string {
 	// http://host/jellyfin/web/index.html#!/details.html?id=id&serverId=serverId
-	url := fmt.Sprintf("%s/web/index.html#!/details?id=%s", a.host, item.GetId())
-	if a.serverId != "" {
-		url += "&serverId=" + a.serverId
+	url := fmt.Sprintf("%s/web/index.html#!/details?id=%s", jf.host, item.GetId())
+	if jf.serverId != "" {
+		url += "&serverId=" + jf.serverId
 	}
 
 	return url

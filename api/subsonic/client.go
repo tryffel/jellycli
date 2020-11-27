@@ -52,6 +52,9 @@ type Subsonic struct {
 
 	favoriteArtists []*models.Artist
 	favoriteAlbums  []*models.Album
+
+	currentSong   models.Id
+	songScrobbled bool
 }
 
 func (s *Subsonic) Stream(Song *models.Song) (io.ReadCloser, interfaces.AudioFormat, error) {
@@ -247,6 +250,31 @@ func (s *Subsonic) GetConfig() config.Backend {
 		Salt:     s.salt,
 		Token:    s.token,
 	}
+}
+
+func (s *Subsonic) ReportProgress(state *interfaces.ApiPlaybackState) (err error) {
+	if state == nil {
+		return
+	}
+
+	if state.Event == interfaces.EventStart {
+		s.currentSong = models.Id(state.ItemId)
+		s.songScrobbled = false
+	}
+
+	if state.Event == interfaces.EventTimeUpdate && models.Id(state.ItemId) == s.currentSong {
+		if state.Position > 5 && !s.songScrobbled {
+			params := &params{}
+			params.setId(s.currentSong.String())
+			_, err := s.get("/scrobble", params)
+			if err != nil {
+				logrus.Errorf("Scrobble song: %v", err)
+			} else {
+				s.songScrobbled = true
+			}
+		}
+	}
+	return
 }
 
 func (s *Subsonic) Start() error {

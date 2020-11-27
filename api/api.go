@@ -122,9 +122,6 @@ type RemoteController interface {
 
 	SetQueue(q interfaces.QueueController)
 
-	// ReportProgress reports player progress to remote controller.
-	ReportProgress(state *interfaces.ApiPlaybackState) error
-
 	RemoteControlEnabled() error
 }
 
@@ -138,6 +135,9 @@ type RemoteServer interface {
 
 	// GetConfig returns backend config that is saved to config file.
 	GetConfig() config.Backend
+
+	// ReportProgress reports player progress to remote controller.
+	ReportProgress(state *interfaces.ApiPlaybackState) error
 
 	// Start starts background service for remote server, if any.
 	Start() error

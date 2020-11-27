@@ -324,11 +324,9 @@ func (p *Player) audioCallback(status interfaces.AudioStatus) {
 		apiStatus.PlaylistLength = status.Song.Duration
 	}
 	f := func() {
-		if p.remoteController != nil {
-			err := p.remoteController.ReportProgress(apiStatus)
-			if err != nil {
-				logrus.Errorf("report audio progress to server: %v", err)
-			}
+		err := p.browser.ReportProgress(apiStatus)
+		if err != nil {
+			logrus.Errorf("report audio progress to server: %v", err)
 		}
 	}
 	go f()

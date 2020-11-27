@@ -158,14 +158,14 @@ func NewJellyfin(conf *config.Jellyfin, provider config.KeyValueProvider) (*Jell
 	}
 
 	if jf.host == "" {
-		jf.host, err = provider.Get("jellyfin host", false, "")
+		jf.host, err = provider.Get("jellyfin.url", false, "jellyfin host")
 		if err != nil {
 			return jf, err
 		}
 	}
 
 	if jf.token == "" {
-		jf.userId, err = provider.Get("username", false, "")
+		jf.userId, err = provider.Get("jellyfin.userid", false, "Username")
 		if err != nil {
 			return jf, err
 		}
@@ -173,7 +173,7 @@ func NewJellyfin(conf *config.Jellyfin, provider config.KeyValueProvider) (*Jell
 
 	var password string
 	if jf.token == "" {
-		password, err = provider.Get("Password", true, "")
+		password, err = provider.Get("jellyfin.password", true, "Password")
 		if err != nil {
 			return jf, err
 		}
@@ -186,7 +186,7 @@ func NewJellyfin(conf *config.Jellyfin, provider config.KeyValueProvider) (*Jell
 	if err = jf.TokenOk(); err != nil {
 		if strings.Contains(err.Error(), "invalid token") {
 			logrus.Warningf("Authentication required")
-			password, err = provider.Get("Password", true, "")
+			password, err = provider.Get("jellyfin.password", true, "Password")
 			if err != nil {
 				return jf, err
 			}
@@ -285,7 +285,7 @@ func (jf *Jellyfin) selectDefaultMusicView(provider config.KeyValueProvider) err
 
 	// Loop for as long as user gives valid input for default view
 	for {
-		number, err := provider.Get("Default music view (enter number)", false, "")
+		number, err := provider.Get("jellyfin.music_view", false, "Default music view (enter number)")
 		if err != nil {
 			fmt.Println("Must be a valid number")
 		} else {

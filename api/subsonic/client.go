@@ -116,7 +116,7 @@ func NewSubsonic(conf *config.Subsonic, provider config.KeyValueProvider) (*Subs
 	}
 
 	if s.host == "" {
-		host, err := provider.Get("subsonic host", false, "")
+		host, err := provider.Get("subsonic.url", false, "Subsonic host")
 		if err != nil {
 			return s, err
 		}
@@ -222,11 +222,11 @@ func (s *Subsonic) login(provider config.KeyValueProvider) error {
 
 	logrus.Warning("Authentication required for Subsonic")
 
-	username, err := provider.Get("username", false, "")
+	username, err := provider.Get("subsonic.username", false, "Subsonic username")
 	if err != nil {
 		return err
 	}
-	password, err := provider.Get("password", true, "")
+	password, err := provider.Get("subsonic.password", true, "Password")
 	if err != nil {
 		return err
 	}

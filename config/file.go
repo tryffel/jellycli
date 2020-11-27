@@ -17,87 +17,53 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
-	"io"
 	"os"
 	"path"
 )
 
-var configFile = AppNameLower + ".yaml"
+// NewConfigFile creates new config file in given location.
+// If locatin is empty, use default user directory ~/.config/jellycli.
+func NewConfigFile(location string) error {
+	var err error
+	var dir string
+	var file string
 
-//ReadConfigFile reads config file from given file. If file is empty, use default location provided by os
-func ReadConfigFile(file string) (*Config, error) {
-	if file == "" {
-		configDir, _ := GetConfigDirectory()
-		dir := path.Join(configDir, AppNameLower)
-		file = path.Join(dir, configFile)
+	if location != "" {
+		dir, file = path.Split(location)
+	} else {
+		var err error
+		dir, err = os.UserConfigDir()
+		if err != nil {
+			return err
+		}
+		file = "jellycli.yaml"
+		location = path.Join(dir, file)
 	}
 
-	return readConfigFile(file)
-}
+	logrus.Warningf("Create new config file in %s", location)
 
-func readConfigFile(file string) (*Config, error) {
-	conf := &Config{}
-	conf.configFile = file
-	err := EnsureConfigDirExists()
-	if err != nil {
-		return nil, err
+	if dir != "" {
+		err = EnsureConfigDirExists(dir)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = EnsureFileExists(file)
 	if err != nil {
-		return nil, err
-	}
-
-	fd, err := os.Open(file)
-	if err != nil {
-		return conf, fmt.Errorf("open config file '%s': %v", file, err)
-	}
-	defer fd.Close()
-	err = yaml.NewDecoder(fd).Decode(&conf)
-	if err != nil {
-		if errors.Is(err, io.EOF) {
-			// empty file
-			logrus.Warning("Creating new config file: ", conf.configFile)
-			err = SaveConfig(conf)
-			if err != nil {
-				return conf, fmt.Errorf("save empty config file")
-			}
-		} else {
-			return conf, fmt.Errorf("read config file: %v", err)
-		}
-	}
-
-	if conf.isEmptyConfig() {
-		conf.initNewConfig()
-	}
-	conf.Player.fillDefaults()
-	return conf, nil
-}
-
-func SaveConfig(conf *Config) error {
-	logrus.Debugf("Save config file")
-	fd, err := os.OpenFile(conf.configFile, os.O_WRONLY, os.ModeAppend)
-	if err != nil {
 		return err
 	}
-	defer fd.Close()
-	return yaml.NewEncoder(fd).Encode(conf)
-}
 
-func GetConfigDirectory() (string, error) {
-	return os.UserConfigDir()
-}
-
-func EnsureConfigDirExists() error {
-	userConfig, err := os.UserConfigDir()
+	fd, err := os.Create(location)
 	if err != nil {
-		return err
+		return fmt.Errorf("create config file '%s': %v", file, err)
 	}
-	dir := path.Join(userConfig, AppNameLower)
+	return fd.Close()
+}
+
+func EnsureConfigDirExists(dir string) error {
 	dirExists, err := DirectoryExists(dir)
 	if err != nil {
 		if !os.IsNotExist(err) {

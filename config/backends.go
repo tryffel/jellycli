@@ -17,6 +17,8 @@
 
 package config
 
+import "github.com/spf13/viper"
+
 type Backend interface {
 	DumpConfig() interface{}
 	GetType() string
@@ -59,12 +61,23 @@ func (s *Subsonic) GetType() string {
 // to request new password or url.
 type KeyValueProvider interface {
 	// Get returns value for key. Sensitive flags key as hidden.
-	Get(key string, sensitive bool, comment string) (string, error)
+	Get(key string, sensitive bool, label string) (string, error)
 }
 
 // StdinConfigProvider reads config keys from stdin.
 type StdinConfigProvider struct{}
 
-func (s *StdinConfigProvider) Get(key string, sensitive bool, comment string) (string, error) {
+func (s *StdinConfigProvider) Get(key string, sensitive bool, label string) (string, error) {
+	return ReadUserInput(label, sensitive)
+}
+
+// ViperStdConfigProvider reads key first from viper (config file & env) and after that reads from stdin.
+type ViperStdConfigProvider struct{}
+
+func (s *ViperStdConfigProvider) Get(key string, sensitive bool, label string) (string, error) {
+	val := viper.GetString(key)
+	if val != "" {
+		return val, nil
+	}
 	return ReadUserInput(key, sensitive)
 }

@@ -23,11 +23,13 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"golang.org/x/crypto/ssh/terminal"
 	"os"
 	"path"
 	"strings"
 	"syscall"
+	"time"
 	"tryffel.net/go/jellycli/models"
 )
 
@@ -41,6 +43,8 @@ type Config struct {
 
 	configFile string
 	configDir  string
+
+	configIsEmpty bool
 }
 
 func (c *Config) ConfigFile() string {
@@ -109,14 +113,18 @@ func (c *Config) initNewConfig() {
 	// so only fill this here
 	c.Player.LimitRecentlyPlayed = true
 	c.Player.SearchTypes = []models.ItemType{"artist,album,song,playlist,genre"}
+	c.Player.Server = "jellyfin"
+	c.Player.LogLevel = logrus.InfoLevel.String()
+
+	tempDir := os.TempDir()
+	c.Player.LogFile = path.Join(tempDir, "jellycli.log")
 }
 
 // can config file be considered empty / not configured
 func (c *Config) isEmptyConfig() bool {
 	return c.Jellyfin.UserId == "" &&
-		c.Jellyfin.ServerId == "" &&
-		c.Jellyfin.MusicView == "" &&
-		c.Jellyfin.Token == ""
+		c.Subsonic.Url == "" &&
+		c.Player.Server == ""
 }
 
 // ReadUserInput reads value from stdin. Name is printed like 'Enter <name>. If mask is true, input is masked.
@@ -141,4 +149,102 @@ func ReadUserInput(name string, mask bool) (string, error) {
 	}
 	val = strings.Trim(val, "\n\r")
 	return val, nil
+}
+
+// ConfigFromViper reads full application configuration from viper.
+func ConfigFromViper() error {
+
+	AppConfig = &Config{
+		Jellyfin: Jellyfin{
+			Url:       viper.GetString("jellyfin.url"),
+			Username:  viper.GetString("jellyfin.username"),
+			Token:     viper.GetString("jellyfin.token"),
+			UserId:    viper.GetString("jellyfin.userid"),
+			DeviceId:  viper.GetString("jellyfin.device_id"),
+			ServerId:  viper.GetString("jellyfin.server_id"),
+			MusicView: viper.GetString("jellyfin.music_view"),
+		},
+		Subsonic: Subsonic{
+			Url:      viper.GetString("subsonic.url"),
+			Username: viper.GetString("subsonic.username"),
+			Salt:     viper.GetString("subsonic.salt"),
+			Token:    viper.GetString("subsonic.token"),
+		},
+		Player: Player{
+			Server:                viper.GetString("player.server"),
+			PageSize:              viper.GetInt("player.pagesize"),
+			LogFile:               viper.GetString("player.logfile"),
+			LogLevel:              viper.GetString("player.loglevel"),
+			DebugMode:             viper.GetBool("player.debug_mode"),
+			LimitRecentlyPlayed:   viper.GetBool("player.limit_recently_played"),
+			MouseEnabled:          viper.GetBool("player.mouse_enabled"),
+			DoubleClickMs:         viper.GetInt("player.double_click_ms"),
+			AudioBufferingMs:      viper.GetInt("player.audio_buffering_ms"),
+			HttpBufferingS:        viper.GetInt("player.http_buffering_s"),
+			HttpBufferingLimitMem: viper.GetInt("player.http_buffering_limit_mem"),
+			EnableRemoteControl:   viper.GetBool("player.enable_remote_control"),
+			SearchResultsLimit:    viper.GetInt("player.search_results_limit"),
+		},
+	}
+
+	searchTypes := viper.GetStringSlice("player_search_types")
+	for _, v := range searchTypes {
+		searchType := models.ItemType(v)
+		AppConfig.Player.SearchTypes = append(AppConfig.Player.SearchTypes, searchType)
+	}
+
+	if AppConfig.Jellyfin.Url == "" && AppConfig.Subsonic.Url == "" {
+		AppConfig.configIsEmpty = true
+		setDefaults()
+	}
+
+	AudioBufferPeriod = time.Millisecond * time.Duration(AppConfig.Player.AudioBufferingMs)
+	return nil
+}
+
+func SaveConfig() error {
+	UpdateViper()
+	err := viper.WriteConfig()
+	if err != nil {
+		return fmt.Errorf("save config file: %v", err)
+	}
+	return nil
+}
+
+func setDefaults() {
+	if AppConfig.configIsEmpty {
+		AppConfig.initNewConfig()
+		err := SaveConfig()
+		if err != nil {
+			logrus.Errorf("save config file: %v", err)
+		}
+	}
+}
+
+func UpdateViper() {
+	viper.Set("jellyfin.url", AppConfig.Jellyfin.Url)
+	viper.Set("jellyfin.username", AppConfig.Jellyfin.Username)
+	viper.Set("jellyfin.token", AppConfig.Jellyfin.Token)
+	viper.Set("jellyfin.userid", AppConfig.Jellyfin.UserId)
+	viper.Set("jellyfin.device_id", AppConfig.Jellyfin.DeviceId)
+	viper.Set("jellyfin.server_id", AppConfig.Jellyfin.ServerId)
+	viper.Set("jellyfin.music_view", AppConfig.Jellyfin.MusicView)
+
+	viper.Set("subsonic.url", AppConfig.Subsonic.Url)
+	viper.Set("subsonic.username", AppConfig.Subsonic.Username)
+	viper.Set("subsonic.salt", AppConfig.Subsonic.Salt)
+	viper.Set("subsonic.token", AppConfig.Subsonic.Token)
+
+	viper.Set("player.server", AppConfig.Player.Server)
+	viper.Set("player.pagesize", AppConfig.Player.PageSize)
+	viper.Set("player.logfile", AppConfig.Player.LogFile)
+	viper.Set("player.loglevel", AppConfig.Player.LogLevel)
+	viper.Set("player.debug_mode", AppConfig.Player.DebugMode)
+	viper.Set("player.limit_recently_played", AppConfig.Player.LimitRecentlyPlayed)
+	viper.Set("player.mouse_enabled", AppConfig.Player.MouseEnabled)
+	viper.Set("player.double_click_ms", AppConfig.Player.DoubleClickMs)
+	viper.Set("player.http_buffering_ms", AppConfig.Player.HttpBufferingS)
+	viper.Set("player.http_buffering_limit_mem", AppConfig.Player.HttpBufferingLimitMem)
+	viper.Set("player.enable_remote_control", AppConfig.Player.EnableRemoteControl)
+	viper.Set("player.search_results_limit", AppConfig.Player.SearchResultsLimit)
 }

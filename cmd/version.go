@@ -1,25 +1,36 @@
 /*
- * Copyright 2019 Tero Vierimaa
+ * Copyright 2020 Tero Vierimaa
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-// Package main contains jellycli executable and bootstraps application.
-// Jellycli is a terminal application for playing music from Jellyfin server.
-package main
+package cmd
 
-import "tryffel.net/go/jellycli/cmd"
+import (
+	"fmt"
+	"github.com/spf13/cobra"
+	"tryffel.net/go/jellycli/config"
+)
 
-func main() {
-	cmd.Execute()
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "Print the version of Jellycli",
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("%s\n", config.Version)
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(versionCmd)
 }

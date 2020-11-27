@@ -73,7 +73,7 @@ type Player struct {
 	SearchResultsLimit int               `yaml:"search_results_limit"`
 }
 
-func (p *Player) fillDefaults() {
+func (p *Player) sanitize() {
 	if p.PageSize <= 0 || p.PageSize > 500 {
 		p.PageSize = 100
 	}
@@ -106,13 +106,12 @@ func (p *Player) fillDefaults() {
 
 // initialize new config with some sensible values
 func (c *Config) initNewConfig() {
-	c.Player.fillDefaults()
+	c.Player.sanitize()
 	c.Player.MouseEnabled = true
 	c.Player.EnableRemoteControl = true
 	// booleans are hard to determine whether they are set or not,
 	// so only fill this here
 	c.Player.LimitRecentlyPlayed = true
-	c.Player.SearchTypes = []models.ItemType{"artist,album,song,playlist,genre"}
 	c.Player.Server = "jellyfin"
 	c.Player.LogLevel = logrus.InfoLevel.String()
 

@@ -173,11 +173,12 @@ func NewJellyfin(conf *config.Jellyfin, provider config.KeyValueProvider) (*Jell
 
 	var password string
 	if jf.token == "" {
+		username, err := provider.Get("jellyfin.username", true, "Username")
 		password, err = provider.Get("jellyfin.password", true, "Password")
 		if err != nil {
 			return jf, err
 		}
-		err = jf.login(jf.userId, password)
+		err = jf.login(username, password)
 		if err != nil {
 			return jf, err
 		}
@@ -186,11 +187,12 @@ func NewJellyfin(conf *config.Jellyfin, provider config.KeyValueProvider) (*Jell
 	if err = jf.TokenOk(); err != nil {
 		if strings.Contains(err.Error(), "invalid token") {
 			logrus.Warningf("Authentication required")
+			username, err := provider.Get("jellyfin.username", true, "Username")
 			password, err = provider.Get("jellyfin.password", true, "Password")
 			if err != nil {
 				return jf, err
 			}
-			err = jf.login(jf.userId, password)
+			err = jf.login(username, password)
 			if err != nil {
 				return jf, err
 			}
@@ -245,6 +247,9 @@ func (jf *Jellyfin) TokenOk() error {
 	}
 	if err != nil {
 		if strings.Contains(err.Error(), "Access token is invalid or expired") {
+			return fmt.Errorf("invalid token: %v", err)
+		}
+		if strings.Contains(err.Error(), "needs authorization") {
 			return fmt.Errorf("invalid token: %v", err)
 		}
 		return err

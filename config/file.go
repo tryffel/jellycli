@@ -45,13 +45,13 @@ func NewConfigFile(location string) error {
 	logrus.Warningf("Create new config file in %s", location)
 
 	if dir != "" {
-		err = EnsureConfigDirExists(dir)
+		err = ensureConfigDirExists(dir)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = EnsureFileExists(file)
+	err = ensureFileExists(file)
 	if err != nil {
 		return err
 	}
@@ -63,8 +63,8 @@ func NewConfigFile(location string) error {
 	return fd.Close()
 }
 
-func EnsureConfigDirExists(dir string) error {
-	dirExists, err := DirectoryExists(dir)
+func ensureConfigDirExists(dir string) error {
+	dirExists, err := directoryExists(dir)
 	if err != nil {
 		if !os.IsNotExist(err) {
 			return err
@@ -73,23 +73,23 @@ func EnsureConfigDirExists(dir string) error {
 	if dirExists {
 		return nil
 	} else {
-		err = CreateDirectory(dir)
+		err = createDirectory(dir)
 		return err
 	}
 }
 
-func EnsureFileExists(name string) error {
-	exists, err := FileExists(name)
+func ensureFileExists(name string) error {
+	exists, err := fileExists(name)
 	if err != nil {
 		return err
 	}
 	if exists {
 		return nil
 	}
-	return CreateFile(name)
+	return createFile(name)
 }
 
-func DirectoryExists(dir string) (bool, error) {
+func directoryExists(dir string) (bool, error) {
 	info, err := os.Stat(dir)
 	if err != nil {
 		return false, err
@@ -100,11 +100,11 @@ func DirectoryExists(dir string) (bool, error) {
 	return false, fmt.Errorf("not directory")
 }
 
-func CreateDirectory(dir string) error {
+func createDirectory(dir string) error {
 	return os.Mkdir(dir, 0760)
 }
 
-func CreateFile(name string) error {
+func createFile(name string) error {
 	file, err := os.Create(name)
 	defer file.Close()
 	if err != nil {
@@ -113,7 +113,7 @@ func CreateFile(name string) error {
 	return nil
 }
 
-func FileExists(file string) (bool, error) {
+func fileExists(file string) (bool, error) {
 	_, err := os.Stat(file)
 	if err != nil {
 		if os.IsNotExist(err) {

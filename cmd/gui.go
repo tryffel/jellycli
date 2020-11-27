@@ -94,9 +94,9 @@ func (a *app) initServerConnection() error {
 	var err error
 	switch strings.ToLower(config.AppConfig.Player.Server) {
 	case "jellyfin":
-		a.server, err = jellyfin.NewJellyfin(&config.AppConfig.Jellyfin, &config.StdinConfigProvider{})
+		a.server, err = jellyfin.NewJellyfin(&config.AppConfig.Jellyfin, &config.ViperStdConfigProvider{})
 	case "subsonic":
-		a.server, err = subsonic.NewSubsonic(&config.AppConfig.Subsonic, &config.StdinConfigProvider{})
+		a.server, err = subsonic.NewSubsonic(&config.AppConfig.Subsonic, &config.ViperStdConfigProvider{})
 	default:
 		return fmt.Errorf("unsupported backend: '%s'", config.AppConfig.Player.Server)
 	}

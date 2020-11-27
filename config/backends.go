@@ -61,6 +61,7 @@ func (s *Subsonic) GetType() string {
 // to request new password or url.
 type KeyValueProvider interface {
 	// Get returns value for key. Sensitive flags key as hidden.
+	// Key is of format block.value from config file. Label is user-friendly label.
 	Get(key string, sensitive bool, label string) (string, error)
 }
 
@@ -79,5 +80,5 @@ func (s *ViperStdConfigProvider) Get(key string, sensitive bool, label string) (
 	if val != "" {
 		return val, nil
 	}
-	return ReadUserInput(key, sensitive)
+	return ReadUserInput(label, sensitive)
 }

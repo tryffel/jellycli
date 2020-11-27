@@ -76,6 +76,7 @@ type Player struct {
 func (p *Player) sanitize() {
 	if p.PageSize <= 0 || p.PageSize > 500 {
 		p.PageSize = 100
+		PageSize = p.PageSize
 	}
 	if p.LogFile == "" {
 		dir := os.TempDir()
@@ -239,10 +240,11 @@ func UpdateViper() {
 	viper.Set("player.logfile", AppConfig.Player.LogFile)
 	viper.Set("player.loglevel", AppConfig.Player.LogLevel)
 	viper.Set("player.debug_mode", AppConfig.Player.DebugMode)
+	viper.Set("player.audio_buffering_ms", AppConfig.Player.AudioBufferingMs)
 	viper.Set("player.limit_recently_played", AppConfig.Player.LimitRecentlyPlayed)
 	viper.Set("player.mouse_enabled", AppConfig.Player.MouseEnabled)
 	viper.Set("player.double_click_ms", AppConfig.Player.DoubleClickMs)
-	viper.Set("player.http_buffering_ms", AppConfig.Player.HttpBufferingS)
+	viper.Set("player.http_buffering_s", AppConfig.Player.HttpBufferingS)
 	viper.Set("player.http_buffering_limit_mem", AppConfig.Player.HttpBufferingLimitMem)
 	viper.Set("player.enable_remote_control", AppConfig.Player.EnableRemoteControl)
 	viper.Set("player.search_results_limit", AppConfig.Player.SearchResultsLimit)

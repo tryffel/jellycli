@@ -83,7 +83,7 @@ func newAudio() *Audio {
 
 func initAudio() error {
 	err := speaker.Init(config.AudioSamplingRate, config.AudioSamplingRate/1000*
-		int(config.AudioBufferPeriod.Seconds()*1000))
+		int(config.AudioBufferPeriod.Milliseconds()))
 	if err != nil {
 		return fmt.Errorf("init speaker: %v", err)
 	}

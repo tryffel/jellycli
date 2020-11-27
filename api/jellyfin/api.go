@@ -164,16 +164,9 @@ func NewJellyfin(conf *config.Jellyfin, provider config.KeyValueProvider) (*Jell
 		}
 	}
 
-	if jf.token == "" {
-		jf.userId, err = provider.Get("jellyfin.userid", false, "Username")
-		if err != nil {
-			return jf, err
-		}
-	}
-
 	var password string
 	if jf.token == "" {
-		username, err := provider.Get("jellyfin.username", true, "Username")
+		username, err := provider.Get("jellyfin.username", false, "Username")
 		password, err = provider.Get("jellyfin.password", true, "Password")
 		if err != nil {
 			return jf, err
@@ -187,7 +180,7 @@ func NewJellyfin(conf *config.Jellyfin, provider config.KeyValueProvider) (*Jell
 	if err = jf.TokenOk(); err != nil {
 		if strings.Contains(err.Error(), "invalid token") {
 			logrus.Warningf("Authentication required")
-			username, err := provider.Get("jellyfin.username", true, "Username")
+			username, err := provider.Get("jellyfin.username", false, "Username")
 			password, err = provider.Get("jellyfin.password", true, "Password")
 			if err != nil {
 				return jf, err

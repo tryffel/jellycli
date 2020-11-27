@@ -26,7 +26,6 @@ type Backend interface {
 
 type Jellyfin struct {
 	Url       string `yaml:"server_url"`
-	Username  string `yaml:"username"`
 	Token     string `yaml:"token"`
 	UserId    string `yaml:"user_id"`
 	DeviceId  string `yaml:"device_id"`

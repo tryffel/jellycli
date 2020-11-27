@@ -112,7 +112,9 @@ func (c *Config) initNewConfig() {
 	// booleans are hard to determine whether they are set or not,
 	// so only fill this here
 	c.Player.LimitRecentlyPlayed = true
-	c.Player.Server = "jellyfin"
+	if c.Player.Server == "" {
+		c.Player.Server = "jellyfin"
+	}
 	c.Player.LogLevel = logrus.InfoLevel.String()
 
 	tempDir := os.TempDir()
@@ -156,7 +158,6 @@ func ConfigFromViper() error {
 	AppConfig = &Config{
 		Jellyfin: Jellyfin{
 			Url:       viper.GetString("jellyfin.url"),
-			Username:  viper.GetString("jellyfin.username"),
 			Token:     viper.GetString("jellyfin.token"),
 			UserId:    viper.GetString("jellyfin.userid"),
 			DeviceId:  viper.GetString("jellyfin.device_id"),
@@ -222,7 +223,6 @@ func setDefaults() {
 
 func UpdateViper() {
 	viper.Set("jellyfin.url", AppConfig.Jellyfin.Url)
-	viper.Set("jellyfin.username", AppConfig.Jellyfin.Username)
 	viper.Set("jellyfin.token", AppConfig.Jellyfin.Token)
 	viper.Set("jellyfin.userid", AppConfig.Jellyfin.UserId)
 	viper.Set("jellyfin.device_id", AppConfig.Jellyfin.DeviceId)

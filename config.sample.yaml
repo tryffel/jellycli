@@ -3,11 +3,11 @@
 # Jellycli does not (yet) parse yaml comments.
 # Do not copy this file, let Jellycli create / initialize
 # the config file.
+# Any key can be overridden with environment variables,
 
-# Server settings
-server:
-  server_url: http://localhost/jellyfin
-  username: ""
+# Jellyfin settings
+jellyfin:
+  url: http://localhost/jellyfin
   # To force logout, clear token
   token:
   # Don't touch these
@@ -15,8 +15,19 @@ server:
   device_id:
   server_id:
   music_view:
+
+# Subsonic configuration
+# Salt & token is created automatically from password.
+# To force logout, remote salt & token
+subsonic:
+  url: http://localhost
+  username:
+  salt:
+  token:
 # Player & Gui settings
 player:
+  # Server to connect to by default. Either jellyfin or subsonic..
+  server: jellyfin
   # Paging, default: 100
   page_size: 100
   # Logging

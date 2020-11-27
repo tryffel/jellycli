@@ -3,11 +3,16 @@
 [![Godoc Reference](https://img.shields.io/badge/godoc-reference-blue.svg)](https://pkg.go.dev/tryffel.net/go/jellycli)
 [![Go Report Card](https://goreportcard.com/badge/tryffel.net/go/jellycli)](https://goreportcard.com/report/tryffel.net/go/jellycli)
 
-Terminal music player for Jellyfin (works with Emby too).
+Terminal music player, works with: 
+* Jellyfin >= 10.6 (and Emby >= 4.4)
+* Subsonic compatible server, with API >= 1.16 (tested with Navidrome)
 
 ![Screenshot](screenshot.png)
 
 ## Features
+
+Available features vary depending on server being used. E.g. Subsonic-servers do not support remote control.
+
 * View artists, songs, albums, playlists, favorite artists and albums, genres, similar albums and artists
 * Queue: add songs and albums, reorder & delete songs, clear queue
 * Control (and view) play state through Dbus integration
@@ -33,7 +38,7 @@ might not work as expected. Windows Console works better than Cmd.
 On raspi 2 you need to increase audio buffer duration in config file to somewhere around 400.
 
 ## Building
-**You will need Go 1.13 or Go 1.14 installed and configured**
+**You will need Go 1.13 or later installed and configured**
 
 * For additional audio libraries required, see [Hajimehoshi/oto](https://github.com/hajimehoshi/oto). 
 On linux you need libasound2-dev.
@@ -78,6 +83,8 @@ docker run -it --rm --device /dev/snd:/dev/snd  -v ~/jellycli-config/jellycli-co
 
 # Configuration
 
+### Config file
+
 On first time application asks for Jellyfin host, username, password and default collection for music. 
 All this is stored in configuration file:
 * ~/.config/jellycli/jellycli.yaml 
@@ -100,6 +107,45 @@ This can be overridden with config file.
 At the moment jellycli does not inform user about errors but rather just silently logs them.
 For development purposes you should set log-level either to debug or trace.
 
+### Environment variables:
+
+It is possible to override any config file value with environment variable. In addition to that,
+it is also possible to define passwords for servers. This way it would be possible to use
+Jellycli without persisting config file (with e.g. Docker). Jellycli will still create config file, nevertheless.
+
+
+```
+JELLYCLI_JELLYFIN_URL
+JELLYCLI_JELLYFIN_USERNAME
+JELLYCLI_JELLYFIN_PASSWORD
+JELLYCLI_JELLYFIN_TOKEN
+JELLYCLI_JELLYFIN_USERID
+JELLYCLI_JELLYFIN_DEVICE_ID
+JELLYCLI_JELLYFIN_SERVER_ID
+JELLYCLI_JELLYFIN_MUSIC_VIEW
+
+JELLYCLI_SUBSONIC_URL
+JELLYCLI_SUBSONIC_USERNAME
+JELLYCLI_SUBSONIC_PASSWORD
+JELLYCLI_SUBSONIC_SALT
+JELLYCLI_SUBSONIC_TOKEN
+
+JELLYCLI_PLAYER_SERVER
+JELLYCLI_PLAYER_PAGESIZE
+JELLYCLI_PLAYER_LOGFILE
+JELLYCLI_PLAYER_LOGLEVEL
+JELLYCLI_PLAYER_DEBUG_MODE
+JELLYCLI_PLAYER_LIMIT_RECENTLY_PLAYED
+JELLYCLI_PLAYER_MOUSE_ENABLED
+JELLYCLI_PLAYER_DOUBLE_CLICK_MS
+JELLYCLI_PLAYER_HTTP_BUFFERING_MS
+JELLYCLI_PLAYER_HTTP_BUFFERING_LIMIT_MEM
+JELLYCLI_PLAYER_ENABLE_REMOTE_CONTROL
+JELLYCLI_PLAYER_SEARCH_RESULTS_LIMIT
+```
+
+
+### Keybindings
 Keybindings are hardcoded at build time. They are located in file config/keybindings.go:73 in function 
 ```
 func DefaultKeybindings()

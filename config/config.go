@@ -190,10 +190,16 @@ func ConfigFromViper() error {
 		},
 	}
 
-	searchTypes := viper.GetStringSlice("player_search_types")
+	searchTypes := viper.GetStringSlice("player.search_types")
 	for _, v := range searchTypes {
 		searchType := models.ItemType(v)
 		AppConfig.Player.SearchTypes = append(AppConfig.Player.SearchTypes, searchType)
+	}
+
+	if len(searchTypes) == 0 {
+		AppConfig.Player.SearchTypes = []models.ItemType{models.TypeArtist, models.TypeAlbum,
+			models.TypeSong, models.TypePlaylist}
+
 	}
 
 	if AppConfig.Jellyfin.Url == "" && AppConfig.Subsonic.Url == "" {
@@ -250,4 +256,7 @@ func UpdateViper() {
 	viper.Set("player.http_buffering_limit_mem", AppConfig.Player.HttpBufferingLimitMem)
 	viper.Set("player.enable_remote_control", AppConfig.Player.EnableRemoteControl)
 	viper.Set("player.search_results_limit", AppConfig.Player.SearchResultsLimit)
+
+	viper.Set("player.search_types", AppConfig.Player.SearchTypes)
+
 }

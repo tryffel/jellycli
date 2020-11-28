@@ -53,8 +53,8 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file")
-	rootCmd.Flags().BoolVarP(&disableGui, "no-gui", "n", false, "disable gui")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file")
+	rootCmd.Flags().BoolVar(&disableGui, "no-gui", false, "disable gui")
 }
 
 func initConfig() {

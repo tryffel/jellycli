@@ -91,10 +91,34 @@ func (s *Subsonic) getAlbums(params *params) ([]*models.Album, error) {
 }
 
 func (s *Subsonic) GetAlbums(opts *interfaces.QueryOpts) ([]*models.Album, int, error) {
+	// subsonic does not support sorting and filtering at the same time
 	params := &params{}
 	(*params)["type"] = "alphabeticalByName"
 	(*params)["offset"] = strconv.Itoa(opts.Paging.Offset())
 	(*params)["size"] = strconv.Itoa(opts.Paging.PageSize)
+
+	if opts.Filter.YearRangeValid() && opts.Filter.YearRange[0] != 0 {
+		(*params)["type"] = "byYear"
+		(*params)["fromYear"] = strconv.Itoa(opts.Filter.YearRange[0])
+		(*params)["toYear"] = strconv.Itoa(opts.Filter.YearRange[1])
+	} else if opts.Filter.Favorite {
+		(*params)["type"] = "starred"
+	} else {
+		if opts.Sort.Field != "" {
+			switch opts.Sort.Field {
+			case interfaces.SortByName, interfaces.SortByAlbum:
+				(*params)["type"] = "alphabeticalByName"
+			case interfaces.SortByDate:
+				(*params)["type"] = "byYear"
+			case interfaces.SortByArtist:
+				(*params)["type"] = "alphabeticalByArtist"
+			case interfaces.SortByPlayCount:
+				(*params)["type"] = "frequent"
+			case interfaces.SortByRandom:
+				(*params)["type"] = "random"
+			}
+		}
+	}
 	albums, err := s.getAlbums(params)
 	return albums, len(albums), err
 }

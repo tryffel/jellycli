@@ -158,10 +158,15 @@ func newFilter(itemType string, filterFunc func(f interfaces.Filter), filterChan
 	f.AddFormItem(f.yearRange)
 
 	f.AddButton("Filter", f.ok)
+	f.AddButton("Clear", func() {
+		f.Clear()
+		f.ok()
+	})
 	f.AddButton("Cancel", f.cancel)
 
 	f.GetButton(0).SetInputCapture(f.inputCapture)
 	f.GetButton(1).SetInputCapture(f.inputCapture)
+	f.GetButton(2).SetInputCapture(f.inputCapture)
 
 	f.SetInputCapture(f.inputCapture)
 

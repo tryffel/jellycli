@@ -184,6 +184,7 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 }
 
 func (w *Window) Run() error {
+	w.selectMedia(MediaLatestMusic)
 	return w.app.Run()
 }
 
@@ -438,7 +439,9 @@ func (w *Window) wrapCloseModal(modal modal.Modal) func() {
 
 func (w *Window) closeModal(modal modal.Modal) {
 	if w.hasModal {
-		w.app.EnableMouse(config.AppConfig.Player.MouseEnabled)
+		if config.AppConfig.Player.MouseEnabled {
+			w.app.EnableMouse(true)
+		}
 		modal.Blur()
 		modal.SetVisible(false)
 		w.layout.RemoveModal(modal)
@@ -455,7 +458,9 @@ func (w *Window) closeModal(modal modal.Modal) {
 
 func (w *Window) showModal(modal modal.Modal, height, width uint, lockSize bool) {
 	if !w.hasModal {
-		w.app.EnableMouse(false)
+		if config.AppConfig.Player.MouseEnabled {
+			w.app.EnableMouse(false)
+		}
 		w.hasModal = true
 		w.modal = modal
 		w.lastFocus = w.app.GetFocus()
@@ -503,6 +508,9 @@ func (w *Window) selectMedia(m MediaSelect) {
 			}
 
 			w.mediaNav.SetCount(MediaLatestMusic, len(albums))
+
+			w.latestAlbums.EnableFilter(false)
+			w.latestAlbums.EnablePaging(false)
 
 			w.latestAlbums.Clear()
 			w.latestAlbums.SetAlbums(albums)
@@ -828,6 +836,7 @@ func (w *Window) selectGenre(id models.IdName) {
 	w.albumList.Clear()
 	w.albumList.EnablePaging(false)
 	w.albumList.EnableSimilar(false)
+	w.albumList.EnableFilter(false)
 	w.albumList.EnableArtistMode(false)
 	w.albumList.SetAlbums(albums)
 	w.albumList.SetText("Genre " + id.Name)

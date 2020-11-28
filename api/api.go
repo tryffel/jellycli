@@ -94,9 +94,6 @@ type Browser interface {
 	// GetAlbumArtist returns main artist for album.
 	GetAlbumArtist(album *models.Album) (*models.Artist, error)
 
-	// GetSongArtistAlbum returns main artist for song.
-	GetSongArtistAlbum(song *models.Song) (*models.Album, *models.Artist, error)
-
 	// GetInstantMix returns instant mix based on given item.
 	GetInstantMix(item models.Item) ([]*models.Song, error)
 

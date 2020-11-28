@@ -222,34 +222,6 @@ func (s *Subsonic) GetAlbumArtist(album *models.Album) (*models.Artist, error) {
 	return artist, nil
 }
 
-func (s *Subsonic) GetSongArtistAlbum(song *models.Song) (*models.Album, *models.Artist, error) {
-	if song.AlbumArtist == "" {
-		return nil, nil, errors.New("no album artist defined")
-	}
-
-	params := &params{}
-	params.setId(song.AlbumArtist.String())
-	resp, err := s.get("/getArtist", params)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if resp.Artist == nil {
-		return nil, nil, nil
-	}
-
-	artist := resp.Artist.toArtist()
-	var album *models.Album
-
-	for _, v := range resp.Artist.Albums {
-		if v.Id == song.Album.String() {
-			album = v.toAlbum()
-			break
-		}
-	}
-	return album, artist, nil
-}
-
 func (s *Subsonic) GetInstantMix(item models.Item) ([]*models.Song, error) {
 	return nil, errors.New("not implemented")
 }

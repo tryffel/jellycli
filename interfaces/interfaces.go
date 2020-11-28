@@ -20,7 +20,9 @@
 package interfaces
 
 import (
+	"errors"
 	"math"
+	"time"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/models"
 )
@@ -141,4 +143,120 @@ func (p *Paging) SetTotalItems(count int) {
 // Offset returns offset
 func (p *Paging) Offset() int {
 	return p.PageSize * p.CurrentPage
+}
+
+type SortMode string
+
+const (
+	SortAsc  = "ASC"
+	SortDesc = "DESC"
+)
+
+func (s SortMode) Label() string {
+	switch s {
+	case SortAsc:
+		return "Ascending"
+	case SortDesc:
+		return "Descending"
+	default:
+		return "Unknown"
+	}
+}
+
+// ErrInvalidSort occurs if backend does not support given sorting.
+var ErrInvalidSort = errors.New("invalid sort")
+
+// ErrInvalidFilter occurs if backend does not support given filtering.
+var ErrInvalidFilter = errors.New("invalid filter")
+
+type SortField string
+
+const (
+	SortByName      SortField = "Name"
+	SortByDate      SortField = "Date"
+	SortByArtist    SortField = "Artist"
+	SortByAlbum     SortField = "Album"
+	SortByPlayCount SortField = "Most played"
+	SortByRandom    SortField = "Random"
+)
+
+// Sort describes sorting
+type Sort struct {
+	Field SortField
+	Mode  string
+}
+
+// NewSort creates default sorting, that is, ASC.
+// If field is empty, use SortbyName and ASC
+func NewSort(field SortField) Sort {
+	if field == "" {
+		field = SortByName
+	}
+	s := Sort{
+		Field: field,
+		Mode:  SortAsc,
+	}
+	return s
+}
+
+type FilterPlayStatus string
+
+const (
+	FilterIsPlayed    = "Played"
+	FilterIsNotPlayed = "Not played"
+)
+
+// Filter contains filter for reducing results. Some fields are exclusive,
+type Filter struct {
+	// Played
+	FilterPlayed FilterPlayStatus
+	// Favorite marks items as being starred / favorite.
+	Favorite bool
+	// Genres contains list of genres to include.
+	Genres []models.IdName
+	// YearRange contains two elements, items must be within these boundaries.
+	YearRange [2]int
+}
+
+// YearRangeValid returns true if year range is considered valid and sane.
+// If both years are 0, then filter is disabled and range is considered valid.
+// Else this checks:
+// * 1st year is before or equals 2nd
+// * 1st year is after 1900
+// * 2nd year if before now() + 10 years
+func (f Filter) YearRangeValid() bool {
+	if f.YearRange == [2]int{0, 0} {
+		return true
+	}
+
+	if f.YearRange[0] > f.YearRange[1] {
+		return false
+	}
+
+	if f.YearRange[0] < 1900 {
+		return false
+	}
+
+	year := time.Now().Year()
+	if f.YearRange[1] > year+10 {
+		return false
+	}
+	return true
+}
+
+type QueryOpts struct {
+	Paging Paging
+	Filter Filter
+	Sort   Sort
+}
+
+func DefaultQueryOpts() *QueryOpts {
+	return &QueryOpts{
+		Paging: DefaultPaging(),
+		Filter: Filter{},
+		Sort: Sort{
+			Field: SortByName,
+			Mode:  SortAsc,
+		},
+	}
 }

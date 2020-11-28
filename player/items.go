@@ -43,7 +43,14 @@ func (i *Items) Search(itemType models.ItemType, query string) ([]models.Item, e
 }
 
 func (i *Items) GetArtists(paging interfaces.Paging) ([]*models.Artist, int, error) {
-	return i.browser.GetArtists(paging)
+	query := &interfaces.QueryOpts{
+		Paging: paging,
+	}
+	query.Sort = interfaces.NewSort(interfaces.SortByRandom)
+	query.Filter = interfaces.Filter{
+		YearRange: [2]int{1960, 1980},
+	}
+	return i.browser.GetArtists(query)
 }
 
 func (i *Items) GetAlbumArtists(paging interfaces.Paging) ([]*models.Artist, int, error) {
@@ -77,7 +84,10 @@ func (i *Items) GetPlaylistSongs(playlist *models.Playlist) error {
 }
 
 func (i *Items) GetFavoriteArtists() ([]*models.Artist, error) {
-	return i.browser.GetFavoriteArtists()
+	query := interfaces.DefaultQueryOpts()
+	query.Filter.Favorite = true
+	artists, _, err := i.browser.GetArtists(query)
+	return artists, err
 }
 
 func (i *Items) GetFavoriteAlbums(paging interfaces.Paging) ([]*models.Album, int, error) {

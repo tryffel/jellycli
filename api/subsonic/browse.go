@@ -44,7 +44,12 @@ func (s *Subsonic) getFavorites() error {
 	return nil
 }
 
-func (s *Subsonic) GetArtists(paging interfaces.Paging) (artists []*models.Artist, n int, err error) {
+func (s *Subsonic) GetArtists(query *interfaces.QueryOpts) (artists []*models.Artist, n int, err error) {
+	if query.Filter.Favorite {
+		err := s.getFavorites()
+		return s.favoriteArtists, len(s.favoriteArtists), err
+	}
+
 	var resp *response
 	resp, err = s.get("/getArtists", nil)
 	if err != nil {
@@ -65,7 +70,10 @@ func (s *Subsonic) GetArtists(paging interfaces.Paging) (artists []*models.Artis
 }
 
 func (s *Subsonic) GetAlbumArtists(paging interfaces.Paging) ([]*models.Artist, int, error) {
-	return s.GetArtists(paging)
+	query := &interfaces.QueryOpts{
+		Paging: paging,
+	}
+	return s.GetArtists(query)
 }
 
 func (s *Subsonic) getAlbums(params *params) ([]*models.Album, error) {
@@ -151,11 +159,6 @@ func (s *Subsonic) GetPlaylistSongs(playlist models.Id) ([]*models.Song, error) 
 		songs[i] = v.toSong()
 	}
 	return songs, nil
-}
-
-func (s *Subsonic) GetFavoriteArtists() ([]*models.Artist, error) {
-	err := s.getFavorites()
-	return s.favoriteArtists, err
 }
 
 func (s *Subsonic) GetFavoriteAlbums(paging interfaces.Paging) ([]*models.Album, int, error) {

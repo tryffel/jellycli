@@ -484,8 +484,25 @@ func (jf *Jellyfin) GetSongsById(ids []models.Id) ([]*models.Song, error) {
 	return songs, nil
 }
 
-// GetArtists return artists defined by paging and total number of artists
-func (jf *Jellyfin) GetArtists(paging interfaces.Paging) (artistList []*models.Artist, numRecords int, err error) {
+// getArtists return artists defined by paging and total number of artists
+func (jf *Jellyfin) GetArtists(query *interfaces.QueryOpts) (artistList []*models.Artist, numRecords int, err error) {
+	params := *jf.defaultParams()
+	params.enableRecursive()
+	params.setPaging(query.Paging)
+	params.setSortingByType(models.TypeArtist, query.Sort)
+	params.setFilter(models.TypeArtist, query.Filter)
+	resp, err := jf.get("/Artists", &params)
+	if resp != nil {
+		defer resp.Close()
+	}
+	if err != nil {
+		return
+	}
+	return jf.parseArtists(resp)
+}
+
+// getArtists return artists defined by paging and total number of artists
+func (jf *Jellyfin) getArtists(paging interfaces.Paging) (artistList []*models.Artist, numRecords int, err error) {
 	params := *jf.defaultParams()
 	params.enableRecursive()
 	params.setSorting("SortName", "Ascending")

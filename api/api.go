@@ -49,7 +49,7 @@ type Streamer interface {
 type Browser interface {
 
 	// GetArtists returns all artists
-	GetArtists(paging interfaces.Paging) ([]*models.Artist, int, error)
+	GetArtists(query *interfaces.QueryOpts) ([]*models.Artist, int, error)
 
 	// GetAlbumArtists returns artists that are marked as album artists. See GetArtists.
 	GetAlbumArtists(paging interfaces.Paging) ([]*models.Artist, int, error)
@@ -65,8 +65,6 @@ type Browser interface {
 	GetPlaylists() ([]*models.Playlist, error)
 	// GetPlaylistSongs fills songs array for playlist. If there's error, songs will not be filled
 	GetPlaylistSongs(playlist models.Id) ([]*models.Song, error)
-	// GetFavoriteArtists returns list of favorite artists.
-	GetFavoriteArtists() ([]*models.Artist, error)
 	// GetFavoriteAlbums return list of favorite albums.
 	GetFavoriteAlbums(paging interfaces.Paging) ([]*models.Album, int, error)
 

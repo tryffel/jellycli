@@ -21,6 +21,7 @@ package jellyfin
 import (
 	"strconv"
 	"tryffel.net/go/jellycli/interfaces"
+	"tryffel.net/go/jellycli/models"
 )
 
 type params map[string]string
@@ -56,4 +57,86 @@ func (p *params) setParentId(id string) {
 func (p *params) setSorting(name string, order string) {
 	(*p)["SortBy"] = name
 	(*p)["SortOrder"] = order
+}
+
+func (p *params) setSortingByType(itemType models.ItemType, sort interfaces.Sort) {
+
+	field := "SortName"
+	order := "Ascending"
+
+	if sort.Mode == interfaces.SortAsc {
+		order = "Ascending"
+	} else if sort.Mode == interfaces.SortDesc {
+		order = "Descending"
+	}
+
+	switch sort.Field {
+	case interfaces.SortByDate:
+		field = "ProductionYear,ProductionYear,SortName"
+	case interfaces.SortByName:
+		field = "SortName"
+		// Todo: following depend on item type
+	case interfaces.SortByAlbum:
+		field = "Album,SortName"
+	case interfaces.SortByArtist:
+		field = "Artist,SortName"
+	case interfaces.SortByPlayCount:
+		field = "PlayCount,SortName"
+	case interfaces.SortByRandom:
+		field = "Random,SortName"
+	}
+
+	p.setSorting(field, order)
+}
+
+func (p *params) setFilter(tItem models.ItemType, filter interfaces.Filter) {
+	f := ""
+	if filter.Favorite {
+		f = appendFilter(f, "IsFavorite", ",")
+	}
+
+	// jellyfin server does not seem to like sorting artists by play status.
+	// https://github.com/jellyfin/jellyfin/issues/2672
+	if tItem != models.TypeArtist {
+		if filter.FilterPlayed == interfaces.FilterIsPlayed {
+			f = appendFilter(f, "IsPlayed", ",")
+		} else if filter.FilterPlayed == interfaces.FilterIsNotPlayed {
+			f = appendFilter(f, "IsUnPlayed", ",")
+		}
+	}
+
+	if tItem != models.TypeArtist {
+		if filter.YearRangeValid() && filter.YearRange[0] > 0 {
+			years := ""
+			totalYears := filter.YearRange[1] - filter.YearRange[0]
+			if totalYears == 0 {
+				years = strconv.Itoa(filter.YearRange[0])
+			} else {
+				for i := 0; i < totalYears+1; i++ {
+					year := filter.YearRange[0] + i
+					years = appendFilter(years, strconv.Itoa(year), ",")
+				}
+			}
+			(*p)["Years"] = years
+		}
+	}
+
+	if len(filter.Genres) > 0 {
+		genres := ""
+		for _, v := range filter.Genres {
+			genres = appendFilter(genres, v.Name, "|")
+		}
+		(*p)["Genres"] = genres
+	}
+
+	if f != "" {
+		(*p)["Filters"] = f
+	}
+}
+
+func appendFilter(old, new string, separator string) string {
+	if old == "" {
+		return new
+	}
+	return old + separator + new
 }

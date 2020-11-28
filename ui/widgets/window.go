@@ -47,16 +47,17 @@ type Window struct {
 	queue    *Queue
 	history  *History
 
-	albumList      *AlbumList
-	similarAlbums  *AlbumList
-	album          *AlbumView
-	latestAlbums   *AlbumList
-	favoriteAlbums *AlbumList
-	artistList     *ArtistList
-	playlists      *Playlists
-	playlist       *PlaylistView
-	songs          *SongList
-	genres         *GenreList
+	artistAlbumList *ArtistAlbumList
+	albumList       *AlbumList
+	similarAlbums   *AlbumList
+	album           *AlbumView
+	latestAlbums    *AlbumList
+	favoriteAlbums  *AlbumList
+	artistList      *ArtistList
+	playlists       *Playlists
+	playlist        *PlaylistView
+	songs           *SongList
+	genres          *GenreList
 
 	searchResultsTop *SearchTopList
 
@@ -86,6 +87,7 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 	w.artistList = NewArtistList(w.selectArtist, w.queryArtists)
 	w.artistList.SetBackCallback(w.goBack)
 	w.artistList.selectPageFunc = w.showArtistPage
+	w.artistAlbumList = NewArtistAlbumList(w.selectAlbum, &w, w.showAlbumPage, w.openFilterModal)
 	w.albumList = NewAlbumList(w.selectAlbum, &w, w.showAlbumPage, w.openFilterModal)
 	w.albumList.SetBackCallback(w.goBack)
 	w.albumList.similarFunc = w.showSimilarArtists
@@ -184,7 +186,6 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 }
 
 func (w *Window) Run() error {
-	w.selectMedia(MediaLatestMusic)
 	return w.app.Run()
 }
 
@@ -498,23 +499,14 @@ func (w *Window) selectMedia(m MediaSelect) {
 			for _, v := range albums {
 				duration += v.Duration
 			}
-			// set pseudo artist
-			artist := &models.Artist{
-				Id:            "",
-				Name:          "Latest albums",
-				Albums:        nil,
-				TotalDuration: duration,
-				AlbumCount:    len(albums),
-			}
-
 			w.mediaNav.SetCount(MediaLatestMusic, len(albums))
+			w.latestAlbums.description.SetText(fmt.Sprintf("Latest albums\nCount: %d", len(albums)))
 
 			w.latestAlbums.EnableFilter(false)
 			w.latestAlbums.EnablePaging(false)
 
 			w.latestAlbums.Clear()
 			w.latestAlbums.SetAlbums(albums)
-			w.latestAlbums.SetArtist(artist)
 			w.setViewWidget(w.latestAlbums, true)
 		}
 	case MediaFavoriteArtists:
@@ -631,7 +623,6 @@ func (w *Window) selectMedia(m MediaSelect) {
 		list.SetPage(paging)
 		list.Clear()
 		list.EnableSimilar(false)
-		list.EnableArtistMode(false)
 
 		list.SetText(fmt.Sprintf("%s\nTotal %v", title, paging.TotalItems))
 		list.SetAlbums(albums)
@@ -648,13 +639,12 @@ func (w *Window) selectArtist(artist *models.Artist) {
 		logrus.Errorf("get albumList albums: %v", err)
 	} else {
 		artist.AlbumCount = len(albums)
-		w.albumList.Clear()
-		w.albumList.EnableArtistMode(true)
-		w.albumList.EnablePaging(false)
-		w.albumList.EnableSimilar(true)
-		w.albumList.SetArtist(artist)
-		w.albumList.SetAlbums(albums)
-		w.setViewWidget(w.albumList, true)
+		w.artistAlbumList.Clear()
+		w.artistAlbumList.EnablePaging(false)
+		w.artistAlbumList.EnableSimilar(true)
+		w.artistAlbumList.SetArtist(artist)
+		w.artistAlbumList.SetAlbums(albums)
+		w.setViewWidget(w.artistAlbumList, true)
 	}
 }
 
@@ -837,7 +827,6 @@ func (w *Window) selectGenre(id models.IdName) {
 	w.albumList.EnablePaging(false)
 	w.albumList.EnableSimilar(false)
 	w.albumList.EnableFilter(false)
-	w.albumList.EnableArtistMode(false)
 	w.albumList.SetAlbums(albums)
 	w.albumList.SetText("Genre " + id.Name)
 	w.setViewWidget(w.albumList, true)

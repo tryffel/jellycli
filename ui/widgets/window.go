@@ -438,6 +438,7 @@ func (w *Window) wrapCloseModal(modal modal.Modal) func() {
 
 func (w *Window) closeModal(modal modal.Modal) {
 	if w.hasModal {
+		w.app.EnableMouse(config.AppConfig.Player.MouseEnabled)
 		modal.Blur()
 		modal.SetVisible(false)
 		w.layout.RemoveModal(modal)
@@ -454,6 +455,7 @@ func (w *Window) closeModal(modal modal.Modal) {
 
 func (w *Window) showModal(modal modal.Modal, height, width uint, lockSize bool) {
 	if !w.hasModal {
+		w.app.EnableMouse(false)
 		w.hasModal = true
 		w.modal = modal
 		w.lastFocus = w.app.GetFocus()

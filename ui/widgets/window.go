@@ -754,7 +754,7 @@ func (w *Window) openFilterModal(m modal.Modal, doneFunc func()) {
 	}
 
 	m.SetDoneFunc(closeFunc)
-	w.showModal(m, 18, 45, false)
+	w.showModal(m, 16, 40, false)
 }
 
 func (w *Window) playSong(song *models.Song) {

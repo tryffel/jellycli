@@ -149,7 +149,7 @@ func newFilter(itemType string, filterFunc func(f interfaces.Filter), filterChan
 	f.itemPlayed.SetLabel("Played")
 	f.itemNotPlayed.SetLabel("Not played")
 	f.itemFavorite.SetLabel("Favorite")
-	f.yearRange.SetLabel("Year range")
+	f.yearRange.SetLabel("Year")
 	f.yearRange.SetPlaceholder("'2020' or '2000-2010'")
 	f.yearRange.SetPlaceholderTextColor(config.Color.TextDisabled)
 	f.yearRange.SetFieldTextColor(config.Color.Text)

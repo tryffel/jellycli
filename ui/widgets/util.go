@@ -96,6 +96,7 @@ func newDropDown(text string) *dropDown {
 	d.SetBackgroundColor(config.Color.ButtonBackground)
 	d.SetFieldBackgroundColor(config.Color.ButtonBackground)
 	d.SetFieldTextColor(config.Color.Text)
+	d.SetPrefixTextColor(config.Color.ButtonBackgroundSelected)
 	d.SetBorder(false)
 	d.SetBorderPadding(0, 0, 1, 2)
 

@@ -40,6 +40,7 @@ type queryFunc = func(opts *interfaces.QueryOpts)
 type sortFunc = func(sort interfaces.Sort)
 type openFilterFunc = func(m modal.Modal, doneFunc func())
 
+// sort provides dropdown for sorting
 type sort struct {
 	*dropDown
 	currentIndex int
@@ -90,6 +91,7 @@ func (s *sort) toggleMode() {
 	}
 }
 
+// filter provides a modal for defining filters
 type filter struct {
 	*cview.Form
 	filterFunc func(interfaces.Filter)
@@ -103,6 +105,8 @@ type filter struct {
 	itemFavorite *cview.Checkbox
 
 	yearRange *cview.InputField
+
+	filterChangedFunc func(bool)
 }
 
 func (f *filter) SetDoneFunc(doneFunc func()) {
@@ -117,7 +121,7 @@ func (f *filter) SetVisible(visible bool) {
 	f.visible = visible
 }
 
-func newFilter(itemType string, filterFunc func(f interfaces.Filter)) *filter {
+func newFilter(itemType string, filterFunc func(f interfaces.Filter), filterChangedFunc func(bool)) *filter {
 
 	f := &filter{
 		Form:       cview.NewForm(),
@@ -127,10 +131,11 @@ func newFilter(itemType string, filterFunc func(f interfaces.Filter)) *filter {
 		itemNotPlayed: cview.NewCheckbox(),
 		itemFavorite:  cview.NewCheckbox(),
 		yearRange:     cview.NewInputField(),
+
+		filterChangedFunc: filterChangedFunc,
 	}
 
 	f.SetTitle(fmt.Sprintf(" Filter %ss ", itemType))
-
 	f.SetBackgroundColor(config.Color.Modal.Background)
 	f.SetBorder(true)
 	f.AddFormItem(f.itemPlayed)
@@ -153,8 +158,19 @@ func newFilter(itemType string, filterFunc func(f interfaces.Filter)) *filter {
 	f.AddFormItem(f.yearRange)
 
 	f.AddButton("Filter", f.ok)
-	f.AddButton("Cancel", f.closeCb)
+	f.AddButton("Cancel", f.cancel)
 
+	f.GetButton(0).SetInputCapture(f.inputCapture)
+	f.GetButton(1).SetInputCapture(f.inputCapture)
+
+	f.SetInputCapture(f.inputCapture)
+
+	f.itemPlayed.SetInputCapture(f.inputCapture)
+	f.itemNotPlayed.SetInputCapture(f.inputCapture)
+	f.itemFavorite.SetInputCapture(f.inputCapture)
+	f.yearRange.SetInputCapture(f.inputCapture)
+
+	f.SetCancelFunc(f.cancel)
 	return f
 }
 
@@ -232,6 +248,26 @@ func (f *filter) ok() {
 	}
 	f.filterFunc(filt)
 	f.closeCb()
+
+	if f.filterChangedFunc != nil {
+		f.filterChangedFunc(true)
+	}
+}
+
+func (f *filter) cancel() {
+	if f.closeCb != nil {
+		f.closeCb()
+	}
+}
+
+func (f *filter) Clear() {
+	f.itemPlayed.SetChecked(false)
+	f.itemNotPlayed.SetChecked(false)
+	f.itemFavorite.SetChecked(false)
+	f.yearRange.SetText("")
+	if f.filterChangedFunc != nil {
+		f.filterChangedFunc(false)
+	}
 }
 
 func (f *filter) InputHandler() func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
@@ -242,4 +278,26 @@ func (f *filter) InputHandler() func(event *tcell.EventKey, setFocus func(p cvie
 		}
 		f.Form.InputHandler()(event, setFocus)
 	}
+}
+
+func (f *filter) inputCapture(e *tcell.EventKey) *tcell.EventKey {
+	key := e.Key()
+	r := e.Rune()
+
+	switch key {
+	case tcell.KeyUp:
+		return tcell.NewEventKey(tcell.KeyBacktab, e.Rune(), e.Modifiers())
+	case tcell.KeyDown:
+		return tcell.NewEventKey(tcell.KeyTab, e.Rune(), e.Modifiers())
+	}
+
+	switch r {
+	case 'k':
+		return tcell.NewEventKey(tcell.KeyBacktab, e.Rune(), e.Modifiers())
+	case 'j':
+		return tcell.NewEventKey(tcell.KeyTab, e.Rune(), e.Modifiers())
+	}
+
+	return e
+
 }

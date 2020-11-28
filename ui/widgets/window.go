@@ -378,6 +378,7 @@ func (w *Window) showSearchResults(itemType models.ItemType, results []models.It
 		}
 		w.albumList.Clear()
 		w.albumList.EnablePaging(false)
+		w.albumList.EnableFilter(false)
 		w.albumList.SetLabel(fmt.Sprintf("[yellow::]Search results for '%s'[-::]\n%d albums", query, len(results)))
 		w.albumList.SetAlbums(albums)
 		w.albumList.EnableSimilar(false)
@@ -600,11 +601,13 @@ func (w *Window) selectMedia(m MediaSelect) {
 			albums, total, err = w.mediaItems.GetAlbums(opts)
 			title = "All Albums"
 			w.albumList.EnablePaging(true)
+			w.albumList.EnableFilter(true)
 		} else if m == MediaFavoriteAlbums {
 			paging.PageSize = 200
 			albums, total, err = w.mediaItems.GetFavoriteAlbums(paging)
 			title = "Favorite albums"
 			w.albumList.EnablePaging(false)
+			w.albumList.EnableFilter(false)
 			list = w.favoriteAlbums
 		}
 
@@ -738,6 +741,7 @@ func (w *Window) showAlbumPage(opts *interfaces.QueryOpts) {
 	w.albumList.SetPage(opts.Paging)
 	w.albumList.Clear()
 	w.albumList.EnablePaging(true)
+	w.albumList.EnableFilter(true)
 	w.albumList.SetAlbums(albums)
 }
 
@@ -787,6 +791,7 @@ func (w *Window) showSimilarAlbums(album *models.Album) {
 		w.similarAlbums.Clear()
 		w.similarAlbums.EnableSimilar(false)
 		w.similarAlbums.EnablePaging(false)
+		w.similarAlbums.EnableFilter(false)
 		w.similarAlbums.SetAlbums(albums)
 		w.similarAlbums.SetText(fmt.Sprintf("Similar albums: %d", len(albums)))
 		w.setViewWidget(w.similarAlbums, true)

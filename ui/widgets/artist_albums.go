@@ -137,11 +137,12 @@ type AlbumList struct {
 	similarFunc    func(id models.Id)
 	similarEnabled bool
 
-	sort      *sort
-	filter    *filter
-	filterBtn *button
-	queryOpts *interfaces.QueryOpts
-	queryFunc func(opts *interfaces.QueryOpts)
+	sort          *sort
+	filter        *filter
+	filterBtn     *button
+	filterEnabled bool
+	queryOpts     *interfaces.QueryOpts
+	queryFunc     func(opts *interfaces.QueryOpts)
 }
 
 func (a *AlbumList) AddAlbum(c *AlbumCover) {
@@ -153,6 +154,7 @@ func (a *AlbumList) Clear() {
 	a.list.Clear()
 	//a.SetArtist(nil)
 	a.albumCovers = make([]*AlbumCover, 0)
+	a.filter.Clear()
 }
 
 // SetPlaylists sets albumList cover
@@ -194,8 +196,9 @@ func (a *AlbumList) EnableArtistMode(enabled bool) {
 func (a *AlbumList) selectPage(n int) {
 	a.paging.SetPage(n)
 	a.page.CurrentPage = n
-	if a.selectPageFunc != nil {
-		a.selectPageFunc(a.page)
+	a.queryOpts.Paging = a.page
+	if a.queryFunc != nil {
+		a.queryFunc(a.queryOpts)
 	}
 }
 
@@ -243,6 +246,14 @@ func (a *AlbumList) EnableSimilar(enabled bool) {
 	a.setButtons()
 }
 
+func (a *AlbumList) EnableFilter(enabled bool) {
+	a.filterEnabled = enabled
+	if enabled {
+		a.similarEnabled = false
+	}
+	a.setButtons()
+}
+
 func (a *AlbumList) setButtons() {
 	a.Banner.Grid.Clear()
 	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn}
@@ -251,25 +262,29 @@ func (a *AlbumList) setButtons() {
 	a.Grid.AddItem(a.playBtn, 3, 2, 1, 1, 1, 10, false)
 
 	if a.pagingEnabled {
-		selectables = append(selectables, a.paging.Previous, a.paging.Next, a.filterBtn)
+		selectables = append(selectables, a.paging.Previous, a.paging.Next)
 		a.Grid.AddItem(a.paging, 3, 4, 1, 3, 1, 10, false)
-		//a.Grid.AddItem(a.sort, 3, 6, 1, 3, 1, 10, false)
-		a.Grid.AddItem(a.filterBtn, 3, 6, 1, 3, 1, 10, false)
 	}
-	/*
-		if a.similarEnabled {
-			selectables = append(selectables, a.options)
-			col := 4
-			if a.pagingEnabled {
-				col = 6
-			}
-			a.Grid.AddItem(a.options, 3, col, 1, 1, 1, 10, false)
+	if a.similarEnabled {
+		selectables = append(selectables, a.options)
+		col := 4
+		if a.pagingEnabled {
+			col = 6
 		}
+		a.Grid.AddItem(a.options, 3, col, 1, 1, 1, 10, false)
+	} else if a.filterEnabled {
+		selectables = append(selectables, a.sort, a.filterBtn)
+		col := 4
+		if a.pagingEnabled {
+			col = 6
+		}
+		a.Grid.AddItem(a.sort, 3, col, 1, 1, 1, 10, false)
+		a.Grid.AddItem(a.filterBtn, 3, col+2, 1, 1, 1, 10, false)
+	}
 
-	*/
 	selectables = append(selectables, a.list)
 	a.Banner.Selectable = selectables
-	a.Grid.AddItem(a.list, 4, 0, 1, 8, 6, 20, false)
+	a.Grid.AddItem(a.list, 4, 0, 1, 10, 6, 20, false)
 }
 
 //NewAlbumList constructs new albumList view
@@ -302,20 +317,21 @@ func NewAlbumList(selectAlbum func(album *models.Album), context contextOperator
 		)
 	}
 
-	a.filter = newFilter("artist", a.setFilter)
+	a.filter = newFilter("album", a.setFilter, a.filterApplied)
 	a.filterBtn = newButton("Filter")
 	a.filterBtn.SetSelectedFunc(func() {
 		if filterFunc != nil {
 			filterFunc(a.filter, nil)
 		}
 	})
+	a.filterEnabled = true
 
 	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.options,
 		a.paging.Previous, a.paging.Next, a.sort, a.filterBtn, a.list}
 	a.Banner.Selectable = selectables
 
 	a.Grid.SetRows(1, 1, 1, 1, -1)
-	a.Grid.SetColumns(6, 2, 10, -1, 10, -1, 10, -3)
+	a.Grid.SetColumns(6, 2, 10, -1, 10, -1, 15, -1, 10, -3)
 	a.Grid.SetMinSize(1, 6)
 	a.Grid.SetBackgroundColor(config.Color.Background)
 	a.list.Grid.SetColumns(1, -1)
@@ -346,6 +362,14 @@ func NewAlbumList(selectAlbum func(album *models.Album), context contextOperator
 
 	a.setButtons()
 	return a
+}
+
+func (a *AlbumList) filterApplied(status bool) {
+	if status {
+		a.filterBtn.SetLabel("Filter *")
+	} else {
+		a.filterBtn.SetLabel("Filter")
+	}
 }
 
 func (a *AlbumList) InputHandler() func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {

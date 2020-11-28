@@ -84,7 +84,7 @@ func bindDefaultTheme() {
 		ContrastSecondaryTextColor:  0,
 		PrimitiveBackgroundColor:    colors.Background,
 		ContrastBackgroundColor:     colors.Background,
-		MoreContrastBackgroundColor: colors.Modal.Background,
+		MoreContrastBackgroundColor: colors.Status.ProgressBar,
 		ContextMenuPaddingTop:       0,
 		ContextMenuPaddingBottom:    0,
 		ContextMenuPaddingLeft:      1,

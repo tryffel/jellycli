@@ -21,6 +21,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"io"
 	"os"
 	"os/signal"
@@ -48,6 +49,10 @@ type app struct {
 var disableGui = false
 
 func initApplication() (*app, error) {
+
+	if viper.GetBool("player_nogui") {
+		disableGui = true
+	}
 
 	logFile, err := initLogging()
 	if err != nil {

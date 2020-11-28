@@ -569,11 +569,12 @@ func (jf *Jellyfin) parseAlbums(resp io.Reader) (albumList []*models.Album, numR
 }
 
 // GetAlbums returns albums with given paging. It also returns number of all albums
-func (jf *Jellyfin) GetAlbums(paging interfaces.Paging) (albumList []*models.Album, numRecords int, err error) {
+func (jf *Jellyfin) GetAlbums(opts *interfaces.QueryOpts) (albumList []*models.Album, numRecords int, err error) {
 	params := *jf.defaultParams()
 	params.enableRecursive()
-	params.setSorting("SortName", "Ascending")
-	params.setPaging(paging)
+	params.setPaging(opts.Paging)
+	params.setSortingByType(models.TypeAlbum, opts.Sort)
+	params.setFilter(models.TypeAlbum, opts.Filter)
 	params.setIncludeTypes(mediaTypeAlbum)
 	resp, err := jf.get(fmt.Sprintf("/Users/%s/Items", jf.userId), &params)
 	if resp != nil {

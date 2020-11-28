@@ -42,23 +42,16 @@ func (i *Items) Search(itemType models.ItemType, query string) ([]models.Item, e
 	return i.browser.Search(query, itemType, config.AppConfig.Player.SearchResultsLimit)
 }
 
-func (i *Items) GetArtists(paging interfaces.Paging) ([]*models.Artist, int, error) {
-	query := &interfaces.QueryOpts{
-		Paging: paging,
-	}
-	query.Sort = interfaces.NewSort(interfaces.SortByRandom)
-	query.Filter = interfaces.Filter{
-		YearRange: [2]int{1960, 1980},
-	}
-	return i.browser.GetArtists(query)
+func (i *Items) GetArtists(opts *interfaces.QueryOpts) ([]*models.Artist, int, error) {
+	return i.browser.GetArtists(opts)
 }
 
 func (i *Items) GetAlbumArtists(paging interfaces.Paging) ([]*models.Artist, int, error) {
 	return i.browser.GetAlbumArtists(paging)
 }
 
-func (i *Items) GetAlbums(paging interfaces.Paging) ([]*models.Album, int, error) {
-	return i.browser.GetAlbums(paging)
+func (i *Items) GetAlbums(opts *interfaces.QueryOpts) ([]*models.Album, int, error) {
+	return i.browser.GetAlbums(opts)
 }
 
 func (i *Items) GetArtistAlbums(artist models.Id) ([]*models.Album, error) {

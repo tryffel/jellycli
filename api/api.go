@@ -54,7 +54,7 @@ type Browser interface {
 	// GetAlbumArtists returns artists that are marked as album artists. See GetArtists.
 	GetAlbumArtists(paging interfaces.Paging) ([]*models.Artist, int, error)
 	// GetAlbums gets albums with given paging. Only PageSize and CurrentPage are used. Total count is returned
-	GetAlbums(paging interfaces.Paging) ([]*models.Album, int, error)
+	GetAlbums(paging *interfaces.QueryOpts) ([]*models.Album, int, error)
 
 	// GetArtistAlbums returns albums that artist takes part in.
 	GetArtistAlbums(artist models.Id) ([]*models.Album, error)

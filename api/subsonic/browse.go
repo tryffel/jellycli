@@ -90,11 +90,11 @@ func (s *Subsonic) getAlbums(params *params) ([]*models.Album, error) {
 	return albums, nil
 }
 
-func (s *Subsonic) GetAlbums(paging interfaces.Paging) ([]*models.Album, int, error) {
+func (s *Subsonic) GetAlbums(opts *interfaces.QueryOpts) ([]*models.Album, int, error) {
 	params := &params{}
 	(*params)["type"] = "alphabeticalByName"
-	(*params)["offset"] = strconv.Itoa(paging.Offset())
-	(*params)["size"] = strconv.Itoa(paging.PageSize)
+	(*params)["offset"] = strconv.Itoa(opts.Paging.Offset())
+	(*params)["size"] = strconv.Itoa(opts.Paging.PageSize)
 	albums, err := s.getAlbums(params)
 	return albums, len(albums), err
 }

@@ -136,6 +136,12 @@ type AlbumList struct {
 	selectPageFunc func(paging interfaces.Paging)
 	similarFunc    func(id models.Id)
 	similarEnabled bool
+
+	sort      *sort
+	filter    *filter
+	filterBtn *button
+	queryOpts *interfaces.QueryOpts
+	queryFunc func(opts *interfaces.QueryOpts)
 }
 
 func (a *AlbumList) AddAlbum(c *AlbumCover) {
@@ -245,24 +251,30 @@ func (a *AlbumList) setButtons() {
 	a.Grid.AddItem(a.playBtn, 3, 2, 1, 1, 1, 10, false)
 
 	if a.pagingEnabled {
-		selectables = append(selectables, a.paging.Previous, a.paging.Next)
+		selectables = append(selectables, a.paging.Previous, a.paging.Next, a.filterBtn)
 		a.Grid.AddItem(a.paging, 3, 4, 1, 3, 1, 10, false)
+		//a.Grid.AddItem(a.sort, 3, 6, 1, 3, 1, 10, false)
+		a.Grid.AddItem(a.filterBtn, 3, 6, 1, 3, 1, 10, false)
 	}
-	if a.similarEnabled {
-		selectables = append(selectables, a.options)
-		col := 4
-		if a.pagingEnabled {
-			col = 6
+	/*
+		if a.similarEnabled {
+			selectables = append(selectables, a.options)
+			col := 4
+			if a.pagingEnabled {
+				col = 6
+			}
+			a.Grid.AddItem(a.options, 3, col, 1, 1, 1, 10, false)
 		}
-		a.Grid.AddItem(a.options, 3, col, 1, 1, 1, 10, false)
-	}
+
+	*/
 	selectables = append(selectables, a.list)
 	a.Banner.Selectable = selectables
 	a.Grid.AddItem(a.list, 4, 0, 1, 8, 6, 20, false)
 }
 
 //NewAlbumList constructs new albumList view
-func NewAlbumList(selectAlbum func(album *models.Album), context contextOperator) *AlbumList {
+func NewAlbumList(selectAlbum func(album *models.Album), context contextOperator,
+	queryFunc func(opts *interfaces.QueryOpts), filterFunc openFilterFunc) *AlbumList {
 	a := &AlbumList{
 		itemList:   newItemList(nil),
 		context:    context,
@@ -270,6 +282,9 @@ func NewAlbumList(selectAlbum func(album *models.Album), context contextOperator
 		artist:     &models.Artist{},
 		playBtn:    newButton("Play all"),
 		options:    newDropDown("Options"),
+
+		queryFunc: queryFunc,
+		queryOpts: interfaces.DefaultQueryOpts(),
 	}
 	a.paging = NewPageSelector(a.selectPage)
 	a.list = newScrollList(a.selectAlbum)
@@ -277,7 +292,26 @@ func NewAlbumList(selectAlbum func(album *models.Album), context contextOperator
 
 	a.list.Grid.SetColumns(-1, 5)
 
-	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.options, a.paging.Previous, a.paging.Next, a.list}
+	if queryFunc != nil {
+		a.sort = newSort(a.setSorting,
+			interfaces.SortByName,
+			interfaces.SortByArtist,
+			interfaces.SortByDate,
+			interfaces.SortByRandom,
+			interfaces.SortByPlayCount,
+		)
+	}
+
+	a.filter = newFilter("artist", a.setFilter)
+	a.filterBtn = newButton("Filter")
+	a.filterBtn.SetSelectedFunc(func() {
+		if filterFunc != nil {
+			filterFunc(a.filter, nil)
+		}
+	})
+
+	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.options,
+		a.paging.Previous, a.paging.Next, a.sort, a.filterBtn, a.list}
 	a.Banner.Selectable = selectables
 
 	a.Grid.SetRows(1, 1, 1, 1, -1)
@@ -340,8 +374,22 @@ func (a *AlbumList) showSimilar() {
 	}
 }
 
+func (a *AlbumList) setSorting(sort interfaces.Sort) {
+	a.queryOpts.Sort = sort
+	if a.queryFunc != nil {
+		a.queryFunc(a.queryOpts)
+	}
+}
+
+func (a *AlbumList) setFilter(filter interfaces.Filter) {
+	a.queryOpts.Filter = filter
+	if a.queryFunc != nil {
+		a.queryFunc(a.queryOpts)
+	}
+}
+
 func newLatestAlbums(selectAlbum func(album *models.Album), context contextOperator) *AlbumList {
-	a := NewAlbumList(selectAlbum, context)
+	a := NewAlbumList(selectAlbum, context, nil, nil)
 	a.EnableArtistMode(false)
 	a.EnablePaging(false)
 	a.EnableSimilar(false)
@@ -349,7 +397,7 @@ func newLatestAlbums(selectAlbum func(album *models.Album), context contextOpera
 }
 
 func newFavoriteAlbums(selectAlbum func(album *models.Album), context contextOperator) *AlbumList {
-	a := NewAlbumList(selectAlbum, context)
+	a := NewAlbumList(selectAlbum, context, nil, nil)
 	a.EnableArtistMode(false)
 	a.EnablePaging(true)
 	a.EnableSimilar(false)

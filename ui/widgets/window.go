@@ -83,18 +83,17 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 		layout: twidgets.NewModalLayout(),
 	}
 
-	w.artistList = NewArtistList(w.selectArtist)
+	w.artistList = NewArtistList(w.selectArtist, w.queryArtists)
 	w.artistList.SetBackCallback(w.goBack)
 	w.artistList.selectPageFunc = w.showArtistPage
-	w.albumList = NewAlbumList(w.selectAlbum, &w)
+	w.albumList = NewAlbumList(w.selectAlbum, &w, w.showAlbumPage, w.openFilterModal)
 	w.albumList.SetBackCallback(w.goBack)
-	w.albumList.selectPageFunc = w.showAlbumPage
 	w.albumList.similarFunc = w.showSimilarArtists
 
 	w.latestAlbums = newLatestAlbums(w.selectAlbum, &w)
 	w.favoriteAlbums = newFavoriteAlbums(w.selectAlbum, &w)
 
-	w.similarAlbums = NewAlbumList(w.selectAlbum, &w)
+	w.similarAlbums = NewAlbumList(w.selectAlbum, &w, w.showAlbumPage, w.openFilterModal)
 	w.similarAlbums.SetBackCallback(w.goBack)
 	w.similarAlbums.EnablePaging(false)
 
@@ -326,7 +325,7 @@ func (w *Window) navBarCtrl(key tcell.Key) bool {
 func (w *Window) moveCtrl(key tcell.Key) bool {
 	if key == tcell.KeyTAB {
 		if w.hasModal {
-			w.closeModal(w.modal)
+			return false
 		}
 
 		if w.mediaViewSelected {
@@ -561,13 +560,14 @@ func (w *Window) selectMedia(m MediaSelect) {
 		w.setViewWidget(w.songs, true)
 	case MediaArtists, MediaAlbumArtists:
 		paging := interfaces.DefaultPaging()
+		opts := interfaces.DefaultQueryOpts()
 		var artists []*models.Artist
 		var err error
 		var total int
 		var title string
 		if m == MediaArtists {
 			title = "All artists"
-			artists, total, err = w.mediaItems.GetArtists(paging)
+			artists, total, err = w.mediaItems.GetArtists(opts)
 		} else if m == MediaAlbumArtists {
 			title = "All album artists"
 			artists, total, err = w.mediaItems.GetAlbumArtists(paging)
@@ -588,6 +588,7 @@ func (w *Window) selectMedia(m MediaSelect) {
 		w.artistList.SetText(fmt.Sprintf("%s: %d", title, paging.TotalItems))
 	case MediaAlbums, MediaFavoriteAlbums:
 		paging := interfaces.DefaultPaging()
+		opts := interfaces.DefaultQueryOpts()
 		var albums []*models.Album
 		var err error
 		var total int
@@ -596,7 +597,7 @@ func (w *Window) selectMedia(m MediaSelect) {
 		list := w.albumList
 
 		if m == MediaAlbums {
-			albums, total, err = w.mediaItems.GetAlbums(paging)
+			albums, total, err = w.mediaItems.GetAlbums(opts)
 			title = "All Albums"
 			w.albumList.EnablePaging(true)
 		} else if m == MediaFavoriteAlbums {
@@ -698,7 +699,9 @@ func (w *Window) showRecentSongsPage(page interfaces.Paging) {
 }
 
 func (w *Window) showArtistPage(page interfaces.Paging) {
-	artists, _, err := w.mediaItems.GetArtists(page)
+	opts := interfaces.DefaultQueryOpts()
+	opts.Paging = page
+	artists, _, err := w.mediaItems.GetArtists(opts)
 	if err != nil {
 		logrus.Errorf("get albumList page: %v", err)
 		return
@@ -710,19 +713,44 @@ func (w *Window) showArtistPage(page interfaces.Paging) {
 	w.setViewWidget(w.artistList, false)
 }
 
-func (w *Window) showAlbumPage(page interfaces.Paging) {
-	albums, total, err := w.mediaItems.GetAlbums(page)
+func (w *Window) queryArtists(opts *interfaces.QueryOpts) {
+	artists, _, err := w.mediaItems.GetArtists(opts)
+	if err != nil {
+		logrus.Errorf("get albumList page: %v", err)
+		return
+	}
+
+	w.artistList.Clear()
+	w.artistList.AddArtists(artists)
+	w.artistList.EnablePaging(true)
+	w.setViewWidget(w.artistList, false)
+}
+
+func (w *Window) showAlbumPage(opts *interfaces.QueryOpts) {
+	albums, total, err := w.mediaItems.GetAlbums(opts)
 	if err != nil {
 		logrus.Errorf("get all albums: %v", err)
 		return
 	}
-	page.SetTotalItems(total)
+	opts.Paging.SetTotalItems(total)
 	w.mediaNav.SetCount(MediaAlbums, total)
 
-	w.albumList.SetPage(page)
+	w.albumList.SetPage(opts.Paging)
 	w.albumList.Clear()
 	w.albumList.EnablePaging(true)
 	w.albumList.SetAlbums(albums)
+}
+
+func (w *Window) openFilterModal(m modal.Modal, doneFunc func()) {
+	closeFunc := func() {
+		w.closeModal(m)
+		if doneFunc != nil {
+			doneFunc()
+		}
+	}
+
+	m.SetDoneFunc(closeFunc)
+	w.showModal(m, 18, 45, false)
 }
 
 func (w *Window) playSong(song *models.Song) {

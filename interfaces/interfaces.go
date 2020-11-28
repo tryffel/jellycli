@@ -67,12 +67,12 @@ type ItemController interface {
 	// Queue and history returns error.
 	Search(itemType models.ItemType, query string) ([]models.Item, error)
 	// GetArtists gets artist with given paging. Only PageSize and CurrentPage are used. Total count is returned
-	GetArtists(paging Paging) ([]*models.Artist, int, error)
+	GetArtists(opts *QueryOpts) ([]*models.Artist, int, error)
 
 	// GetAlbumArtists returns artists that are marked as album artists. See GetArtists.
 	GetAlbumArtists(paging Paging) ([]*models.Artist, int, error)
 	// GetAlbums gets albums with given paging. Only PageSize and CurrentPage are used. Total count is returned
-	GetAlbums(paging Paging) ([]*models.Album, int, error)
+	GetAlbums(opts *QueryOpts) ([]*models.Album, int, error)
 
 	GetArtistAlbums(artist models.Id) ([]*models.Album, error)
 

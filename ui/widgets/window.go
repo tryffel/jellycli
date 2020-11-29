@@ -127,9 +127,9 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 
 	w.setLayout()
 	w.app.SetRoot(w.layout, true)
-	if config.AppConfig.Player.MouseEnabled {
+	if config.AppConfig.Gui.MouseEnabled {
 		w.app.EnableMouse(true)
-		interval := time.Millisecond * time.Duration(config.AppConfig.Player.DoubleClickMs)
+		interval := time.Millisecond * time.Duration(config.AppConfig.Gui.DoubleClickMs)
 		w.app.SetDoubleClickInterval(interval)
 	}
 
@@ -177,7 +177,7 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 		w.navBar.AddButton(btn, navBarShortucts[i])
 	}
 
-	if config.AppConfig.Player.DebugMode {
+	if config.AppConfig.Gui.DebugMode {
 		btn := cview.NewButton("Debug dump")
 		w.navBar.AddButton(btn, sc.Dump)
 	}
@@ -354,7 +354,7 @@ func (w *Window) searchCb(query string) {
 	logrus.Debug("In search callback")
 	w.searchResultsTop.ClearResults()
 
-	for _, itemType := range config.AppConfig.Player.SearchTypes {
+	for _, itemType := range config.AppConfig.Gui.SearchTypes {
 		items, err := w.mediaItems.Search(itemType, query)
 		if err == nil {
 			if len(items) > 0 {
@@ -440,7 +440,7 @@ func (w *Window) wrapCloseModal(modal modal.Modal) func() {
 
 func (w *Window) closeModal(modal modal.Modal) {
 	if w.hasModal {
-		if config.AppConfig.Player.MouseEnabled {
+		if config.AppConfig.Gui.MouseEnabled {
 			w.app.EnableMouse(true)
 		}
 		modal.Blur()
@@ -459,7 +459,7 @@ func (w *Window) closeModal(modal modal.Modal) {
 
 func (w *Window) showModal(modal modal.Modal, height, width uint, lockSize bool) {
 	if !w.hasModal {
-		if config.AppConfig.Player.MouseEnabled {
+		if config.AppConfig.Gui.MouseEnabled {
 			w.app.EnableMouse(false)
 		}
 		w.hasModal = true

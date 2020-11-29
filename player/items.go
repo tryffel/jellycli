@@ -39,7 +39,7 @@ func newItems(api api.MediaServer) *Items {
 }
 
 func (i *Items) Search(itemType models.ItemType, query string) ([]models.Item, error) {
-	return i.browser.Search(query, itemType, config.AppConfig.Player.SearchResultsLimit)
+	return i.browser.Search(query, itemType, config.AppConfig.Gui.SearchResultsLimit)
 }
 
 func (i *Items) GetArtists(opts *interfaces.QueryOpts) ([]*models.Artist, int, error) {

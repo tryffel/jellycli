@@ -50,6 +50,7 @@ type AlbumList struct {
 	filter        *filter
 	filterBtn     *button
 	filterEnabled bool
+	sortEnabled   bool
 	queryOpts     *interfaces.QueryOpts
 	queryFunc     func(opts *interfaces.QueryOpts)
 }
@@ -159,6 +160,16 @@ func (a *AlbumList) EnableFilter(enabled bool) {
 	}
 }
 
+func (a *AlbumList) EnableSorting(enabled bool) {
+	if a.sort != nil {
+		a.sortEnabled = enabled
+		if enabled {
+			a.similarEnabled = false
+		}
+		a.setButtons()
+	}
+}
+
 func (a *AlbumList) setButtons() {
 	a.Banner.Grid.Clear()
 	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn}
@@ -177,14 +188,22 @@ func (a *AlbumList) setButtons() {
 			col = 6
 		}
 		a.Grid.AddItem(a.options, 3, col, 1, 1, 1, 10, false)
-	} else if a.filterEnabled && a.filterBtn != nil {
-		selectables = append(selectables, a.sort, a.filterBtn)
+	} else {
 		col := 4
-		if a.pagingEnabled {
-			col = 6
+		if a.sortEnabled {
+			if a.pagingEnabled {
+				col += 2
+			}
+			selectables = append(selectables, a.sort)
+			a.Grid.AddItem(a.sort, 3, col, 1, 1, 1, 10, false)
 		}
-		a.Grid.AddItem(a.sort, 3, col, 1, 1, 1, 10, false)
-		a.Grid.AddItem(a.filterBtn, 3, col+2, 1, 1, 1, 10, false)
+		if a.filterEnabled && a.filterBtn != nil {
+			selectables = append(selectables, a.filterBtn)
+			if a.pagingEnabled {
+				col += 2
+			}
+			a.Grid.AddItem(a.filterBtn, 3, col+2, 1, 1, 1, 10, false)
+		}
 	}
 
 	selectables = append(selectables, a.list)
@@ -210,7 +229,7 @@ func NewAlbumList(selectAlbum func(album *models.Album), context contextOperator
 
 	a.list.Grid.SetColumns(-1, 5)
 
-	if queryFunc != nil {
+	if queryFunc != nil && config.AppConfig.Gui.EnableSorting {
 		a.sort = newSort(a.setSorting,
 			interfaces.SortByName,
 			interfaces.SortByArtist,
@@ -221,13 +240,13 @@ func NewAlbumList(selectAlbum func(album *models.Album), context contextOperator
 	}
 
 	a.filter = newFilter("album", a.setFilter, a.filterApplied)
-	if filterFunc != nil {
+	if filterFunc != nil && config.AppConfig.Gui.EnableFiltering {
+		a.filterEnabled = true
 		a.filterBtn = newButton("Filter")
 		a.filterBtn.SetSelectedFunc(func() {
 			filterFunc(a.filter, nil)
 		})
 	}
-	a.filterEnabled = true
 
 	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.options,
 		a.paging.Previous, a.paging.Next, a.list}

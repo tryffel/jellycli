@@ -59,6 +59,13 @@ type Gui struct {
 	// valid types: artist,album,song,playlist,genre
 	SearchTypes        []models.ItemType `yaml:"search_types"`
 	SearchResultsLimit int               `yaml:"search_results_limit"`
+
+	// EnableSorting enables sorting on remote server
+	EnableSorting bool `yaml:"enable_sorting"`
+	// EnableFiltering enables filtering on remote server
+	EnableFiltering bool `yaml:"enable_filtering"`
+	// EnableResultsFiltering enables filtering existing results, 'search inside results'.
+	EnableResultsFiltering bool `yaml:"enable_results_filtering"`
 }
 
 func (c *Config) ConfigFile() string {
@@ -130,6 +137,8 @@ func (c *Config) initNewConfig() {
 
 	tempDir := os.TempDir()
 	c.Player.LogFile = path.Join(tempDir, "jellycli.log")
+
+	c.Gui.EnableResultsFiltering = true
 }
 
 // can config file be considered empty / not configured
@@ -197,6 +206,10 @@ func ConfigFromViper() error {
 			MouseEnabled:        viper.GetBool("gui.mouse_enabled"),
 			DoubleClickMs:       viper.GetInt("gui.double_click_ms"),
 			SearchResultsLimit:  viper.GetInt("gui.search_results_limit"),
+
+			EnableSorting:          viper.GetBool("gui.enable_sorting"),
+			EnableFiltering:        viper.GetBool("gui.enable_filtering"),
+			EnableResultsFiltering: viper.GetBool("gui.enable_results_filtering"),
 		},
 	}
 
@@ -269,4 +282,8 @@ func UpdateViper() {
 	viper.Set("gui.double_click_ms", AppConfig.Gui.DoubleClickMs)
 	viper.Set("gui.pagesize", AppConfig.Gui.PageSize)
 	viper.Set("gui.search_types", AppConfig.Gui.SearchTypes)
+
+	viper.Set("gui.enable_sorting", AppConfig.Gui.EnableSorting)
+	viper.Set("gui.enable_filtering", AppConfig.Gui.EnableFiltering)
+	viper.Set("gui.enable_results_filtering", AppConfig.Gui.EnableResultsFiltering)
 }

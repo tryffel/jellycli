@@ -119,7 +119,7 @@ func (i *itemList) InputHandler() func(event *tcell.EventKey, setFocus func(p cv
 	return func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
 		r := event.Rune()
 		if r == ' ' {
-			if i.reduceEnabled {
+			if i.reduceEnabled && config.AppConfig.Gui.EnableResultsFiltering {
 				if i.setReducerVisible != nil {
 					i.setReducerVisible(true)
 					i.reduceVisible = true

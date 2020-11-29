@@ -381,6 +381,7 @@ func (w *Window) showSearchResults(itemType models.ItemType, results []models.It
 		w.albumList.Clear()
 		w.albumList.EnablePaging(false)
 		w.albumList.EnableFilter(false)
+		w.albumList.EnableSorting(false)
 		w.albumList.SetLabel(fmt.Sprintf("[yellow::]Search results for '%s'[-::]\n%d albums", query, len(results)))
 		w.albumList.SetAlbums(albums)
 		w.albumList.EnableSimilar(false)
@@ -503,6 +504,7 @@ func (w *Window) selectMedia(m MediaSelect) {
 			w.latestAlbums.description.SetText(fmt.Sprintf("Latest albums\nCount: %d", len(albums)))
 
 			w.latestAlbums.EnableFilter(false)
+			w.latestAlbums.EnableSorting(false)
 			w.latestAlbums.EnablePaging(false)
 
 			w.latestAlbums.Clear()
@@ -604,12 +606,14 @@ func (w *Window) selectMedia(m MediaSelect) {
 			title = "All Albums"
 			w.albumList.EnablePaging(true)
 			w.albumList.EnableFilter(true)
+			w.albumList.EnableSorting(true)
 		} else if m == MediaFavoriteAlbums {
 			paging.PageSize = 200
 			albums, total, err = w.mediaItems.GetFavoriteAlbums(paging)
 			title = "Favorite albums"
 			w.albumList.EnablePaging(false)
 			w.albumList.EnableFilter(false)
+			w.albumList.EnableSorting(false)
 			list = w.favoriteAlbums
 		}
 
@@ -742,6 +746,7 @@ func (w *Window) showAlbumPage(opts *interfaces.QueryOpts) {
 	w.albumList.Clear()
 	w.albumList.EnablePaging(true)
 	w.albumList.EnableFilter(true)
+	w.albumList.EnableSorting(true)
 	w.albumList.SetAlbums(albums)
 }
 
@@ -827,6 +832,7 @@ func (w *Window) selectGenre(id models.IdName) {
 	w.albumList.EnablePaging(false)
 	w.albumList.EnableSimilar(false)
 	w.albumList.EnableFilter(false)
+	w.albumList.EnableSorting(false)
 	w.albumList.SetAlbums(albums)
 	w.albumList.SetText("Genre " + id.Name)
 	w.setViewWidget(w.albumList, true)

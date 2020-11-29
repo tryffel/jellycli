@@ -21,5 +21,5 @@ require (
 	gitlab.com/tslocum/cview v1.4.5
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
 	golang.org/x/sys v0.0.0-20200509044756-6aff5f38e54f // indirect
-	tryffel.net/go/twidgets v0.0.0-20200509125417-ad1a73eaca8f
+	tryffel.net/go/twidgets v0.0.0-20201129095253-a35c46db2571
 )

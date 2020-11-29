@@ -415,3 +415,5 @@ honnef.co/go/tools v0.0.1-2019.2.3/go.mod h1:a3bituU0lyd329TUQxRnasdCoJDkEUEAqEt
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=
 tryffel.net/go/twidgets v0.0.0-20200509125417-ad1a73eaca8f h1:y+oTvEwOUbGQ1SPBTumMTbCTqz4H++YgkyFWprMHpjI=
 tryffel.net/go/twidgets v0.0.0-20200509125417-ad1a73eaca8f/go.mod h1:p8xJcL57OPI9r1Iab9CI53SeLU6uAWYynngcD5cdTck=
+tryffel.net/go/twidgets v0.0.0-20201129095253-a35c46db2571 h1:M5LjTJLtArR7d543zdb3fj9Z/TuDvJ/8tHbLm1YS42A=
+tryffel.net/go/twidgets v0.0.0-20201129095253-a35c46db2571/go.mod h1:p8xJcL57OPI9r1Iab9CI53SeLU6uAWYynngcD5cdTck=

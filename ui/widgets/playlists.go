@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"github.com/gdamore/tcell"
 	"gitlab.com/tslocum/cview"
+	"strings"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/models"
 	"tryffel.net/go/jellycli/util"
@@ -86,46 +87,49 @@ type Playlists struct {
 	playBtn        *button
 }
 
-func (a *Playlists) AddAlbum(c *PlaylistCover) {
-	a.list.AddItem(c)
-	a.playlistCovers = append(a.playlistCovers, c)
-}
-
-func (a *Playlists) Clear() {
-	a.list.Clear()
-	a.playlistCovers = make([]*PlaylistCover, 0)
+func (pl *Playlists) Clear() {
+	pl.list.Clear()
+	pl.playlistCovers = make([]*PlaylistCover, 0)
+	pl.resetReduce()
 }
 
 // SetPlaylist sets albums
-func (a *Playlists) SetPlaylists(playlists []*models.Playlist) {
-	a.list.Clear()
-	a.playlistCovers = make([]*PlaylistCover, len(playlists))
+func (pl *Playlists) SetPlaylists(playlists []*models.Playlist) {
+	pl.list.Clear()
+	pl.playlistCovers = make([]*PlaylistCover, len(playlists))
+
+	itemTexts := make([]string, len(playlists))
 
 	items := make([]twidgets.ListItem, len(playlists))
 	for i, v := range playlists {
 		cover := NewPlaylistCover(i+1, v)
 		items[i] = cover
-		a.playlistCovers[i] = cover
+		pl.playlistCovers[i] = cover
+
+		itemTexts[i] = strings.ToLower(v.Name)
 	}
-	a.list.AddItems(items...)
-	a.description.SetText(fmt.Sprintf("Playlists: %d", len(playlists)))
+	pl.list.AddItems(items...)
+	pl.description.SetText(fmt.Sprintf("Playlists: %d", len(playlists)))
+	pl.items = items
+	pl.itemsTexts = itemTexts
 }
 
 // NewPlaylists constructs new playlist view
 func NewPlaylists(selectPlaylist func(playlist *models.Playlist)) *Playlists {
 	a := &Playlists{
-
 		selectFunc: selectPlaylist,
 		playBtn:    newButton("Play all"),
 	}
 	a.itemList = newItemList(a.selectAlbum)
 	a.itemList.list.ItemHeight = 3
+	a.itemList.reduceEnabled = true
+	a.itemList.setReducerVisible = a.showReduceInput
 	a.list.Grid.SetColumns(-1, 5)
 
 	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.list}
 	a.prevBtn.SetSelectedFunc(a.goBack)
 	a.Banner.Selectable = selectables
-	a.Grid.SetRows(1, 1, 1, 1, -1)
+	a.Grid.SetRows(1, 1, 1, 1, -1, 3)
 	a.Grid.SetColumns(6, 2, 10, -1, 10, -1, 10, -3)
 	a.Grid.SetMinSize(1, 6)
 	a.Grid.SetBackgroundColor(config.Color.Background)
@@ -134,22 +138,34 @@ func NewPlaylists(selectPlaylist func(playlist *models.Playlist)) *Playlists {
 	a.Grid.AddItem(a.prevBtn, 0, 0, 1, 1, 1, 5, false)
 	a.Grid.AddItem(a.description, 0, 2, 2, 6, 1, 10, false)
 	a.Grid.AddItem(a.playBtn, 3, 2, 1, 1, 1, 10, false)
-	a.Grid.AddItem(a.list, 4, 0, 1, 8, 6, 20, false)
+	a.Grid.AddItem(a.list, 4, 0, 2, 8, 6, 20, false)
 
 	a.listFocused = false
 	return a
 }
 
-func (a *Playlists) InputHandler() func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
+func (pl *Playlists) InputHandler() func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
 	return func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
-		a.Banner.InputHandler()(event, setFocus)
+		pl.Banner.InputHandler()(event, setFocus)
 	}
 }
 
-func (a *Playlists) selectAlbum(index int) {
-	if a.selectFunc != nil {
-		index := a.list.GetSelectedIndex()
-		album := a.playlistCovers[index]
-		a.selectFunc(album.album)
+func (pl *Playlists) selectAlbum(index int) {
+	if pl.selectFunc != nil {
+		album := pl.playlistCovers[index]
+		pl.selectFunc(album.album)
+		pl.resetReduce()
+	}
+}
+
+func (pl *Playlists) showReduceInput(visible bool) {
+	if visible {
+		pl.Grid.AddItem(pl.reduceInput, 5, 0, 1, 10, 1, 20, false)
+		pl.Grid.RemoveItem(pl.list)
+		pl.Grid.AddItem(pl.list, 4, 0, 1, 10, 6, 20, false)
+	} else {
+		pl.Grid.RemoveItem(pl.reduceInput)
+		pl.Grid.RemoveItem(pl.list)
+		pl.Grid.AddItem(pl.list, 4, 0, 2, 10, 6, 20, false)
 	}
 }

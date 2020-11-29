@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"github.com/gdamore/tcell"
 	"gitlab.com/tslocum/cview"
+	"strings"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
@@ -56,6 +57,8 @@ type AlbumList struct {
 func (a *AlbumList) AddAlbum(c *AlbumCover) {
 	a.list.AddItem(c)
 	a.albumCovers = append(a.albumCovers, c)
+
+	a.itemsTexts = append(a.itemsTexts, strings.ToLower(c.name))
 }
 
 func (a *AlbumList) Clear() {
@@ -66,6 +69,7 @@ func (a *AlbumList) Clear() {
 	if a.filterBtn != nil {
 		a.filter.Clear()
 	}
+	a.resetReduce()
 }
 
 func (a *AlbumList) SetLabel(label string) {
@@ -88,6 +92,7 @@ func (a *AlbumList) selectPage(n int) {
 	a.queryOpts.Paging = a.page
 	if a.queryFunc != nil {
 		a.queryFunc(a.queryOpts)
+		a.resetReduce()
 	}
 }
 
@@ -95,6 +100,8 @@ func (a *AlbumList) selectPage(n int) {
 func (a *AlbumList) SetAlbums(albums []*models.Album) {
 	a.list.Clear()
 	a.albumCovers = make([]*AlbumCover, len(albums))
+
+	a.itemsTexts = make([]string, len(albums))
 
 	offset := 0
 	if a.pagingEnabled {
@@ -112,8 +119,17 @@ func (a *AlbumList) SetAlbums(albums []*models.Album) {
 		}
 		text := fmt.Sprintf("%d. %s\n     %s - %d", offset+i+1, v.Name, artist, v.Year)
 		cover.setText(text)
+
+		itemText := v.Name
+		if len(v.AdditionalArtists) > 0 {
+			for _, v := range v.AdditionalArtists {
+				itemText += " " + v.Name
+			}
+		}
+		a.itemsTexts[i] = strings.ToLower(itemText)
 	}
 	a.list.AddItems(items...)
+	a.items = items
 }
 
 // EnablePaging enables paging and shows page on banner
@@ -173,14 +189,13 @@ func (a *AlbumList) setButtons() {
 
 	selectables = append(selectables, a.list)
 	a.Banner.Selectable = selectables
-	a.Grid.AddItem(a.list, 4, 0, 1, 10, 6, 20, false)
+	a.Grid.AddItem(a.list, 4, 0, 2, 10, 6, 20, false)
 }
 
 //NewAlbumList constructs new albumList view
 func NewAlbumList(selectAlbum func(album *models.Album), context contextOperator,
 	queryFunc func(opts *interfaces.QueryOpts), filterFunc openFilterFunc) *AlbumList {
 	a := &AlbumList{
-		itemList:   newItemList(nil),
 		context:    context,
 		selectFunc: selectAlbum,
 		playBtn:    newButton("Play all"),
@@ -189,8 +204,8 @@ func NewAlbumList(selectAlbum func(album *models.Album), context contextOperator
 		queryFunc: queryFunc,
 		queryOpts: interfaces.DefaultQueryOpts(),
 	}
+	a.itemList = newItemList(a.selectAlbum)
 	a.paging = NewPageSelector(a.selectPage)
-	a.list = newScrollList(a.selectAlbum)
 	a.list.ItemHeight = 3
 
 	a.list.Grid.SetColumns(-1, 5)
@@ -218,7 +233,7 @@ func NewAlbumList(selectAlbum func(album *models.Album), context contextOperator
 		a.paging.Previous, a.paging.Next, a.list}
 	a.Banner.Selectable = selectables
 
-	a.Grid.SetRows(1, 1, 1, 1, -1)
+	a.Grid.SetRows(1, 1, 1, 1, -1, 3)
 	a.Grid.SetColumns(6, 2, 10, -1, 10, -1, 15, -1, 10, -3)
 	a.Grid.SetMinSize(1, 6)
 	a.Grid.SetBackgroundColor(config.Color.Background)
@@ -228,6 +243,8 @@ func NewAlbumList(selectAlbum func(album *models.Album), context contextOperator
 	a.pagingEnabled = true
 	a.similarEnabled = true
 
+	a.reduceEnabled = true
+	a.setReducerVisible = a.showReduceInput
 	a.setButtons()
 	return a
 }
@@ -245,17 +262,18 @@ func (a *AlbumList) InputHandler() func(event *tcell.EventKey, setFocus func(p c
 		if event.Key() == tcell.KeyEnter && event.Modifiers() == tcell.ModAlt {
 			a.list.InputHandler()(event, setFocus)
 		} else {
-			a.Banner.InputHandler()(event, setFocus)
+			a.itemList.InputHandler()(event, setFocus)
 		}
 	}
 }
 
 func (a *AlbumList) selectAlbum(index int) {
 	if a.selectFunc != nil {
-		index := a.list.GetSelectedIndex()
 		if len(a.albumCovers) > index {
 			album := a.albumCovers[index]
 			a.selectFunc(album.album)
+
+			a.resetReduce()
 		}
 	}
 }
@@ -264,6 +282,7 @@ func (a *AlbumList) setSorting(sort interfaces.Sort) {
 	a.queryOpts.Sort = sort
 	if a.queryFunc != nil {
 		a.queryFunc(a.queryOpts)
+		a.resetReduce()
 	}
 }
 
@@ -271,6 +290,19 @@ func (a *AlbumList) setFilter(filter interfaces.Filter) {
 	a.queryOpts.Filter = filter
 	if a.queryFunc != nil {
 		a.queryFunc(a.queryOpts)
+		a.resetReduce()
+	}
+}
+
+func (a *AlbumList) showReduceInput(visible bool) {
+	if visible {
+		a.Grid.AddItem(a.reduceInput, 5, 0, 1, 10, 1, 20, false)
+		a.Grid.RemoveItem(a.list)
+		a.Grid.AddItem(a.list, 4, 0, 1, 10, 6, 20, false)
+	} else {
+		a.Grid.RemoveItem(a.reduceInput)
+		a.Grid.RemoveItem(a.list)
+		a.Grid.AddItem(a.list, 4, 0, 2, 10, 6, 20, false)
 	}
 }
 

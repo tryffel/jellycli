@@ -20,8 +20,8 @@ package widgets
 
 import (
 	"fmt"
-	"github.com/gdamore/tcell"
 	"gitlab.com/tslocum/cview"
+	"strings"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
@@ -46,18 +46,15 @@ type ArtistList struct {
 
 func NewArtistList(selectFunc func(artist *models.Artist), queryFunc func(opts *interfaces.QueryOpts)) *ArtistList {
 	a := &ArtistList{
-		itemList:   newItemList(nil),
 		selectFunc: selectFunc,
 		artists:    make([]*ArtistCover, 0),
 		queryFunc:  queryFunc,
 		queryOpts:  interfaces.DefaultQueryOpts(),
 	}
+	a.itemList = newItemList(a.selectArtist)
 	a.paging = NewPageSelector(a.selectPage)
 
 	a.sort = newSort(a.setSorting, interfaces.SortByName, interfaces.SortByRandom)
-
-	a.list.SetInputCapture(a.listHandler)
-	a.list.Grid.SetColumns(1, -1)
 
 	a.list.Padding = 1
 	a.list.ItemHeight = 2
@@ -66,7 +63,7 @@ func NewArtistList(selectFunc func(artist *models.Artist), queryFunc func(opts *
 	selectables := []twidgets.Selectable{a.prevBtn, a.paging.Previous, a.paging.Next, a.sort, a.list}
 	a.Banner.Selectable = selectables
 
-	a.Banner.Grid.SetRows(1, 1, 1, 1, -1)
+	a.Banner.Grid.SetRows(1, 1, 1, 1, -1, 3)
 	a.Banner.Grid.SetColumns(6, 2, 10, -1, 10, -1, 15, -3)
 	a.Banner.Grid.SetMinSize(1, 6)
 
@@ -74,7 +71,11 @@ func NewArtistList(selectFunc func(artist *models.Artist), queryFunc func(opts *
 	a.Banner.Grid.AddItem(a.description, 0, 2, 2, 6, 1, 10, false)
 	a.Banner.Grid.AddItem(a.paging, 3, 4, 1, 3, 1, 10, false)
 	a.Banner.Grid.AddItem(a.sort, 3, 6, 1, 1, 1, 10, false)
-	a.Banner.Grid.AddItem(a.list, 4, 0, 1, 8, 4, 10, false)
+	a.Banner.Grid.AddItem(a.list, 4, 0, 2, 8, 4, 10, false)
+
+	a.reduceEnabled = true
+	a.setReducerVisible = a.showReducer
+
 	return a
 }
 
@@ -106,6 +107,7 @@ func (a *ArtistList) EnablePaging(enabled bool) {
 func (a *ArtistList) Clear() {
 	a.list.Clear()
 	a.artists = make([]*ArtistCover, 0)
+	a.resetReduce()
 }
 
 func (a *ArtistList) SetPage(paging interfaces.Paging) {
@@ -116,6 +118,8 @@ func (a *ArtistList) SetPage(paging interfaces.Paging) {
 
 func (a *ArtistList) AddArtists(artists []*models.Artist) {
 	items := make([]twidgets.ListItem, len(artists))
+
+	itemTexts := make([]string, len(artists))
 
 	offset := 0
 	if a.pagingEnabled {
@@ -133,9 +137,12 @@ func (a *ArtistList) AddArtists(artists []*models.Artist) {
 				offset+i+1, v.Name, util.SecToString(v.TotalDuration)))
 		}
 		items[i] = cover
+		itemTexts[i] = strings.ToLower(cover.artist.Name)
 	}
 
 	a.list.AddItems(items...)
+	a.items = items
+	a.itemsTexts = itemTexts
 }
 
 func (a *ArtistList) selectArtist(index int) {
@@ -150,23 +157,26 @@ func (a *ArtistList) selectPage(n int) {
 		a.paging.SetPage(n)
 		a.page.CurrentPage = n
 		a.selectPageFunc(a.page)
+		a.resetReduce()
 	}
-}
-
-func (a *ArtistList) listHandler(key *tcell.EventKey) *tcell.EventKey {
-	if key.Key() == tcell.KeyEnter && a.selectFunc != nil {
-		index := a.list.GetSelectedIndex()
-		artist := a.artists[index]
-		a.selectFunc(artist.artist)
-		return nil
-	}
-	return key
 }
 
 func (a *ArtistList) setSorting(sort interfaces.Sort) {
 	a.queryOpts.Sort = sort
 	if a.queryFunc != nil {
 		a.queryFunc(a.queryOpts)
+	}
+}
+
+func (a *ArtistList) showReducer(visible bool) {
+	if visible {
+		a.Banner.Grid.AddItem(a.reduceInput, 5, 0, 1, 10, 1, 10, false)
+		a.Banner.Grid.RemoveItem(a.list)
+		a.Banner.Grid.AddItem(a.list, 4, 0, 1, 10, 6, 20, false)
+	} else {
+		a.Banner.Grid.RemoveItem(a.reduceInput)
+		a.Banner.Grid.RemoveItem(a.list)
+		a.Banner.Grid.AddItem(a.list, 4, 0, 2, 10, 6, 20, false)
 	}
 }
 

@@ -60,17 +60,23 @@ func NewArtistList(selectFunc func(artist *models.Artist), queryFunc func(opts *
 	a.list.ItemHeight = 2
 
 	a.pagingEnabled = true
-	selectables := []twidgets.Selectable{a.prevBtn, a.paging.Previous, a.paging.Next, a.sort, a.list}
-	a.Banner.Selectable = selectables
-
 	a.Banner.Grid.SetRows(1, 1, 1, 1, -1, 3)
 	a.Banner.Grid.SetColumns(6, 2, 10, -1, 10, -1, 15, -3)
 	a.Banner.Grid.SetMinSize(1, 6)
 
+	var selectables []twidgets.Selectable
+
+	if config.AppConfig.Gui.EnableSorting {
+		selectables = []twidgets.Selectable{a.prevBtn, a.paging.Previous, a.paging.Next, a.sort, a.list}
+		a.Banner.Grid.AddItem(a.sort, 3, 6, 1, 1, 1, 10, false)
+	} else {
+		selectables = []twidgets.Selectable{a.prevBtn, a.paging.Previous, a.paging.Next, a.sort, a.list}
+	}
+	a.Banner.Selectable = selectables
+
 	a.Banner.Grid.AddItem(a.prevBtn, 0, 0, 1, 1, 1, 5, false)
 	a.Banner.Grid.AddItem(a.description, 0, 2, 2, 6, 1, 10, false)
 	a.Banner.Grid.AddItem(a.paging, 3, 4, 1, 3, 1, 10, false)
-	a.Banner.Grid.AddItem(a.sort, 3, 6, 1, 1, 1, 10, false)
 	a.Banner.Grid.AddItem(a.list, 4, 0, 2, 8, 4, 10, false)
 
 	a.reduceEnabled = true

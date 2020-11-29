@@ -158,6 +158,8 @@ func (i *itemList) reduce(input string) {
 	// seems to be fast enough for this use case, where list if (hopefully)
 	// < 1000 items.
 
+	input = strings.ToLower(input)
+
 	selected := i.list.GetSelectedIndex()
 	i.items[selected].SetSelected(twidgets.Deselected)
 

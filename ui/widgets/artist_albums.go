@@ -289,12 +289,6 @@ func NewAlbumList(selectAlbum func(album *models.Album), context contextOperator
 	a.similarEnabled = true
 
 	if a.context != nil {
-		a.list.AddContextItem("Instant mix", 0, func(index int) {
-			if index < len(a.albumCovers) && a.context != nil {
-				album := a.albumCovers[index]
-				a.context.InstantMix(album.album)
-			}
-		})
 		a.options.AddOption("Instant Mix", func() {
 			a.context.InstantMix(a.artist)
 		})

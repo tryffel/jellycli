@@ -38,16 +38,13 @@ import (
 // AppConfig is a configuration loaded during startup
 var AppConfig *Config
 
+var configIsEmpty bool
+
 type Config struct {
 	Jellyfin Jellyfin `yaml:"jellyfin"`
 	Subsonic Subsonic `yaml:"subsonic"`
 	Player   Player   `yaml:"player"`
 	Gui      Gui      `yaml:"gui"`
-
-	configFile string
-	configDir  string
-
-	configIsEmpty bool
 }
 
 type Gui struct {
@@ -66,10 +63,6 @@ type Gui struct {
 	EnableFiltering bool `yaml:"enable_filtering"`
 	// EnableResultsFiltering enables filtering existing results, 'search inside results'.
 	EnableResultsFiltering bool `yaml:"enable_results_filtering"`
-}
-
-func (c *Config) ConfigFile() string {
-	return c.configFile
 }
 
 type Player struct {
@@ -213,7 +206,7 @@ func ConfigFromViper() error {
 		},
 	}
 
-	searchTypes := viper.GetStringSlice("player.search_types")
+	searchTypes := viper.GetStringSlice("gui.search_types")
 	for _, v := range searchTypes {
 		searchType := models.ItemType(v)
 		AppConfig.Gui.SearchTypes = append(AppConfig.Gui.SearchTypes, searchType)
@@ -226,10 +219,12 @@ func ConfigFromViper() error {
 	}
 
 	if AppConfig.Jellyfin.Url == "" && AppConfig.Subsonic.Url == "" {
-		AppConfig.configIsEmpty = true
+		configIsEmpty = true
 		setDefaults()
+	} else {
+		AppConfig.Player.sanitize()
+		AppConfig.Gui.sanitize()
 	}
-
 	AudioBufferPeriod = time.Millisecond * time.Duration(AppConfig.Player.AudioBufferingMs)
 	return nil
 }
@@ -244,13 +239,18 @@ func SaveConfig() error {
 }
 
 func setDefaults() {
-	if AppConfig.configIsEmpty {
+	if configIsEmpty {
 		AppConfig.initNewConfig()
 		err := SaveConfig()
 		if err != nil {
 			logrus.Errorf("save config file: %v", err)
 		}
 	}
+}
+
+// set AppConfig. This is needed for testing.
+func configFrom(conf *Config) {
+	AppConfig = conf
 }
 
 func UpdateViper() {
@@ -281,7 +281,13 @@ func UpdateViper() {
 	viper.Set("gui.mouse_enabled", AppConfig.Gui.MouseEnabled)
 	viper.Set("gui.double_click_ms", AppConfig.Gui.DoubleClickMs)
 	viper.Set("gui.pagesize", AppConfig.Gui.PageSize)
-	viper.Set("gui.search_types", AppConfig.Gui.SearchTypes)
+
+	sTypes := make([]string, len(AppConfig.Gui.SearchTypes))
+	for i, v := range AppConfig.Gui.SearchTypes {
+		sTypes[i] = string(v)
+	}
+
+	viper.Set("gui.search_types", sTypes)
 
 	viper.Set("gui.enable_sorting", AppConfig.Gui.EnableSorting)
 	viper.Set("gui.enable_filtering", AppConfig.Gui.EnableFiltering)

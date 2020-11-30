@@ -116,7 +116,7 @@ Jellycli without persisting config file (with e.g. Docker). Jellycli will still 
 
 ```
 
-# Config overrides
+# Config overrides, see config.sample.yaml for more info.
 JELLYCLI_JELLYFIN_URL
 JELLYCLI_JELLYFIN_TOKEN
 JELLYCLI_JELLYFIN_USERID
@@ -145,7 +145,8 @@ JELLYCLI_GUI_DOUBLE_CLICK_MS
 JELLYCLI_GUI_SEARCH_RESULTS_LIMIT
 JELLYCLI_GUI_SEARCH_TYPES
 
-# Additional environment variables
+# Additional environment variables. If Jellycli asks for password (due to failed auth),
+# it would normally ask password from user. Supply password here to skip interactive input.
 JELLYCLI_JELLYFIN_PASSWORD
 JELLYCLI_SUBSONIC_PASSWORD
 

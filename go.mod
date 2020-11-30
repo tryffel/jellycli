@@ -7,6 +7,7 @@ require (
 	github.com/faiface/beep v1.0.1
 	github.com/gdamore/tcell v1.3.0
 	github.com/godbus/dbus v4.1.0+incompatible
+	github.com/google/go-cmp v0.5.4
 	github.com/gorilla/websocket v1.4.2
 	github.com/mattn/go-colorable v0.1.4 // indirect
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect

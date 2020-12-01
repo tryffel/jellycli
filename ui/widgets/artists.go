@@ -148,6 +148,7 @@ func (a *ArtistList) AddArtists(artists []*models.Artist) {
 
 	a.list.AddItems(items...)
 	a.items = items
+	a.searchItemsSet()
 	a.itemsTexts = itemTexts
 }
 

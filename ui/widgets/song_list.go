@@ -138,6 +138,7 @@ func (s *SongList) SetSongs(songs []*models.Song, page interfaces.Paging) {
 
 	s.items = items
 	s.itemsTexts = itemTexts
+	s.searchItemsSet()
 }
 
 func (s *SongList) selectSong(index int) {

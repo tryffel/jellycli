@@ -124,6 +124,7 @@ func (g *GenreList) setGenres(genres []*models.IdName) {
 
 	g.items = items
 	g.itemsTexts = itemTexts
+	g.searchItemsSet()
 	g.list.AddItems(items...)
 }
 

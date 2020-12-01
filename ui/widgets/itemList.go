@@ -27,6 +27,9 @@ import (
 	"tryffel.net/go/twidgets"
 )
 
+// characters to strip from search texts and search input
+const stripCharacters = "-+_.:,;&#%!"
+
 // itemList shows Banner (title, buttons) and list below header.
 // It also features filtering list items.
 //
@@ -158,14 +161,29 @@ func (i *itemList) reduce(input string) {
 	// seems to be fast enough for this use case, where list if (hopefully)
 	// < 1000 items.
 
-	input = strings.ToLower(input)
+	lowerCase := strings.ToLower(input)
+	rawTokens := strings.Split(lowerCase, " ")
+	tokens := make([]string, 0, 1)
+	for _, v := range rawTokens {
+		stripped := strings.Trim(v, stripCharacters)
+		if len(v) > 0 {
+			tokens = append(tokens, stripped)
+		}
+	}
 
 	selected := i.list.GetSelectedIndex()
 	i.items[selected].SetSelected(twidgets.Deselected)
 
-	indices := []int{}
+	indices := make([]int, 0, 10)
 	for index, v := range i.itemsTexts {
-		if strings.Contains(v, input) {
+		tokenFound := true
+		for _, token := range tokens {
+			if !strings.Contains(v, token) {
+				tokenFound = false
+				break
+			}
+		}
+		if tokenFound {
 			indices = append(indices, index)
 		}
 	}
@@ -176,9 +194,15 @@ func (i *itemList) reduce(input string) {
 	i.list.Clear()
 	i.list.AddItems(items...)
 	i.reduceIndices = indices
-
 	i.reduceInput.SetLabel(fmt.Sprintf("Filter (%d)", len(items)))
+}
 
+func (i *itemList) searchItemsSet() {
+	for iText, v := range i.itemsTexts {
+		lower := strings.ToLower(v)
+		stripped := strings.Trim(lower, stripCharacters)
+		i.itemsTexts[iText] = stripped
+	}
 }
 
 func (i *itemList) drawReducedResultsCount(screen tcell.Screen) {

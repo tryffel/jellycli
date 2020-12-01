@@ -111,6 +111,7 @@ func (pl *Playlists) SetPlaylists(playlists []*models.Playlist) {
 	pl.list.AddItems(items...)
 	pl.description.SetText(fmt.Sprintf("Playlists: %d", len(playlists)))
 	pl.items = items
+	pl.searchItemsSet()
 	pl.itemsTexts = itemTexts
 }
 

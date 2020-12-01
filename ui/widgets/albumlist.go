@@ -58,6 +58,7 @@ func (a *AlbumList) AddAlbum(c *AlbumCover) {
 	a.albumCovers = append(a.albumCovers, c)
 
 	a.itemsTexts = append(a.itemsTexts, strings.ToLower(c.name))
+	a.searchItemsSet()
 }
 
 func (a *AlbumList) Clear() {
@@ -129,6 +130,7 @@ func (a *AlbumList) SetAlbums(albums []*models.Album) {
 	}
 	a.list.AddItems(items...)
 	a.items = items
+	a.searchItemsSet()
 }
 
 // EnablePaging enables paging and shows page on banner

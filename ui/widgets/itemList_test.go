@@ -75,16 +75,39 @@ func Test_itemList_reduce(t *testing.T) {
 		wantIndices []int
 	}{
 		{
+			name:        "simple match",
 			input:       "ipsum",
 			wantIndices: []int{0},
 		},
 		{
+			name:        "empty query",
 			input:       "",
 			wantIndices: []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
 		},
 		{
+			name:        "invalid query",
+			input:       " ., .",
+			wantIndices: []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
+		},
+		{
+			name:        "uppercased query",
 			input:       "AD",
 			wantIndices: []int{1, 5},
+		},
+		{
+			name:        "multi-case query",
+			input:       "AD ven",
+			wantIndices: []int{5},
+		},
+		{
+			name:        "multi-case no match",
+			input:       "AD moc",
+			wantIndices: []int{},
+		},
+		{
+			name:        "multi-case with stripped characters",
+			input:       "AD + & ven",
+			wantIndices: []int{5},
 		},
 	}
 	for _, tt := range tests {

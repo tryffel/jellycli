@@ -1,17 +1,19 @@
 /*
- * Copyright 2020 Tero Vierimaa
+ * Jellycli is a terminal music player for Jellyfin.
+ * Copyright (C) 2020 Tero Vierimaa
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 // Package api contains interface for connecting to remote server. Subpackages contain implementations.
@@ -47,12 +49,12 @@ type Streamer interface {
 type Browser interface {
 
 	// GetArtists returns all artists
-	GetArtists(paging interfaces.Paging) ([]*models.Artist, int, error)
+	GetArtists(query *interfaces.QueryOpts) ([]*models.Artist, int, error)
 
 	// GetAlbumArtists returns artists that are marked as album artists. See GetArtists.
 	GetAlbumArtists(paging interfaces.Paging) ([]*models.Artist, int, error)
 	// GetAlbums gets albums with given paging. Only PageSize and CurrentPage are used. Total count is returned
-	GetAlbums(paging interfaces.Paging) ([]*models.Album, int, error)
+	GetAlbums(paging *interfaces.QueryOpts) ([]*models.Album, int, error)
 
 	// GetArtistAlbums returns albums that artist takes part in.
 	GetArtistAlbums(artist models.Id) ([]*models.Album, error)
@@ -63,8 +65,6 @@ type Browser interface {
 	GetPlaylists() ([]*models.Playlist, error)
 	// GetPlaylistSongs fills songs array for playlist. If there's error, songs will not be filled
 	GetPlaylistSongs(playlist models.Id) ([]*models.Song, error)
-	// GetFavoriteArtists returns list of favorite artists.
-	GetFavoriteArtists() ([]*models.Artist, error)
 	// GetFavoriteAlbums return list of favorite albums.
 	GetFavoriteAlbums(paging interfaces.Paging) ([]*models.Album, int, error)
 
@@ -91,9 +91,6 @@ type Browser interface {
 
 	// GetAlbumArtist returns main artist for album.
 	GetAlbumArtist(album *models.Album) (*models.Artist, error)
-
-	// GetSongArtistAlbum returns main artist for song.
-	GetSongArtistAlbum(song *models.Song) (*models.Album, *models.Artist, error)
 
 	// GetInstantMix returns instant mix based on given item.
 	GetInstantMix(item models.Item) ([]*models.Song, error)

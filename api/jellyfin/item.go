@@ -1,17 +1,19 @@
 /*
- * Copyright 2019 Tero Vierimaa
+ * Jellycli is a terminal music player for Jellyfin.
+ * Copyright (C) 2020 Tero Vierimaa
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 package jellyfin
@@ -482,8 +484,25 @@ func (jf *Jellyfin) GetSongsById(ids []models.Id) ([]*models.Song, error) {
 	return songs, nil
 }
 
-// GetArtists return artists defined by paging and total number of artists
-func (jf *Jellyfin) GetArtists(paging interfaces.Paging) (artistList []*models.Artist, numRecords int, err error) {
+// getArtists return artists defined by paging and total number of artists
+func (jf *Jellyfin) GetArtists(query *interfaces.QueryOpts) (artistList []*models.Artist, numRecords int, err error) {
+	params := *jf.defaultParams()
+	params.enableRecursive()
+	params.setPaging(query.Paging)
+	params.setSortingByType(models.TypeArtist, query.Sort)
+	params.setFilter(models.TypeArtist, query.Filter)
+	resp, err := jf.get("/Artists", &params)
+	if resp != nil {
+		defer resp.Close()
+	}
+	if err != nil {
+		return
+	}
+	return jf.parseArtists(resp)
+}
+
+// getArtists return artists defined by paging and total number of artists
+func (jf *Jellyfin) getArtists(paging interfaces.Paging) (artistList []*models.Artist, numRecords int, err error) {
 	params := *jf.defaultParams()
 	params.enableRecursive()
 	params.setSorting("SortName", "Ascending")
@@ -550,11 +569,12 @@ func (jf *Jellyfin) parseAlbums(resp io.Reader) (albumList []*models.Album, numR
 }
 
 // GetAlbums returns albums with given paging. It also returns number of all albums
-func (jf *Jellyfin) GetAlbums(paging interfaces.Paging) (albumList []*models.Album, numRecords int, err error) {
+func (jf *Jellyfin) GetAlbums(opts *interfaces.QueryOpts) (albumList []*models.Album, numRecords int, err error) {
 	params := *jf.defaultParams()
 	params.enableRecursive()
-	params.setSorting("SortName", "Ascending")
-	params.setPaging(paging)
+	params.setPaging(opts.Paging)
+	params.setSortingByType(models.TypeAlbum, opts.Sort)
+	params.setFilter(models.TypeAlbum, opts.Filter)
 	params.setIncludeTypes(mediaTypeAlbum)
 	resp, err := jf.get(fmt.Sprintf("/Users/%s/Items", jf.userId), &params)
 	if resp != nil {
@@ -669,42 +689,4 @@ func (jf *Jellyfin) GetAlbumArtist(album *models.Album) (*models.Artist, error) 
 		return artist, nil
 	}
 	return artist, nil
-}
-
-func (jf *Jellyfin) GetSongArtistAlbum(song *models.Song) (*models.Album, *models.Artist, error) {
-	var artist *models.Artist
-	var album *models.Album
-	var ok bool
-	var err error
-	var item models.Item
-
-	item, err = jf.GetItem(song.Album)
-	if err == nil {
-		album, ok = item.(*models.Album)
-		if ok {
-			jf.cache.Put(item.GetId(), item, true)
-		} else {
-			album = nil
-		}
-	}
-
-	if album == nil {
-		if err == nil {
-			err = fmt.Errorf("album not found")
-		}
-		return nil, nil, err
-	}
-
-	item, err = jf.GetItem(album.Artist)
-	if err == nil {
-		artist, ok = item.(*models.Artist)
-		if ok {
-			jf.cache.Put(item.GetId(), item, true)
-		}
-	}
-
-	if artist == nil {
-		return nil, nil, fmt.Errorf("not found")
-	}
-	return album, artist, nil
 }

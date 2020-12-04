@@ -1,17 +1,19 @@
 /*
- * Copyright 2020 Tero Vierimaa
+ * Jellycli is a terminal music player for Jellyfin.
+ * Copyright (C) 2020 Tero Vierimaa
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 package widgets
@@ -20,6 +22,7 @@ import (
 	"fmt"
 	"github.com/gdamore/tcell"
 	"gitlab.com/tslocum/cview"
+	"strings"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/models"
 	"tryffel.net/go/jellycli/util"
@@ -45,7 +48,6 @@ type PlaylistView struct {
 func NewPlaylistView(playSong func(song *models.Song), playSongs func(songs []*models.Song),
 	operator contextOperator) *PlaylistView {
 	p := &PlaylistView{
-		itemList:      newItemList(nil),
 		playSongFunc:  playSong,
 		playSongsFunc: playSongs,
 
@@ -54,6 +56,7 @@ func NewPlaylistView(playSong func(song *models.Song), playSongs func(songs []*m
 		options: newDropDown("Options"),
 	}
 
+	p.itemList = newItemList(p.playSong)
 	p.list.ItemHeight = 2
 	p.list.Padding = 1
 	p.list.SetInputCapture(p.listHandler)
@@ -61,7 +64,7 @@ func NewPlaylistView(playSong func(song *models.Song), playSongs func(songs []*m
 
 	p.playBtn.SetSelectedFunc(p.playAll)
 
-	p.Banner.Grid.SetRows(1, 1, 1, 1, -1)
+	p.Banner.Grid.SetRows(1, 1, 1, 1, -1, 3)
 	p.Banner.Grid.SetColumns(6, 2, 10, -1, 10, -1, 10, -3)
 	p.Banner.Grid.SetMinSize(1, 6)
 
@@ -69,10 +72,13 @@ func NewPlaylistView(playSong func(song *models.Song), playSongs func(songs []*m
 	p.Banner.Grid.AddItem(p.description, 0, 2, 2, 6, 1, 10, false)
 	p.Banner.Grid.AddItem(p.playBtn, 3, 2, 1, 1, 1, 10, true)
 	p.Banner.Grid.AddItem(p.options, 3, 4, 1, 1, 1, 10, false)
-	p.Banner.Grid.AddItem(p.list, 4, 0, 1, 8, 4, 10, false)
+	p.Banner.Grid.AddItem(p.list, 4, 0, 2, 8, 4, 10, false)
 
 	selectables := []twidgets.Selectable{p.prevBtn, p.playBtn, p.options, p.list}
 	p.Banner.Selectable = selectables
+
+	p.reduceEnabled = true
+	p.setReducerVisible = p.showReduceInput
 
 	if p.context != nil {
 		p.list.AddContextItem("Play all from here", 0, func(index int) {
@@ -119,6 +125,7 @@ func NewPlaylistView(playSong func(song *models.Song), playSongs func(songs []*m
 
 func (p *PlaylistView) SetPlaylist(playlist *models.Playlist) {
 	p.list.Clear()
+	p.resetReduce()
 	p.playlist = playlist
 	p.songs = make([]*albumSong, len(playlist.Songs))
 	items := make([]twidgets.ListItem, len(playlist.Songs))
@@ -129,14 +136,23 @@ func (p *PlaylistView) SetPlaylist(playlist *models.Playlist) {
 		len(playlist.Songs), util.SecToStringApproximate(playlist.Duration))
 
 	p.description.SetText(text)
+	itemTexts := make([]string, len(playlist.Songs))
 
 	for i, v := range playlist.Songs {
 		p.songs[i] = newAlbumSong(v, false, i+1)
 		p.songs[i].updateTextFunc = p.updateSongText
 		items[i] = p.songs[i]
+
+		itemText := v.Name
+		for _, artist := range v.Artists {
+			itemText += " " + artist.Name
+		}
+		itemTexts[i] = strings.ToLower(itemText)
 	}
 
 	p.list.AddItems(items...)
+	p.items = items
+	p.itemsTexts = itemTexts
 }
 
 func (p *PlaylistView) InputHandler() func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
@@ -214,4 +230,16 @@ func (p *PlaylistView) updateSongText(song *albumSong) {
 
 	}
 	song.SetText(text)
+}
+
+func (p *PlaylistView) showReduceInput(visible bool) {
+	if visible {
+		p.Grid.AddItem(p.reduceInput, 5, 0, 1, 10, 1, 20, false)
+		p.Grid.RemoveItem(p.list)
+		p.Grid.AddItem(p.list, 4, 0, 1, 10, 6, 20, false)
+	} else {
+		p.Grid.RemoveItem(p.reduceInput)
+		p.Grid.RemoveItem(p.list)
+		p.Grid.AddItem(p.list, 4, 0, 2, 10, 6, 20, false)
+	}
 }

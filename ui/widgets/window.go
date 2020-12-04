@@ -1,17 +1,19 @@
 /*
- * Copyright 2019 Tero Vierimaa
+ * Jellycli is a terminal music player for Jellyfin.
+ * Copyright (C) 2020 Tero Vierimaa
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 // Package widgets contains all widgets that are used in jellycli. Window is the root widget and controls access
@@ -45,16 +47,17 @@ type Window struct {
 	queue    *Queue
 	history  *History
 
-	albumList      *AlbumList
-	similarAlbums  *AlbumList
-	album          *AlbumView
-	latestAlbums   *AlbumList
-	favoriteAlbums *AlbumList
-	artistList     *ArtistList
-	playlists      *Playlists
-	playlist       *PlaylistView
-	songs          *SongList
-	genres         *GenreList
+	artistAlbumList *ArtistAlbumList
+	albumList       *AlbumList
+	similarAlbums   *AlbumList
+	album           *AlbumView
+	latestAlbums    *AlbumList
+	favoriteAlbums  *AlbumList
+	artistList      *ArtistList
+	playlists       *Playlists
+	playlist        *PlaylistView
+	songs           *SongList
+	genres          *GenreList
 
 	searchResultsTop *SearchTopList
 
@@ -81,18 +84,18 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 		layout: twidgets.NewModalLayout(),
 	}
 
-	w.artistList = NewArtistList(w.selectArtist)
+	w.artistList = NewArtistList(w.selectArtist, w.queryArtists)
 	w.artistList.SetBackCallback(w.goBack)
 	w.artistList.selectPageFunc = w.showArtistPage
-	w.albumList = NewAlbumList(w.selectAlbum, &w)
+	w.artistAlbumList = NewArtistAlbumList(w.selectAlbum, &w, w.showAlbumPage, w.openFilterModal)
+	w.albumList = NewAlbumList(w.selectAlbum, &w, w.showAlbumPage, w.openFilterModal)
 	w.albumList.SetBackCallback(w.goBack)
-	w.albumList.selectPageFunc = w.showAlbumPage
 	w.albumList.similarFunc = w.showSimilarArtists
 
 	w.latestAlbums = newLatestAlbums(w.selectAlbum, &w)
 	w.favoriteAlbums = newFavoriteAlbums(w.selectAlbum, &w)
 
-	w.similarAlbums = NewAlbumList(w.selectAlbum, &w)
+	w.similarAlbums = NewAlbumList(w.selectAlbum, &w, w.showAlbumPage, w.openFilterModal)
 	w.similarAlbums.SetBackCallback(w.goBack)
 	w.similarAlbums.EnablePaging(false)
 
@@ -124,9 +127,9 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 
 	w.setLayout()
 	w.app.SetRoot(w.layout, true)
-	if config.AppConfig.Player.MouseEnabled {
+	if config.AppConfig.Gui.MouseEnabled {
 		w.app.EnableMouse(true)
-		interval := time.Millisecond * time.Duration(config.AppConfig.Player.DoubleClickMs)
+		interval := time.Millisecond * time.Duration(config.AppConfig.Gui.DoubleClickMs)
 		w.app.SetDoubleClickInterval(interval)
 	}
 
@@ -174,7 +177,7 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 		w.navBar.AddButton(btn, navBarShortucts[i])
 	}
 
-	if config.AppConfig.Player.DebugMode {
+	if config.AppConfig.Gui.DebugMode {
 		btn := cview.NewButton("Debug dump")
 		w.navBar.AddButton(btn, sc.Dump)
 	}
@@ -324,7 +327,7 @@ func (w *Window) navBarCtrl(key tcell.Key) bool {
 func (w *Window) moveCtrl(key tcell.Key) bool {
 	if key == tcell.KeyTAB {
 		if w.hasModal {
-			w.closeModal(w.modal)
+			return false
 		}
 
 		if w.mediaViewSelected {
@@ -351,7 +354,7 @@ func (w *Window) searchCb(query string) {
 	logrus.Debug("In search callback")
 	w.searchResultsTop.ClearResults()
 
-	for _, itemType := range config.AppConfig.Player.SearchTypes {
+	for _, itemType := range config.AppConfig.Gui.SearchTypes {
 		items, err := w.mediaItems.Search(itemType, query)
 		if err == nil {
 			if len(items) > 0 {
@@ -377,6 +380,8 @@ func (w *Window) showSearchResults(itemType models.ItemType, results []models.It
 		}
 		w.albumList.Clear()
 		w.albumList.EnablePaging(false)
+		w.albumList.EnableFilter(false)
+		w.albumList.EnableSorting(false)
 		w.albumList.SetLabel(fmt.Sprintf("[yellow::]Search results for '%s'[-::]\n%d albums", query, len(results)))
 		w.albumList.SetAlbums(albums)
 		w.albumList.EnableSimilar(false)
@@ -436,6 +441,9 @@ func (w *Window) wrapCloseModal(modal modal.Modal) func() {
 
 func (w *Window) closeModal(modal modal.Modal) {
 	if w.hasModal {
+		if config.AppConfig.Gui.MouseEnabled {
+			w.app.EnableMouse(true)
+		}
 		modal.Blur()
 		modal.SetVisible(false)
 		w.layout.RemoveModal(modal)
@@ -452,6 +460,9 @@ func (w *Window) closeModal(modal modal.Modal) {
 
 func (w *Window) showModal(modal modal.Modal, height, width uint, lockSize bool) {
 	if !w.hasModal {
+		if config.AppConfig.Gui.MouseEnabled {
+			w.app.EnableMouse(false)
+		}
 		w.hasModal = true
 		w.modal = modal
 		w.lastFocus = w.app.GetFocus()
@@ -489,20 +500,15 @@ func (w *Window) selectMedia(m MediaSelect) {
 			for _, v := range albums {
 				duration += v.Duration
 			}
-			// set pseudo artist
-			artist := &models.Artist{
-				Id:            "",
-				Name:          "Latest albums",
-				Albums:        nil,
-				TotalDuration: duration,
-				AlbumCount:    len(albums),
-			}
-
 			w.mediaNav.SetCount(MediaLatestMusic, len(albums))
+			w.latestAlbums.description.SetText(fmt.Sprintf("Latest albums\nCount: %d", len(albums)))
+
+			w.latestAlbums.EnableFilter(false)
+			w.latestAlbums.EnableSorting(false)
+			w.latestAlbums.EnablePaging(false)
 
 			w.latestAlbums.Clear()
 			w.latestAlbums.SetAlbums(albums)
-			w.latestAlbums.SetArtist(artist)
 			w.setViewWidget(w.latestAlbums, true)
 		}
 	case MediaFavoriteArtists:
@@ -559,13 +565,14 @@ func (w *Window) selectMedia(m MediaSelect) {
 		w.setViewWidget(w.songs, true)
 	case MediaArtists, MediaAlbumArtists:
 		paging := interfaces.DefaultPaging()
+		opts := interfaces.DefaultQueryOpts()
 		var artists []*models.Artist
 		var err error
 		var total int
 		var title string
 		if m == MediaArtists {
 			title = "All artists"
-			artists, total, err = w.mediaItems.GetArtists(paging)
+			artists, total, err = w.mediaItems.GetArtists(opts)
 		} else if m == MediaAlbumArtists {
 			title = "All album artists"
 			artists, total, err = w.mediaItems.GetAlbumArtists(paging)
@@ -586,6 +593,7 @@ func (w *Window) selectMedia(m MediaSelect) {
 		w.artistList.SetText(fmt.Sprintf("%s: %d", title, paging.TotalItems))
 	case MediaAlbums, MediaFavoriteAlbums:
 		paging := interfaces.DefaultPaging()
+		opts := interfaces.DefaultQueryOpts()
 		var albums []*models.Album
 		var err error
 		var total int
@@ -594,14 +602,18 @@ func (w *Window) selectMedia(m MediaSelect) {
 		list := w.albumList
 
 		if m == MediaAlbums {
-			albums, total, err = w.mediaItems.GetAlbums(paging)
+			albums, total, err = w.mediaItems.GetAlbums(opts)
 			title = "All Albums"
 			w.albumList.EnablePaging(true)
+			w.albumList.EnableFilter(true)
+			w.albumList.EnableSorting(true)
 		} else if m == MediaFavoriteAlbums {
 			paging.PageSize = 200
 			albums, total, err = w.mediaItems.GetFavoriteAlbums(paging)
 			title = "Favorite albums"
 			w.albumList.EnablePaging(false)
+			w.albumList.EnableFilter(false)
+			w.albumList.EnableSorting(false)
 			list = w.favoriteAlbums
 		}
 
@@ -615,7 +627,6 @@ func (w *Window) selectMedia(m MediaSelect) {
 		list.SetPage(paging)
 		list.Clear()
 		list.EnableSimilar(false)
-		list.EnableArtistMode(false)
 
 		list.SetText(fmt.Sprintf("%s\nTotal %v", title, paging.TotalItems))
 		list.SetAlbums(albums)
@@ -632,13 +643,12 @@ func (w *Window) selectArtist(artist *models.Artist) {
 		logrus.Errorf("get albumList albums: %v", err)
 	} else {
 		artist.AlbumCount = len(albums)
-		w.albumList.Clear()
-		w.albumList.EnableArtistMode(true)
-		w.albumList.EnablePaging(false)
-		w.albumList.EnableSimilar(true)
-		w.albumList.SetArtist(artist)
-		w.albumList.SetAlbums(albums)
-		w.setViewWidget(w.albumList, true)
+		w.artistAlbumList.Clear()
+		w.artistAlbumList.EnablePaging(false)
+		w.artistAlbumList.EnableSimilar(true)
+		w.artistAlbumList.SetArtist(artist)
+		w.artistAlbumList.SetAlbums(albums)
+		w.setViewWidget(w.artistAlbumList, true)
 	}
 }
 
@@ -696,7 +706,9 @@ func (w *Window) showRecentSongsPage(page interfaces.Paging) {
 }
 
 func (w *Window) showArtistPage(page interfaces.Paging) {
-	artists, _, err := w.mediaItems.GetArtists(page)
+	opts := interfaces.DefaultQueryOpts()
+	opts.Paging = page
+	artists, _, err := w.mediaItems.GetArtists(opts)
 	if err != nil {
 		logrus.Errorf("get albumList page: %v", err)
 		return
@@ -708,19 +720,46 @@ func (w *Window) showArtistPage(page interfaces.Paging) {
 	w.setViewWidget(w.artistList, false)
 }
 
-func (w *Window) showAlbumPage(page interfaces.Paging) {
-	albums, total, err := w.mediaItems.GetAlbums(page)
+func (w *Window) queryArtists(opts *interfaces.QueryOpts) {
+	artists, _, err := w.mediaItems.GetArtists(opts)
+	if err != nil {
+		logrus.Errorf("get albumList page: %v", err)
+		return
+	}
+
+	w.artistList.Clear()
+	w.artistList.AddArtists(artists)
+	w.artistList.EnablePaging(true)
+	w.setViewWidget(w.artistList, false)
+}
+
+func (w *Window) showAlbumPage(opts *interfaces.QueryOpts) {
+	albums, total, err := w.mediaItems.GetAlbums(opts)
 	if err != nil {
 		logrus.Errorf("get all albums: %v", err)
 		return
 	}
-	page.SetTotalItems(total)
+	opts.Paging.SetTotalItems(total)
 	w.mediaNav.SetCount(MediaAlbums, total)
 
-	w.albumList.SetPage(page)
+	w.albumList.SetPage(opts.Paging)
 	w.albumList.Clear()
 	w.albumList.EnablePaging(true)
+	w.albumList.EnableFilter(true)
+	w.albumList.EnableSorting(true)
 	w.albumList.SetAlbums(albums)
+}
+
+func (w *Window) openFilterModal(m modal.Modal, doneFunc func()) {
+	closeFunc := func() {
+		w.closeModal(m)
+		if doneFunc != nil {
+			doneFunc()
+		}
+	}
+
+	m.SetDoneFunc(closeFunc)
+	w.showModal(m, 16, 40, false)
 }
 
 func (w *Window) playSong(song *models.Song) {
@@ -757,6 +796,7 @@ func (w *Window) showSimilarAlbums(album *models.Album) {
 		w.similarAlbums.Clear()
 		w.similarAlbums.EnableSimilar(false)
 		w.similarAlbums.EnablePaging(false)
+		w.similarAlbums.EnableFilter(false)
 		w.similarAlbums.SetAlbums(albums)
 		w.similarAlbums.SetText(fmt.Sprintf("Similar albums: %d", len(albums)))
 		w.setViewWidget(w.similarAlbums, true)
@@ -791,7 +831,8 @@ func (w *Window) selectGenre(id models.IdName) {
 	w.albumList.Clear()
 	w.albumList.EnablePaging(false)
 	w.albumList.EnableSimilar(false)
-	w.albumList.EnableArtistMode(false)
+	w.albumList.EnableFilter(false)
+	w.albumList.EnableSorting(false)
 	w.albumList.SetAlbums(albums)
 	w.albumList.SetText("Genre " + id.Name)
 	w.setViewWidget(w.albumList, true)

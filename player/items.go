@@ -1,17 +1,19 @@
 /*
- * Copyright 2020 Tero Vierimaa
+ * Jellycli is a terminal music player for Jellyfin.
+ * Copyright (C) 2020 Tero Vierimaa
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 package player
@@ -37,19 +39,19 @@ func newItems(api api.MediaServer) *Items {
 }
 
 func (i *Items) Search(itemType models.ItemType, query string) ([]models.Item, error) {
-	return i.browser.Search(query, itemType, config.AppConfig.Player.SearchResultsLimit)
+	return i.browser.Search(query, itemType, config.AppConfig.Gui.SearchResultsLimit)
 }
 
-func (i *Items) GetArtists(paging interfaces.Paging) ([]*models.Artist, int, error) {
-	return i.browser.GetArtists(paging)
+func (i *Items) GetArtists(opts *interfaces.QueryOpts) ([]*models.Artist, int, error) {
+	return i.browser.GetArtists(opts)
 }
 
 func (i *Items) GetAlbumArtists(paging interfaces.Paging) ([]*models.Artist, int, error) {
 	return i.browser.GetAlbumArtists(paging)
 }
 
-func (i *Items) GetAlbums(paging interfaces.Paging) ([]*models.Album, int, error) {
-	return i.browser.GetAlbums(paging)
+func (i *Items) GetAlbums(opts *interfaces.QueryOpts) ([]*models.Album, int, error) {
+	return i.browser.GetAlbums(opts)
 }
 
 func (i *Items) GetArtistAlbums(artist models.Id) ([]*models.Album, error) {
@@ -75,7 +77,10 @@ func (i *Items) GetPlaylistSongs(playlist *models.Playlist) error {
 }
 
 func (i *Items) GetFavoriteArtists() ([]*models.Artist, error) {
-	return i.browser.GetFavoriteArtists()
+	query := interfaces.DefaultQueryOpts()
+	query.Filter.Favorite = true
+	artists, _, err := i.browser.GetArtists(query)
+	return artists, err
 }
 
 func (i *Items) GetFavoriteAlbums(paging interfaces.Paging) ([]*models.Album, int, error) {
@@ -133,7 +138,12 @@ func (i *Items) GetAlbumArtist(album *models.Album) (*models.Artist, error) {
 }
 
 func (i *Items) GetSongArtistAlbum(song *models.Song) (*models.Album, *models.Artist, error) {
-	return i.browser.GetSongArtistAlbum(song)
+	artist, err := i.browser.GetArtist(song.AlbumArtist)
+	if err != nil {
+		return nil, artist, err
+	}
+	album, err := i.browser.GetAlbum(song.Album)
+	return album, artist, err
 }
 
 func (i *Items) GetInstantMix(item models.Item) ([]*models.Song, error) {

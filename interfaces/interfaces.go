@@ -1,24 +1,28 @@
 /*
- * Copyright 2020 Tero Vierimaa
+ * Jellycli is a terminal music player for Jellyfin.
+ * Copyright (C) 2020 Tero Vierimaa
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 // Package interfaces contains interfaces and structs that multiple packages use and communicate with.
 package interfaces
 
 import (
+	"errors"
 	"math"
+	"time"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/models"
 )
@@ -63,12 +67,12 @@ type ItemController interface {
 	// Queue and history returns error.
 	Search(itemType models.ItemType, query string) ([]models.Item, error)
 	// GetArtists gets artist with given paging. Only PageSize and CurrentPage are used. Total count is returned
-	GetArtists(paging Paging) ([]*models.Artist, int, error)
+	GetArtists(opts *QueryOpts) ([]*models.Artist, int, error)
 
 	// GetAlbumArtists returns artists that are marked as album artists. See GetArtists.
 	GetAlbumArtists(paging Paging) ([]*models.Artist, int, error)
 	// GetAlbums gets albums with given paging. Only PageSize and CurrentPage are used. Total count is returned
-	GetAlbums(paging Paging) ([]*models.Album, int, error)
+	GetAlbums(opts *QueryOpts) ([]*models.Album, int, error)
 
 	GetArtistAlbums(artist models.Id) ([]*models.Album, error)
 
@@ -139,4 +143,120 @@ func (p *Paging) SetTotalItems(count int) {
 // Offset returns offset
 func (p *Paging) Offset() int {
 	return p.PageSize * p.CurrentPage
+}
+
+type SortMode string
+
+const (
+	SortAsc  = "ASC"
+	SortDesc = "DESC"
+)
+
+func (s SortMode) Label() string {
+	switch s {
+	case SortAsc:
+		return "Ascending"
+	case SortDesc:
+		return "Descending"
+	default:
+		return "Unknown"
+	}
+}
+
+// ErrInvalidSort occurs if backend does not support given sorting.
+var ErrInvalidSort = errors.New("invalid sort")
+
+// ErrInvalidFilter occurs if backend does not support given filtering.
+var ErrInvalidFilter = errors.New("invalid filter")
+
+type SortField string
+
+const (
+	SortByName      SortField = "Name"
+	SortByDate      SortField = "Date"
+	SortByArtist    SortField = "Artist"
+	SortByAlbum     SortField = "Album"
+	SortByPlayCount SortField = "Most played"
+	SortByRandom    SortField = "Random"
+)
+
+// Sort describes sorting
+type Sort struct {
+	Field SortField
+	Mode  string
+}
+
+// NewSort creates default sorting, that is, ASC.
+// If field is empty, use SortbyName and ASC
+func NewSort(field SortField) Sort {
+	if field == "" {
+		field = SortByName
+	}
+	s := Sort{
+		Field: field,
+		Mode:  SortAsc,
+	}
+	return s
+}
+
+type FilterPlayStatus string
+
+const (
+	FilterIsPlayed    = "Played"
+	FilterIsNotPlayed = "Not played"
+)
+
+// Filter contains filter for reducing results. Some fields are exclusive,
+type Filter struct {
+	// Played
+	FilterPlayed FilterPlayStatus
+	// Favorite marks items as being starred / favorite.
+	Favorite bool
+	// Genres contains list of genres to include.
+	Genres []models.IdName
+	// YearRange contains two elements, items must be within these boundaries.
+	YearRange [2]int
+}
+
+// YearRangeValid returns true if year range is considered valid and sane.
+// If both years are 0, then filter is disabled and range is considered valid.
+// Else this checks:
+// * 1st year is before or equals 2nd
+// * 1st year is after 1900
+// * 2nd year if before now() + 10 years
+func (f Filter) YearRangeValid() bool {
+	if f.YearRange == [2]int{0, 0} {
+		return true
+	}
+
+	if f.YearRange[0] > f.YearRange[1] {
+		return false
+	}
+
+	if f.YearRange[0] < 1900 {
+		return false
+	}
+
+	year := time.Now().Year()
+	if f.YearRange[1] > year+10 {
+		return false
+	}
+	return true
+}
+
+type QueryOpts struct {
+	Paging Paging
+	Filter Filter
+	Sort   Sort
+}
+
+func DefaultQueryOpts() *QueryOpts {
+	return &QueryOpts{
+		Paging: DefaultPaging(),
+		Filter: Filter{},
+		Sort: Sort{
+			Field: SortByName,
+			Mode:  SortAsc,
+		},
+	}
 }

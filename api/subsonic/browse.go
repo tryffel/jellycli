@@ -1,18 +1,19 @@
 /*
- * Copyright 2020 Tero Vierimaa
+ * Jellycli is a terminal music player for Jellyfin.
+ * Copyright (C) 2020 Tero Vierimaa
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 package subsonic
@@ -43,7 +44,12 @@ func (s *Subsonic) getFavorites() error {
 	return nil
 }
 
-func (s *Subsonic) GetArtists(paging interfaces.Paging) (artists []*models.Artist, n int, err error) {
+func (s *Subsonic) GetArtists(query *interfaces.QueryOpts) (artists []*models.Artist, n int, err error) {
+	if query.Filter.Favorite {
+		err := s.getFavorites()
+		return s.favoriteArtists, len(s.favoriteArtists), err
+	}
+
 	var resp *response
 	resp, err = s.get("/getArtists", nil)
 	if err != nil {
@@ -64,7 +70,10 @@ func (s *Subsonic) GetArtists(paging interfaces.Paging) (artists []*models.Artis
 }
 
 func (s *Subsonic) GetAlbumArtists(paging interfaces.Paging) ([]*models.Artist, int, error) {
-	return s.GetArtists(paging)
+	query := &interfaces.QueryOpts{
+		Paging: paging,
+	}
+	return s.GetArtists(query)
 }
 
 func (s *Subsonic) getAlbums(params *params) ([]*models.Album, error) {
@@ -81,11 +90,35 @@ func (s *Subsonic) getAlbums(params *params) ([]*models.Album, error) {
 	return albums, nil
 }
 
-func (s *Subsonic) GetAlbums(paging interfaces.Paging) ([]*models.Album, int, error) {
+func (s *Subsonic) GetAlbums(opts *interfaces.QueryOpts) ([]*models.Album, int, error) {
+	// subsonic does not support sorting and filtering at the same time
 	params := &params{}
 	(*params)["type"] = "alphabeticalByName"
-	(*params)["offset"] = strconv.Itoa(paging.Offset())
-	(*params)["size"] = strconv.Itoa(paging.PageSize)
+	(*params)["offset"] = strconv.Itoa(opts.Paging.Offset())
+	(*params)["size"] = strconv.Itoa(opts.Paging.PageSize)
+
+	if opts.Filter.YearRangeValid() && opts.Filter.YearRange[0] != 0 {
+		(*params)["type"] = "byYear"
+		(*params)["fromYear"] = strconv.Itoa(opts.Filter.YearRange[0])
+		(*params)["toYear"] = strconv.Itoa(opts.Filter.YearRange[1])
+	} else if opts.Filter.Favorite {
+		(*params)["type"] = "starred"
+	} else {
+		if opts.Sort.Field != "" {
+			switch opts.Sort.Field {
+			case interfaces.SortByName, interfaces.SortByAlbum:
+				(*params)["type"] = "alphabeticalByName"
+			case interfaces.SortByDate:
+				(*params)["type"] = "byYear"
+			case interfaces.SortByArtist:
+				(*params)["type"] = "alphabeticalByArtist"
+			case interfaces.SortByPlayCount:
+				(*params)["type"] = "frequent"
+			case interfaces.SortByRandom:
+				(*params)["type"] = "random"
+			}
+		}
+	}
 	albums, err := s.getAlbums(params)
 	return albums, len(albums), err
 }
@@ -152,11 +185,6 @@ func (s *Subsonic) GetPlaylistSongs(playlist models.Id) ([]*models.Song, error) 
 	return songs, nil
 }
 
-func (s *Subsonic) GetFavoriteArtists() ([]*models.Artist, error) {
-	err := s.getFavorites()
-	return s.favoriteArtists, err
-}
-
 func (s *Subsonic) GetFavoriteAlbums(paging interfaces.Paging) ([]*models.Album, int, error) {
 	err := s.getFavorites()
 	return s.favoriteAlbums, len(s.favoriteAlbums), err
@@ -219,34 +247,6 @@ func (s *Subsonic) GetAlbumArtist(album *models.Album) (*models.Artist, error) {
 
 	artist := resp.Artist.toArtist()
 	return artist, nil
-}
-
-func (s *Subsonic) GetSongArtistAlbum(song *models.Song) (*models.Album, *models.Artist, error) {
-	if song.AlbumArtist == "" {
-		return nil, nil, errors.New("no album artist defined")
-	}
-
-	params := &params{}
-	params.setId(song.AlbumArtist.String())
-	resp, err := s.get("/getArtist", params)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if resp.Artist == nil {
-		return nil, nil, nil
-	}
-
-	artist := resp.Artist.toArtist()
-	var album *models.Album
-
-	for _, v := range resp.Artist.Albums {
-		if v.Id == song.Album.String() {
-			album = v.toAlbum()
-			break
-		}
-	}
-	return album, artist, nil
 }
 
 func (s *Subsonic) GetInstantMix(item models.Item) ([]*models.Song, error) {

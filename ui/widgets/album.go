@@ -1,17 +1,19 @@
 /*
- * Copyright 2020 Tero Vierimaa
+ * Jellycli is a terminal music player for Jellyfin.
+ * Copyright (C) 2020 Tero Vierimaa
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 package widgets
@@ -21,6 +23,7 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/rivo/uniseg"
 	"gitlab.com/tslocum/cview"
+	"strings"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/models"
 	"tryffel.net/go/jellycli/util"
@@ -203,15 +206,20 @@ func NewAlbumview(playSong func(song *models.Song),
 		dropDown:   newDropDown("Options"),
 	}
 
+	a.itemList = newItemList(a.playSong)
+
 	a.list.ItemHeight = 2
 	a.list.Padding = 1
 	a.list.SetInputCapture(a.listHandler)
 	a.list.Grid.SetColumns(1, -1)
 
+	a.reduceEnabled = true
+	a.setReducerVisible = a.showReduceInput
+
 	a.SetBorder(true)
 	a.playBtn.SetSelectedFunc(a.playAlbum)
 
-	a.Banner.Grid.SetRows(1, 1, 1, 1, -1)
+	a.Banner.Grid.SetRows(1, 1, 1, 1, -1, 3)
 	a.Banner.Grid.SetColumns(6, 2, 10, -1, 10, -1, 10, -3)
 	a.Banner.Grid.SetMinSize(1, 6)
 
@@ -219,7 +227,7 @@ func NewAlbumview(playSong func(song *models.Song),
 	a.Banner.Grid.AddItem(a.description, 0, 2, 2, 6, 1, 10, false)
 	a.Banner.Grid.AddItem(a.playBtn, 3, 2, 1, 1, 1, 10, true)
 	a.Banner.Grid.AddItem(a.dropDown, 3, 4, 1, 1, 1, 10, false)
-	a.Banner.Grid.AddItem(a.list, 4, 0, 1, 8, 4, 10, false)
+	a.Banner.Grid.AddItem(a.list, 4, 0, 4, 8, 4, 10, false)
 
 	selectables := []twidgets.Selectable{a.prevBtn, a.playBtn, a.dropDown, a.list}
 	a.similarBtn.SetSelectedFunc(a.showSimilar)
@@ -261,8 +269,11 @@ func NewAlbumview(playSong func(song *models.Song),
 
 func (a *AlbumView) SetAlbum(album *models.Album, songs []*models.Song) {
 	a.list.Clear()
+	a.resetReduce()
 	a.songs = make([]*albumSong, len(songs))
 	items := make([]twidgets.ListItem, len(songs))
+
+	itemTexts := make([]string, len(songs))
 
 	album.SongCount = len(a.songs)
 	a.album = album
@@ -307,9 +318,13 @@ func (a *AlbumView) SetAlbum(album *models.Album, songs []*models.Song) {
 	for i, v := range songs {
 		a.songs[i] = newAlbumSong(v, showDiscNum, -1)
 		items[i] = a.songs[i]
+		itemTexts[i] = strings.ToLower(v.Name)
 	}
 
 	a.list.AddItems(items...)
+
+	a.items = items
+	a.itemsTexts = itemTexts
 }
 
 func (a *AlbumView) SetArtist(artist *models.Artist) {
@@ -381,4 +396,17 @@ func (a *AlbumView) showSimilar() {
 	if a.similarFunc != nil {
 		a.similarFunc(a.album)
 	}
+}
+
+func (a *AlbumView) showReduceInput(visible bool) {
+	if visible {
+		a.Grid.AddItem(a.reduceInput, 5, 0, 1, 10, 1, 20, false)
+		a.Grid.RemoveItem(a.list)
+		a.Grid.AddItem(a.list, 4, 0, 1, 10, 6, 20, false)
+	} else {
+		a.Grid.RemoveItem(a.reduceInput)
+		a.Grid.RemoveItem(a.list)
+		a.Grid.AddItem(a.list, 4, 0, 2, 10, 6, 20, false)
+	}
+
 }

@@ -209,3 +209,13 @@ func (i *itemList) selectitem(index int) {
 	}
 	i.listSelectFunc(index)
 }
+
+func (i *itemList) getSelectedIndex() int {
+	var index int
+	if i.reduceVisible {
+		index = i.reduceIndices[index]
+	} else {
+		index = i.list.GetSelectedIndex()
+	}
+	return index
+}

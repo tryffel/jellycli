@@ -346,7 +346,7 @@ func (a *AlbumView) playAlbum() {
 
 func (a *AlbumView) playFromSelected() {
 	if a.playSongsFunc != nil {
-		index := a.list.GetSelectedIndex()
+		index := a.getSelectedIndex()
 		songs := make([]*models.Song, len(a.songs)-index)
 		for i, v := range a.songs[index:] {
 			songs[i] = v.song

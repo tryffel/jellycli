@@ -76,17 +76,17 @@ func NewSongList(playSong func(song *models.Song), playSongs func(songs []*model
 
 	if p.context != nil {
 		p.list.AddContextItem("View album", 0, func(index int) {
-			selected := p.list.GetSelectedIndex()
+			selected := p.getSelectedIndex()
 			song := p.songs[selected]
 			p.context.ViewSongAlbum(song.song)
 		})
 		p.list.AddContextItem("View artist", 0, func(index int) {
-			selected := p.list.GetSelectedIndex()
+			selected := p.getSelectedIndex()
 			song := p.songs[selected]
 			p.context.ViewSongArtist(song.song)
 		})
 		p.list.AddContextItem("Instant mix", 0, func(index int) {
-			selected := p.list.GetSelectedIndex()
+			selected := p.getSelectedIndex()
 			song := p.songs[selected]
 			p.context.InstantMix(song.song)
 		})

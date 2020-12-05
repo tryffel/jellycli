@@ -21,7 +21,6 @@ package widgets
 import (
 	"fmt"
 	"github.com/gdamore/tcell"
-	"gitlab.com/tslocum/cview"
 	"strings"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/models"
@@ -85,20 +84,20 @@ func NewPlaylistView(playSong func(song *models.Song), playSongs func(songs []*m
 			p.playFromSelected()
 		})
 		p.list.AddContextItem("View album", 0, func(index int) {
-			selected := p.list.GetSelectedIndex()
+			selected := p.getSelectedIndex()
 			song := p.songs[selected]
 			p.context.ViewSongAlbum(song.song)
 		})
 		p.list.AddContextItem("View artist", 0, func(index int) {
 			if index < len(p.songs) && p.context != nil {
-				index := p.list.GetSelectedIndex()
+				index := p.getSelectedIndex()
 				song := p.songs[index]
 				p.context.ViewSongArtist(song.song)
 			}
 		})
 		p.list.AddContextItem("Instant mix", 0, func(index int) {
 			if index < len(p.songs) && p.context != nil {
-				index := p.list.GetSelectedIndex()
+				index := p.getSelectedIndex()
 				song := p.songs[index]
 				p.context.InstantMix(song.song)
 			}
@@ -153,30 +152,6 @@ func (p *PlaylistView) SetPlaylist(playlist *models.Playlist) {
 	p.list.AddItems(items...)
 	p.items = items
 	p.itemsTexts = itemTexts
-}
-
-func (p *PlaylistView) InputHandler() func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
-	return func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
-		key := event.Key()
-		if p.listFocused {
-			index := p.list.GetSelectedIndex()
-			if index == 0 && (key == tcell.KeyUp || key == tcell.KeyCtrlK) {
-				p.listFocused = false
-				p.prevBtn.Focus(func(p cview.Primitive) {})
-				p.list.Blur()
-			} else if key == tcell.KeyEnter && event.Modifiers() == tcell.ModNone {
-				p.playSong(index)
-			} else {
-				p.list.InputHandler()(event, setFocus)
-			}
-		} else {
-			if key == tcell.KeyDown || key == tcell.KeyCtrlJ {
-				p.listFocused = true
-				p.list.Focus(func(p cview.Primitive) {})
-			} else {
-			}
-		}
-	}
 }
 
 func (p *PlaylistView) playSong(index int) {

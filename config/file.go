@@ -44,7 +44,7 @@ func NewConfigFile(location string) error {
 		location = path.Join(dir, file)
 	}
 
-	logrus.Warningf("Create new config file in %s", location)
+	logrus.Warningf("Create new config file %s", location)
 
 	if dir != "" {
 		err = ensureConfigDirExists(dir)

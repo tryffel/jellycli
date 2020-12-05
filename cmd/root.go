@@ -92,9 +92,15 @@ func initConfig() {
 		}
 	}
 
+	// create new config file, save empty config file.
 	err := config.ConfigFromViper()
 	if err != nil {
 		logrus.Fatalf("read config file: %v", err)
+	}
+
+	err = config.SaveConfig()
+	if err != nil {
+		logrus.Fatalf("save config file: %v", err)
 	}
 }
 
@@ -113,7 +119,7 @@ func initLogging() (*os.File, error) {
 		DisableTimestamp: false,
 		DisableUppercase: false,
 		FullTimestamp:    true,
-		TimestampFormat:  "",
+		TimestampFormat:  "15:04:05.000",
 		DisableSorting:   false,
 		QuoteEmptyFields: false,
 		QuoteCharacter:   "'",

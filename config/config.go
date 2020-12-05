@@ -276,7 +276,6 @@ func UpdateViper() {
 
 	viper.Set("gui.search_results_limit", AppConfig.Gui.SearchResultsLimit)
 	viper.Set("gui.debug_mode", AppConfig.Gui.DebugMode)
-	viper.Set("gui.audio_buffering_ms", AppConfig.Player.AudioBufferingMs)
 	viper.Set("gui.limit_recently_played", AppConfig.Gui.LimitRecentlyPlayed)
 	viper.Set("gui.mouse_enabled", AppConfig.Gui.MouseEnabled)
 	viper.Set("gui.double_click_ms", AppConfig.Gui.DoubleClickMs)

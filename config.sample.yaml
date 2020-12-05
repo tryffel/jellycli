@@ -1,11 +1,50 @@
 # Jellycli reference configuration file
 
-# Jellycli does not (yet) parse yaml comments.
-# Do not copy this file, let Jellycli create / initialize
-# the config file.
-# Any key can be overridden with environment variables,
+# This file is for reference purposes only. Jellycli creates file pointed to it as config file
+# if the file does not exist or is empty.
+# Any key can be set with environment variables. See Readme or use command
+# jellycli list-env to list available variables.
 
-# Jellyfin settings
+# Gui settings
+gui:
+  # debug mode. When enabled, a new shortcut is added for creating debug dump.
+  debug_mode: false
+
+  # If mouse support is enabled, maximum interval (ms) for double click.
+  # Default: 220
+  double_click_ms: 220
+
+  # Enable server-side filtering if items. Results depend on backend being used.
+  enable_filtering: false
+
+  # enable client-side filtering of list items.
+  enable_results_filtering: true
+
+  # enable server-side sorting. Results depend on item type and backend being used.
+  enable_sorting: false
+
+  # Limit recent songs to a sensible value.
+  # When set to false, 'recent songs' are actually
+  # all songs ever listened on this account
+  limit_recently_played: true
+
+  # Enable mouse support
+  mouse_enabled: true
+
+  # Paging, default: 100
+  pagesize: 100
+
+  # limit to search queries, default 30.
+  search_results_limit: 30
+
+  # types to search for, case-sensitive values. Default: Artist, Album, Song, Playlist
+  search_types:
+    - Artist
+    - Album
+    - Song
+    - Playlist
+
+# Jellyfin settings. All values are saved when logging in.
 jellyfin:
   url: http://localhost/jellyfin
   # To force logout, clear token
@@ -17,38 +56,24 @@ jellyfin:
   music_view:
 
 # Subsonic configuration
-# Salt & token is created automatically from password.
-# To force logout, remote salt & token
+# Salt & token are created automatically from password during login.
+# To force logout, remove salt & token
 subsonic:
   url: http://localhost
   username:
   salt:
   token:
-# Player & Gui settings
+
+# Audio & application settings
 player:
-  # Server to connect to by default. Either jellyfin or subsonic..
+  # Server to connect to by default. Either jellyfin or subsonic.
   server: jellyfin
-  # Paging, default: 100
-  page_size: 100
+
   # Logging
   log_file: /tmp/jellycli.log
+
   # Allowed values: trace|debug|info|warning|error|fatal
   log_level: warning
-
-  # debug mode. When enabled, a new shortcut is added for creating debug dump.
-  debug_mode: false
-
-  # Limit recent songs to a sensible value.
-  # When set to false, 'recent songs' are actually
-  # all songs ever listened on this account
-  limit_recent_songs: true
-
-  # Enable mouse support
-  enable_mouse: true
-
-  # If mouse support is enabled, maximum interval (ms) for double click.
-  # Default: 200
-  mouse_double_click_interval_ms: 200
 
   # Low-level audio buffer duration. Set smaller (e.g. 50ms) for less delay and more cpu usage,
   # increase if audio stutters (to 300, or even 500) or to use less cpu. Default value: 150.
@@ -64,9 +89,3 @@ player:
   # If enabled, user can control playback remotely with another client.
   enable_remote_control: true
 
-  # Configure which fields get searched. Values are case-sensitive.
-  search_types:
-    - Artist
-    - Album
-    - Song
-    - Playlist

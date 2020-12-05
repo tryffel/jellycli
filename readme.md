@@ -7,7 +7,7 @@ Terminal music player, works with:
 * Jellyfin >= 10.6 (and Emby >= 4.4)
 * Subsonic compatible server, with API >= 1.16 (tested with Navidrome)
 
-![Screenshot](screenshot.png)
+![Screenshot](screenshots/browse.png)
 
 ## Features
 
@@ -22,6 +22,8 @@ Available features vary depending on server being used. E.g. Subsonic-servers do
     * [x] Next/previous track
     * [x] Control queue
     * [ ] Seeking, see [#8](https://github.com/tryffel/jellycli/issues/8)
+    * [ ] Shuffle, todo
+    * [x] Search & filter results
 * Supported formats (server transcodes everything else to mp3): mp3,ogg,flac,wav
 * headless mode (--no-gui)
 
@@ -162,14 +164,14 @@ JELLYCLI_PLAYER_NOGUI
 ```
 
 
-### Keybindings
-Keybindings are hardcoded at build time. They are located in file config/keybindings.go:73 in function 
-```
-func DefaultKeybindings()
-```
-edit that function as you like. 
+### Keybindings & Color Scheme
+Keybindings and color scheme are hardcoded at build time. 
+They are located in files
+* config/keybindings.go
+* config/colors.go
+edit those as you like. 
 
-To create debug goroutine dumps, enable 'player.debug_mode' 
+To create a debug goroutines dump, enable 'player.debug_mode' 
 and then press Ctrl+W to write a text file that's located in log directory. 
 
 

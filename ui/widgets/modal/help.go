@@ -145,7 +145,8 @@ func (h *Help) mainPage() string {
 }
 
 func (h *Help) shortcutsPage() string {
-	return `[yellow]Movement[-]:
+	return `
+[yellow]Navigation[-]:
 * Up/Down: Key up / down
 * VIM-like keys: 
 	* Up / Down: J / K, 
@@ -155,6 +156,10 @@ func (h *Help) shortcutsPage() string {
 * Select button or item: Enter
 * Open context menu: Alt+Enter
 * Close application: Ctrl-C
+* Filter list items: 
+	activate list with Key Up / Key Down, then press Whitespace ' ' 
+    to activate filter. Start typing and see list items reducing. Press enter to activate list again
+	and press ESC to cancel filter and return to original list.
 
 [yellow]Queue[-]:
 * Delete song: Del

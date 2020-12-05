@@ -138,7 +138,12 @@ func (i *Items) GetAlbumArtist(album *models.Album) (*models.Artist, error) {
 }
 
 func (i *Items) GetSongArtistAlbum(song *models.Song) (*models.Album, *models.Artist, error) {
-	artist, err := i.browser.GetArtist(song.AlbumArtist)
+	id := song.AlbumArtist
+	if id == "" && len(song.Artists) > 0 {
+		id = song.Artists[0].Id
+	}
+
+	artist, err := i.browser.GetArtist(id)
 	if err != nil {
 		return nil, artist, err
 	}

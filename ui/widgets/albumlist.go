@@ -20,8 +20,6 @@ package widgets
 
 import (
 	"fmt"
-	"github.com/gdamore/tcell"
-	"gitlab.com/tslocum/cview"
 	"strings"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
@@ -273,16 +271,6 @@ func (a *AlbumList) filterApplied(status bool) {
 		a.filterBtn.SetLabel("Filter *")
 	} else {
 		a.filterBtn.SetLabel("Filter")
-	}
-}
-
-func (a *AlbumList) InputHandler() func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
-	return func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
-		if event.Key() == tcell.KeyEnter && event.Modifiers() == tcell.ModAlt {
-			a.list.InputHandler()(event, setFocus)
-		} else {
-			a.itemList.InputHandler()(event, setFocus)
-		}
 	}
 }
 

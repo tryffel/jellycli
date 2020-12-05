@@ -20,7 +20,6 @@ package widgets
 
 import (
 	"fmt"
-	"github.com/gdamore/tcell"
 	"github.com/rivo/uniseg"
 	"gitlab.com/tslocum/cview"
 	"strings"
@@ -196,7 +195,6 @@ type AlbumView struct {
 func NewAlbumview(playSong func(song *models.Song),
 	playSongs func(songs []*models.Song), operator contextOperator) *AlbumView {
 	a := &AlbumView{
-		itemList:      newItemList(nil),
 		playSongFunc:  playSong,
 		playSongsFunc: playSongs,
 
@@ -207,10 +205,8 @@ func NewAlbumview(playSong func(song *models.Song),
 	}
 
 	a.itemList = newItemList(a.playSong)
-
 	a.list.ItemHeight = 2
 	a.list.Padding = 1
-	a.list.SetInputCapture(a.listHandler)
 	a.list.Grid.SetColumns(1, -1)
 
 	a.reduceEnabled = true
@@ -331,30 +327,6 @@ func (a *AlbumView) SetArtist(artist *models.Artist) {
 	a.artist = artist
 }
 
-func (a *AlbumView) InputHandler() func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
-	return func(event *tcell.EventKey, setFocus func(p cview.Primitive)) {
-		key := event.Key()
-		if a.listFocused {
-			index := a.list.GetSelectedIndex()
-			if index == 0 && (key == tcell.KeyUp || key == tcell.KeyCtrlK) {
-				a.listFocused = false
-				a.prevBtn.Focus(func(p cview.Primitive) {})
-				a.list.Blur()
-			} else if key == tcell.KeyEnter && event.Modifiers() == 0 {
-				a.playSong(index)
-			} else {
-				a.list.InputHandler()(event, setFocus)
-			}
-		} else {
-			if key == tcell.KeyDown || key == tcell.KeyCtrlJ {
-				a.listFocused = true
-				a.list.Focus(func(p cview.Primitive) {})
-			} else {
-			}
-		}
-	}
-}
-
 func (a *AlbumView) playSong(index int) {
 	if a.playSongFunc != nil {
 		song := a.songs[index].song
@@ -381,15 +353,6 @@ func (a *AlbumView) playFromSelected() {
 		}
 		a.playSongsFunc(songs)
 	}
-}
-
-func (a *AlbumView) listHandler(key *tcell.EventKey) *tcell.EventKey {
-	if key.Key() == tcell.KeyEnter && key.Modifiers() == tcell.ModNone {
-		index := a.list.GetSelectedIndex()
-		a.playSong(index)
-		return nil
-	}
-	return key
 }
 
 func (a *AlbumView) showSimilar() {

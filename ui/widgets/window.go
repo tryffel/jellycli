@@ -84,42 +84,48 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 		layout: twidgets.NewModalLayout(),
 	}
 
+	previousWidgets := make([]Previous, 0, 5)
+
 	w.artistList = NewArtistList(w.selectArtist, w.queryArtists)
-	w.artistList.SetBackCallback(w.goBack)
 	w.artistList.selectPageFunc = w.showArtistPage
 	w.artistAlbumList = NewArtistAlbumList(w.selectAlbum, &w, w.showAlbumPage, w.openFilterModal)
+
+	previousWidgets = append(previousWidgets, w.artistList, w.artistAlbumList)
 	w.albumList = NewAlbumList(w.selectAlbum, &w, w.showAlbumPage, w.openFilterModal)
-	w.albumList.SetBackCallback(w.goBack)
 	w.albumList.similarFunc = w.showSimilarArtists
 
+	previousWidgets = append(previousWidgets, w.albumList)
 	w.latestAlbums = newLatestAlbums(w.selectAlbum, &w)
+
+	previousWidgets = append(previousWidgets, w.latestAlbums)
 	w.favoriteAlbums = newFavoriteAlbums(w.selectAlbum, &w)
+	previousWidgets = append(previousWidgets, w.favoriteAlbums)
 
 	w.similarAlbums = NewAlbumList(w.selectAlbum, &w, w.showAlbumPage, w.openFilterModal)
-	w.similarAlbums.SetBackCallback(w.goBack)
 	w.similarAlbums.EnablePaging(false)
+	previousWidgets = append(previousWidgets, w.similarAlbums)
 
 	w.album = NewAlbumview(w.playSong, w.playSongs, &w)
-	w.album.SetBackCallback(w.goBack)
 	w.album.similarFunc = w.showSimilarAlbums
+	previousWidgets = append(previousWidgets, w.album)
 	w.mediaNav = NewMediaNavigation(w.selectMedia)
 	w.navBar = twidgets.NewNavBar(config.Color.NavBar.ToWidgetsNavBar(), w.navBarHandler)
 
 	w.playlists = NewPlaylists(w.selectPlaylist)
 	w.playlist = NewPlaylistView(w.playSong, w.playSongs, &w)
-	w.playlist.SetBackCallback(w.goBack)
-	w.playlists.SetBackCallback(w.goBack)
+	previousWidgets = append(previousWidgets, w.playlists, w.playlist)
 
 	w.genres = NewGenreList()
-	w.genres.SetBackCallback(w.goBack)
 	w.genres.selectFunc = w.selectGenre
 	w.genres.selectPageFunc = w.showGenrePage
+	previousWidgets = append(previousWidgets, w.genres)
 
 	w.songs = NewSongList(w.playSong, w.playSongs, &w)
-	w.songs.SetBackCallback(w.goBack)
 	w.songs.showPage = w.selectSongs
+	previousWidgets = append(previousWidgets, w.songs)
 
 	w.searchResultsTop = NewSearchTopList(w.searchCb, w.showSearchResults)
+	previousWidgets = append(previousWidgets, w.searchResultsTop)
 
 	w.mediaPlayer = p
 	w.mediaItems = i
@@ -143,7 +149,7 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 	w.message.SetDoneFunc(w.closeMessage)
 
 	w.queue = NewQueue()
-	w.queue.SetBackCallback(w.goBack)
+	previousWidgets = append(previousWidgets, w.queue)
 	w.queue.clearFunc = w.clearQueue
 	w.queue.controller = w.mediaQueue
 	w.mediaQueue.AddQueueChangedCallback(func(songs []*models.Song) {
@@ -155,7 +161,7 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 	})
 
 	w.history = NewHistory()
-	w.history.SetBackCallback(w.goBack)
+	previousWidgets = append(previousWidgets, w.history)
 
 	w.mediaQueue.SetHistoryChangedCallback(func(songs []*models.Song) {
 		w.app.QueueUpdateDraw(func() {
@@ -164,9 +170,7 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 	})
 
 	w.layout.Grid().SetBackgroundColor(config.Color.Background)
-
 	w.mediaPlayer.AddStatusCallback(w.statusCb)
-
 	navBarLabels := []string{"Help", "Queue", "History", "Search"}
 
 	sc := config.KeyBinds.NavigationBar
@@ -180,6 +184,10 @@ func NewWindow(p interfaces.Player, i interfaces.ItemController, q interfaces.Qu
 	if config.AppConfig.Gui.DebugMode {
 		btn := cview.NewButton("Debug dump")
 		w.navBar.AddButton(btn, sc.Dump)
+	}
+
+	for _, v := range previousWidgets {
+		v.SetBackCallback(w.goBack)
 	}
 
 	return w
@@ -669,7 +677,6 @@ func (w *Window) selectAlbum(album *models.Album) {
 		}
 
 		w.album.SetAlbum(album, songs)
-		w.album.SetLast(w.mediaView)
 		w.setViewWidget(w.album, true)
 	}
 }

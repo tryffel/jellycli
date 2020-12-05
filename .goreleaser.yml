@@ -4,15 +4,22 @@ before:
   hooks:
     - go mod download
 builds:
-  - id: default
+  - id: linux
+    env:
+      - CGO_ENABLED=1
     goos:
       - linux
+    goarch:
+      - amd64
+      - 386
+
+  - id: windows
+    env:
+      - CGO_ENABLED=1
+    goos:
       - windows
     goarch:
       - amd64
-    ignore:
-      - goos: windows
-        goarch: arm64
 archives:
   - id: default
     replacements:

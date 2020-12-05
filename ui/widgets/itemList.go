@@ -28,7 +28,7 @@ import (
 )
 
 // characters to strip from search texts and search input
-const stripCharacters = "-+_.:,;&#%!"
+const stripCharacters = "-+_.:,;&#%!'"
 
 // itemList shows Banner (title, buttons) and list below header.
 // It also features filtering list items.
@@ -171,8 +171,10 @@ func (i *itemList) reduce(input string) {
 		}
 	}
 
-	selected := i.list.GetSelectedIndex()
-	i.items[selected].SetSelected(twidgets.Deselected)
+	if len(i.items) > 0 {
+		selected := i.list.GetSelectedIndex()
+		i.items[selected].SetSelected(twidgets.Deselected)
+	}
 
 	indices := make([]int, 0, 10)
 	for index, v := range i.itemsTexts {
@@ -216,8 +218,10 @@ func (i *itemList) drawReducedResultsCount(screen tcell.Screen) {
 
 func (i *itemList) resetReduce() {
 	if i.reduceVisible {
-		selected := i.list.GetSelectedIndex()
-		i.items[selected].SetSelected(twidgets.Deselected)
+		if len(i.items) > 0 {
+			selected := i.list.GetSelectedIndex()
+			i.items[selected].SetSelected(twidgets.Deselected)
+		}
 		i.reduceInput.SetText("")
 		i.reduceInput.SetLabel("Filter")
 		i.list.Clear()

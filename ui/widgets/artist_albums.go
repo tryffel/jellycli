@@ -170,7 +170,9 @@ func (a *ArtistAlbumList) SetArtist(artist *models.Artist) {
 // SetPlaylist sets albums
 func (a *ArtistAlbumList) SetAlbums(albums []*models.Album) {
 	a.list.Clear()
+	a.resetReduce()
 	a.albumCovers = make([]*AlbumCover, len(albums))
+	itemsTexts := make([]string, len(albums))
 
 	offset := 0
 	if a.pagingEnabled {
@@ -189,8 +191,13 @@ func (a *ArtistAlbumList) SetAlbums(albums []*models.Album) {
 		}
 		text := fmt.Sprintf("%d. %s\n     %s - %d", offset+i+1, v.Name, artist, v.Year)
 		cover.setText(text)
+
+		itemsTexts[i] = v.Name + " " + artist
 	}
 	a.list.AddItems(items...)
+	a.itemsTexts = itemsTexts
+	a.items = items
+	a.searchItemsSet()
 }
 
 func (a *ArtistAlbumList) showSimilar() {

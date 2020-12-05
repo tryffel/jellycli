@@ -53,14 +53,6 @@ type AlbumList struct {
 	queryFunc     func(opts *interfaces.QueryOpts)
 }
 
-func (a *AlbumList) AddAlbum(c *AlbumCover) {
-	a.list.AddItem(c)
-	a.albumCovers = append(a.albumCovers, c)
-
-	a.itemsTexts = append(a.itemsTexts, strings.ToLower(c.name))
-	a.searchItemsSet()
-}
-
 func (a *AlbumList) Clear() {
 	a.list.Clear()
 	//a.SetArtist(nil)
@@ -98,9 +90,8 @@ func (a *AlbumList) selectPage(n int) {
 
 // SetPlaylist sets albums
 func (a *AlbumList) SetAlbums(albums []*models.Album) {
-	a.list.Clear()
+	a.Clear()
 	a.albumCovers = make([]*AlbumCover, len(albums))
-
 	a.itemsTexts = make([]string, len(albums))
 
 	offset := 0

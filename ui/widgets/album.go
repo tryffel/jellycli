@@ -318,10 +318,9 @@ func (a *AlbumView) SetAlbum(album *models.Album, songs []*models.Song) {
 	}
 
 	a.list.AddItems(items...)
-
 	a.items = items
-	a.searchItemsSet()
 	a.itemsTexts = itemTexts
+	a.searchItemsSet()
 }
 
 func (a *AlbumView) SetArtist(artist *models.Artist) {

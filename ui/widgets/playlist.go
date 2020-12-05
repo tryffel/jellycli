@@ -151,8 +151,8 @@ func (p *PlaylistView) SetPlaylist(playlist *models.Playlist) {
 
 	p.list.AddItems(items...)
 	p.items = items
-	p.searchItemsSet()
 	p.itemsTexts = itemTexts
+	p.searchItemsSet()
 }
 
 func (p *PlaylistView) playSong(index int) {

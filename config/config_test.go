@@ -64,6 +64,7 @@ func TestConfigToFromViper(t *testing.T) {
 			EnableSorting:          true,
 			EnableFiltering:        true,
 			EnableResultsFiltering: true,
+			VolumeSteps:            20,
 		},
 	}
 
@@ -120,6 +121,7 @@ func TestInitEmptyConfig(t *testing.T) {
 			EnableSorting:          false,
 			EnableFiltering:        false,
 			EnableResultsFiltering: true,
+			VolumeSteps:            20,
 		},
 	}
 
@@ -177,6 +179,7 @@ func TestSanitizeConfig(t *testing.T) {
 			EnableSorting:          true,
 			EnableFiltering:        true,
 			EnableResultsFiltering: true,
+			VolumeSteps:            20,
 		},
 	}
 

@@ -57,6 +57,8 @@ type Gui struct {
 	SearchTypes        []models.ItemType `yaml:"search_types"`
 	SearchResultsLimit int               `yaml:"search_results_limit"`
 
+	VolumeSteps int `yaml:"volume_steps"`
+
 	// EnableSorting enables sorting on remote server
 	EnableSorting bool `yaml:"enable_sorting"`
 	// EnableFiltering enables filtering on remote server
@@ -89,6 +91,9 @@ func (g *Gui) sanitize() {
 	}
 	if g.SearchResultsLimit == 0 {
 		g.SearchResultsLimit = 30
+	}
+	if g.VolumeSteps < 2 || g.VolumeSteps > 50 {
+		g.VolumeSteps = 20
 	}
 }
 
@@ -199,6 +204,7 @@ func ConfigFromViper() error {
 			MouseEnabled:        viper.GetBool("gui.mouse_enabled"),
 			DoubleClickMs:       viper.GetInt("gui.double_click_ms"),
 			SearchResultsLimit:  viper.GetInt("gui.search_results_limit"),
+			VolumeSteps:         viper.GetInt("gui.volume_steps"),
 
 			EnableSorting:          viper.GetBool("gui.enable_sorting"),
 			EnableFiltering:        viper.GetBool("gui.enable_filtering"),
@@ -226,6 +232,7 @@ func ConfigFromViper() error {
 		AppConfig.Gui.sanitize()
 	}
 	AudioBufferPeriod = time.Millisecond * time.Duration(AppConfig.Player.AudioBufferingMs)
+	VolumeStepSize = (AudioMinVolume + AudioMaxVolume) / AppConfig.Gui.VolumeSteps
 	return nil
 }
 
@@ -280,6 +287,7 @@ func UpdateViper() {
 	viper.Set("gui.mouse_enabled", AppConfig.Gui.MouseEnabled)
 	viper.Set("gui.double_click_ms", AppConfig.Gui.DoubleClickMs)
 	viper.Set("gui.pagesize", AppConfig.Gui.PageSize)
+	viper.Set("gui.volume_steps", AppConfig.Gui.VolumeSteps)
 
 	sTypes := make([]string, len(AppConfig.Gui.SearchTypes))
 	for i, v := range AppConfig.Gui.SearchTypes {

@@ -269,10 +269,10 @@ func (w *Window) mediaCtrl(event *tcell.EventKey) bool {
 	case ctrls.PlayPause:
 		w.mediaPlayer.PlayPause()
 	case ctrls.VolumeDown:
-		volume := w.status.state.Volume.Add(-5)
+		volume := w.status.state.Volume.Add(-config.VolumeStepSize)
 		go w.mediaPlayer.SetVolume(volume)
 	case ctrls.VolumeUp:
-		volume := w.status.state.Volume.Add(5)
+		volume := w.status.state.Volume.Add(config.VolumeStepSize)
 		go w.mediaPlayer.SetVolume(volume)
 	case ctrls.Next:
 		w.mediaPlayer.Next()

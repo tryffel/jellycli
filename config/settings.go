@@ -36,10 +36,13 @@ var (
 	// how many recent song to show, if limited
 	LimitedRecentlyPlayedCount = 24
 	AudioBufferPeriod          = time.Millisecond * 100
+
+	VolumeStepSize = 5
 )
 
 // audio configuration
 const (
+	// AudioSamplingRate is default sampling rate. This may vary depending on song being played.
 	AudioSamplingRate = 44100
 
 	// Volume range in decibels
@@ -50,11 +53,9 @@ const (
 	AudioMaxVolume = 100
 
 	// Audio volume is logarithmic, which base to use
-	AudioVolumeLogBase = 2
+	AudioVolumeLogBase = 2.5
 
 	CacheTimeout = time.Minute * 5
-
-	SongHistorySize = 100
 )
 
 // AppNameVersion returns string containing application name and current version

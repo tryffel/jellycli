@@ -44,6 +44,9 @@ gui:
     - Song
     - Playlist
 
+  # volume control total steps
+  volume_steps: 20
+
 # Jellyfin settings. All values are saved when logging in.
 jellyfin:
   url: http://localhost/jellyfin

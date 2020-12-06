@@ -9,11 +9,6 @@ builds:
       - linux
     goarch:
       - amd64
-  - id: linux-368
-    env:
-      - CGO_ENABLED=1
-    goarch:
-      - 386
   - id: windows
     env:
       - CGO_ENABLED=1

@@ -1,5 +1,5 @@
 # Base image for building purposes
-FROM golang:1.14-alpine as builder
+FROM golang:1.15.5-alpine3.12 as builder
 
 RUN apk --no-cache add alsa-lib-dev git alpine-sdk
 
@@ -13,11 +13,11 @@ RUN git clone -b ${JELLYCLI_BRANCH} --single-branch --depth 1 https://github.com
 
 RUN go mod download
 
-RUN go build . && ./jellycli -help
+RUN go build . && ./jellycli --help
 
 
 # Alpine runtime
-FROM alpine:3.10
+FROM alpine:3.12
 
 RUN apk --no-cache add alsa-lib-dev dbus-x11 alsa-utils
 COPY --from=builder /jellycli/jellycli /usr/local/bin

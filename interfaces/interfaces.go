@@ -244,6 +244,10 @@ func (f Filter) YearRangeValid() bool {
 	return true
 }
 
+func (f Filter) Empty() bool {
+	return !(f.FilterPlayed == "" && !f.Favorite && len(f.Genres) == 0 && f.YearRange == [2]int{0, 0})
+}
+
 type QueryOpts struct {
 	Paging Paging
 	Filter Filter

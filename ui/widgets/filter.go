@@ -251,11 +251,18 @@ func (f *filter) ok() {
 			}
 		}
 	}
+
+	if f.itemPlayed.IsChecked() {
+		filt.FilterPlayed = interfaces.FilterIsPlayed
+	} else if f.itemNotPlayed.IsChecked() {
+		filt.FilterPlayed = interfaces.FilterIsNotPlayed
+	}
+
 	f.filterFunc(filt)
 	f.closeCb()
 
 	if f.filterChangedFunc != nil {
-		f.filterChangedFunc(true)
+		f.filterChangedFunc(filt.Empty())
 	}
 }
 

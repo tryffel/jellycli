@@ -111,9 +111,9 @@ func (a *ArtistList) EnablePaging(enabled bool) {
 }
 
 func (a *ArtistList) Clear() {
+	a.resetReduce()
 	a.list.Clear()
 	a.artists = make([]*ArtistCover, 0)
-	a.resetReduce()
 }
 
 func (a *ArtistList) SetPage(paging interfaces.Paging) {
@@ -122,11 +122,10 @@ func (a *ArtistList) SetPage(paging interfaces.Paging) {
 	a.page = paging
 }
 
-func (a *ArtistList) AddArtists(artists []*models.Artist) {
+func (a *ArtistList) SetArtists(artists []*models.Artist) {
+	a.Clear()
 	items := make([]twidgets.ListItem, len(artists))
-
 	itemTexts := make([]string, len(artists))
-
 	offset := 0
 	if a.pagingEnabled {
 		offset = a.page.Offset()

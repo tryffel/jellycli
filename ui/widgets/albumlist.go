@@ -90,7 +90,9 @@ func (a *AlbumList) selectPage(n int) {
 
 // SetPlaylist sets albums
 func (a *AlbumList) SetAlbums(albums []*models.Album) {
-	a.Clear()
+	a.list.Clear()
+	a.albumCovers = make([]*AlbumCover, 0)
+	a.resetReduce()
 	a.albumCovers = make([]*AlbumCover, len(albums))
 	a.itemsTexts = make([]string, len(albums))
 

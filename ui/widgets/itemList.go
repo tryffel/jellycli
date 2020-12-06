@@ -227,6 +227,7 @@ func (i *itemList) resetReduce() {
 		i.list.Clear()
 		i.list.AddItems(i.items...)
 		i.setReducerVisible(false)
+		i.reduceVisible = false
 	}
 }
 

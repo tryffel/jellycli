@@ -403,7 +403,7 @@ func (w *Window) showSearchResults(itemType models.ItemType, results []models.It
 		w.artistList.SetText(fmt.Sprintf("[yellow::]Search results: for '%s'[-::]\n%d artists", query, len(artists)))
 		w.artistList.Clear()
 		w.artistList.EnablePaging(false)
-		w.artistList.AddArtists(artists)
+		w.artistList.SetArtists(artists)
 	case models.TypeSong:
 		view = w.songs
 		songs := make([]*models.Song, len(results))
@@ -528,7 +528,7 @@ func (w *Window) selectMedia(m MediaSelect) {
 			w.artistList.SetText("Favorite artists")
 			w.artistList.EnablePaging(false)
 			w.mediaNav.SetCount(MediaFavoriteArtists, len(artists))
-			w.artistList.AddArtists(artists)
+			w.artistList.SetArtists(artists)
 			w.setViewWidget(w.artistList, true)
 		}
 	case MediaPlaylists:
@@ -596,7 +596,7 @@ func (w *Window) selectMedia(m MediaSelect) {
 		w.artistList.EnablePaging(true)
 		w.artistList.SetPage(paging)
 
-		w.artistList.AddArtists(artists)
+		w.artistList.SetArtists(artists)
 		w.setViewWidget(w.artistList, true)
 		w.artistList.SetText(fmt.Sprintf("%s: %d", title, paging.TotalItems))
 	case MediaAlbums, MediaFavoriteAlbums:
@@ -722,7 +722,7 @@ func (w *Window) showArtistPage(page interfaces.Paging) {
 	}
 
 	w.artistList.Clear()
-	w.artistList.AddArtists(artists)
+	w.artistList.SetArtists(artists)
 	w.artistList.EnablePaging(true)
 	w.setViewWidget(w.artistList, false)
 }
@@ -735,7 +735,7 @@ func (w *Window) queryArtists(opts *interfaces.QueryOpts) {
 	}
 
 	w.artistList.Clear()
-	w.artistList.AddArtists(artists)
+	w.artistList.SetArtists(artists)
 	w.artistList.EnablePaging(true)
 	w.setViewWidget(w.artistList, false)
 }
@@ -748,12 +748,7 @@ func (w *Window) showAlbumPage(opts *interfaces.QueryOpts) {
 	}
 	opts.Paging.SetTotalItems(total)
 	w.mediaNav.SetCount(MediaAlbums, total)
-
 	w.albumList.SetPage(opts.Paging)
-	w.albumList.Clear()
-	w.albumList.EnablePaging(true)
-	w.albumList.EnableFilter(true)
-	w.albumList.EnableSorting(true)
 	w.albumList.SetAlbums(albums)
 }
 
@@ -787,7 +782,7 @@ func (w *Window) showSimilarArtists(artist models.Id) {
 		logrus.Errorf("get similar artists: %v", err)
 	} else if len(artists) > 0 {
 		w.artistList.Clear()
-		w.artistList.AddArtists(artists)
+		w.artistList.SetArtists(artists)
 		w.artistList.SetText(fmt.Sprintf("Similar artists: %d", len(artists)))
 		w.setViewWidget(w.artistList, true)
 	} else {

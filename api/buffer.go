@@ -20,6 +20,7 @@ package api
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -89,7 +90,10 @@ func (s *StreamBuffer) SecondsBuffered() int {
 }
 
 func (s *StreamBuffer) AudioFormat() (format interfaces.AudioFormat, err error) {
-	return MimeToAudioFormat(s.resp.Header.Get("Content-Type"))
+	if s.resp != nil {
+		return MimeToAudioFormat(s.resp.Header.Get("Content-Type"))
+	}
+	return interfaces.AudioFormatNil, errors.New("no http response")
 }
 
 func NewStreamDownload(url string, headers map[string]string, params map[string]string,
@@ -219,6 +223,11 @@ func (s *StreamBuffer) readData() bool {
 		}
 	}
 	size := s.buff.Len()
-	logrus.Tracef("Buffer: %d KiB, %d sec", size/1024, size/s.bitrate)
+	if size > 0 && s.bitrate > 0 {
+		logrus.Tracef("Buffer: %d KiB, %d sec, bitrate %d bit/s", size/1024, size/s.bitrate, s.bitrate)
+	} else {
+		logrus.Tracef("Empty buffer, size %d B, bitrate %d", size, s.bitrate)
+
+	}
 	return stop
 }

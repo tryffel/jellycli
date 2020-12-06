@@ -53,7 +53,7 @@ const (
 	AudioMaxVolume = 100
 
 	// Audio volume is logarithmic, which base to use
-	AudioVolumeLogBase = 2.5
+	AudioVolumeLogBase = 2
 
 	CacheTimeout = time.Minute * 5
 )

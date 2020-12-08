@@ -95,15 +95,15 @@ func (q *queueRbTree) SetShuffling(enable bool) {
 // Clear. First: whether to clear first item too
 func (q *queueRbTree) Clear(first bool) {
 	if first && q.Len() > 0 {
+		q.tree.Clear()
+		q.maxIndex = 0
+	} else {
 		node := q.tree.Left()
 		q.tree.Clear()
 		if node != nil {
 			q.tree.Put(node.Key, node.Value)
 			q.maxIndex = node.Key.(int) + 1
 		}
-	} else {
-		q.tree.Clear()
-		q.maxIndex = 0
 	}
 }
 
@@ -427,5 +427,19 @@ func (q *Queue) currentSong() *models.Song {
 }
 
 func (q *Queue) SetShuffle(enabled bool) {
+	q.lock.Lock()
+	changed := enabled != q.tree.shuffle
+	if !changed {
+		q.lock.Unlock()
+		return
+	}
 	q.tree.SetShuffling(enabled)
+	q.lock.Unlock()
+	q.notifyQueueUpdated()
+}
+
+func (q *Queue) GetShuffle() bool {
+	q.lock.RLock()
+	defer q.lock.RUnlock()
+	return q.tree.shuffle
 }

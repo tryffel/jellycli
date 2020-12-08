@@ -92,6 +92,12 @@ func initAudio() error {
 	return nil
 }
 
+func (a *Audio) SetShuffle(shuffle bool) {
+	speaker.Lock()
+	defer speaker.Unlock()
+	a.status.Shuffle = shuffle
+}
+
 func (a *Audio) getStatus() interfaces.AudioStatus {
 	speaker.Lock()
 	defer speaker.Unlock()

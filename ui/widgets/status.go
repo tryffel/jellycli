@@ -43,9 +43,7 @@ const (
 
 	// yellow heart, utf8. Not visible on all editors.
 	charFavorite = "💛"
-
-	btnLessVolume = "\xF0\x9F\x94\x89"
-	btnMoreVolume = ""
+	btnShuffle   = "⤨"
 
 	btnStyleStart = "[white:red:b]"
 	btnStyleStop  = "[-:-:-]"
@@ -73,7 +71,7 @@ type Status struct {
 	btnForward  *cview.Button
 	btnBackward *cview.Button
 	btnStop     *cview.Button
-	btnQueue    *cview.Button
+	btnShuffle  *cview.Button
 
 	buttons   []*cview.Button
 	shortCuts []string
@@ -140,7 +138,8 @@ func newStatus(ctrl interfaces.Player) *Status {
 	s.btnBackward.SetSelectedFunc(s.namedCbFunc(btnBackward))
 	s.btnStop = cview.NewButton(btnStop)
 	s.btnStop.SetSelectedFunc(s.namedCbFunc(btnStop))
-	s.btnQueue = cview.NewButton(btnQueue)
+	s.btnShuffle = cview.NewButton(btnShuffle)
+	s.btnShuffle.SetSelectedFunc(s.namedCbFunc(btnShuffle))
 
 	s.progress = NewProgressBar(40, 100)
 	s.volume = NewProgressBar(10, 100)
@@ -168,9 +167,10 @@ func newStatus(ctrl interfaces.Player) *Status {
 		util.PackKeyBindingName(config.KeyBinds.Global.PlayPause, 5),
 		util.PackKeyBindingName(config.KeyBinds.Global.Forward, 5),
 		util.PackKeyBindingName(config.KeyBinds.Global.Next, 5),
+		util.PackKeyBindingName(config.KeyBinds.Global.Shuffle, 10),
 	}
 
-	for _, v := range s.buttons {
+	for _, v := range append(s.buttons, s.btnShuffle) {
 		v.SetBackgroundColor(s.controlsBgColor)
 		v.SetLabelColor(s.controlsFgColor)
 		v.SetBorder(false)
@@ -220,12 +220,19 @@ func (s *Status) Draw(screen tcell.Screen) {
 	btnY := y + 1
 	btnX := x + 1
 
-	for i, v := range s.buttons {
-		cview.Print(screen, s.shortCuts[i], btnX, btnY-1, 4, cview.AlignLeft, colors.Shortcuts)
+	if w > 40 {
+		for i, v := range s.buttons {
+			cview.Print(screen, s.shortCuts[i], btnX, btnY-1, 4, cview.AlignLeft, colors.Shortcuts)
 
-		v.SetRect(btnX, btnY, 3, 1)
-		v.Draw(screen)
-		btnX += 5
+			v.SetRect(btnX, btnY, 3, 1)
+			v.Draw(screen)
+			btnX += 5
+		}
+
+		btnX = w - 3
+		cview.Print(screen, s.shortCuts[len(s.shortCuts)-1], btnX-2, btnY+1, 6, cview.AlignRight, colors.Shortcuts)
+		s.btnShuffle.SetRect(btnX, btnY, 3, 1)
+		s.btnShuffle.Draw(screen)
 	}
 	s.WriteStatus(screen, x+30, y)
 }
@@ -304,6 +311,9 @@ func (s *Status) buttonCb(name string) {
 		status.Action = interfaces.AudioActionNext
 	case btnStop:
 		status.Action = interfaces.AudioActionStop
+	case btnShuffle:
+		status.Action = interfaces.AudioActionShuffleChanged
+		status.Shuffle = !s.state.Shuffle
 	}
 	s.actionCb(status)
 }
@@ -324,5 +334,12 @@ func (s *Status) DrawButtons() {
 		s.btnPlay.SetLabel(btnPlay)
 	} else {
 		s.btnPlay.SetLabel(btnPause)
+	}
+
+	if s.state.Shuffle {
+		s.btnShuffle.SetBackgroundColor(config.Color.ButtonBackgroundSelected)
+
+	} else {
+		s.btnShuffle.SetBackgroundColor(config.Color.ButtonBackground)
 	}
 }

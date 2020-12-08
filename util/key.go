@@ -20,6 +20,7 @@ package util
 
 import (
 	"github.com/gdamore/tcell"
+	"github.com/rivo/uniseg"
 	"strings"
 )
 
@@ -38,7 +39,7 @@ func PackKeyBindingName(key tcell.Key, maxLength int) string {
 	if maxLength == 0 {
 		return name
 	}
-	if strings.Contains(name, "Ctrl") {
+	if strings.Contains(name, "Ctrl") && uniseg.GraphemeClusterCount(name) > maxLength {
 		name = strings.TrimPrefix(name, "Ctrl-")
 		name = "C-" + name
 	}

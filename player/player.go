@@ -355,3 +355,8 @@ func (p *Player) Reorder(index int, left bool) bool {
 
 	return p.Queue.Reorder(index, left)
 }
+
+func (p *Player) SetShuffle(enabled bool) {
+	p.Queue.SetShuffle(enabled)
+	p.Audio.SetShuffle(enabled)
+}

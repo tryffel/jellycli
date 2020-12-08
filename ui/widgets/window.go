@@ -290,6 +290,10 @@ func (w *Window) mediaCtrl(event *tcell.EventKey) bool {
 		w.mediaPlayer.Seek(interfaces.AudioTick(3000))
 	case ctrls.Backward:
 		w.mediaPlayer.Seek(interfaces.AudioTick(-3000))
+	case ctrls.Shuffle:
+		shuffle := !w.status.state.Shuffle
+		go w.mediaPlayer.SetShuffle(shuffle)
+
 	default:
 		return false
 	}

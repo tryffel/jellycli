@@ -141,7 +141,7 @@ func (a *app) initApp() error {
 	if err != nil {
 		return fmt.Errorf("create player: %v", err)
 	}
-	a.mpris, err = mpris.NewController(a.player.Audio)
+	a.mpris, err = mpris.NewController(a.player)
 	if err != nil {
 		if strings.Contains(err.Error(), "dbus-launch") {
 			logrus.Warningf("Dbus disabled: %v", err)

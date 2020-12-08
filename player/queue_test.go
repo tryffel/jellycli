@@ -19,6 +19,7 @@
 package player
 
 import (
+	"github.com/google/go-cmp/cmp"
 	"reflect"
 	"testing"
 	"tryffel.net/go/jellycli/models"
@@ -59,12 +60,14 @@ func Test_queue_GetQueue(t *testing.T) {
 				},
 			},
 		},
+		{
+			songs: testSongs(),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q := &Queue{
-				items: tt.songs,
-			}
+			q := newQueue()
+			q.AddSongs(tt.songs)
 			if got := q.GetQueue(); !reflect.DeepEqual(got, tt.songs) {
 				t.Errorf("GetQueue() = %v, want %v", got, tt.songs)
 			}
@@ -164,10 +167,8 @@ func Test_queue_Reorder(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q := &Queue{
-				items: make([]*models.Song, len(songs)),
-			}
-			copy(q.items, songs)
+			q := newQueue()
+			q.AddSongs(songs)
 			for _, v := range tt.orderings {
 				q.Reorder(v.from, v.down)
 			}
@@ -199,10 +200,8 @@ func Test_queue_songComplete(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q := &Queue{
-				items:   tt.songs,
-				history: []*models.Song{},
-			}
+			q := newQueue()
+			q.AddSongs(tt.songs)
 			for i := 0; i < tt.complete; i++ {
 				q.songComplete()
 			}
@@ -212,9 +211,11 @@ func Test_queue_songComplete(t *testing.T) {
 				t.Errorf("TestQueue songComplete history: got %v, want: %v", history, tt.want)
 			}
 
-			if !reflect.DeepEqual(q.GetQueue(), tt.songs[tt.complete:]) {
-				t.Errorf("TestQueue songComplete remove items: got %v, want: %v",
-					q.GetQueue(), tt.songs[tt.complete])
+			songs := q.GetQueue()
+			wantSongs := tt.songs[tt.complete:]
+			diff := cmp.Diff(songs, wantSongs)
+			if diff != "" {
+				t.Errorf("TestQueue songComplete remove items: %s", diff)
 			}
 		})
 	}
@@ -246,16 +247,13 @@ func Test_queue_AddSongs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q := &Queue{
-				items: tt.songs,
-			}
+			q := newQueue()
+			q.AddSongs(tt.songs)
 			q.AddSongs(tt.add)
 			got := q.GetQueue()
-
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("AddSongs, got: %v, want: %v", got, tt.want)
 			}
-
 		})
 	}
 }
@@ -302,10 +300,9 @@ func TestQueue_playLastSong(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q := &Queue{
-				items:   tt.queue,
-				history: tt.history,
-			}
+			q := newQueue()
+			q.history = tt.history
+			q.AddSongs(tt.queue)
 			for i := 0; i < tt.previous; i++ {
 				q.playLastSong()
 			}
@@ -375,15 +372,113 @@ func TestQueue_PlayNext(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			q := &Queue{
-				items:              tt.fields.items,
+				tree:               newQueueHeap(),
 				history:            tt.fields.history,
 				queueUpdatedFunc:   tt.fields.queueUpdatedFunc,
 				historyUpdatedFunc: tt.fields.historyUpdatedFunc,
 			}
+			q.AddSongs(tt.fields.items)
 			q.PlayNext(tt.args.songs)
-			if !reflect.DeepEqual(q.items, tt.wantQueue) {
-				t.Errorf("queue playNext, want: %v, got: %v", tt.wantQueue, q.items)
+			if !reflect.DeepEqual(q.GetQueue(), tt.wantQueue) {
+				t.Errorf("queue playNext, want: %v, got: %v", tt.wantQueue, q.GetQueue())
 			}
 		})
+	}
+}
+
+func TestQueue_Shuffle(t *testing.T) {
+
+	songs := testSongs()
+	q := newQueue()
+
+	tests := []struct {
+		name  string
+		songs []*models.Song
+	}{
+		{
+			name:  "simple",
+			songs: songs,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			q.ClearQueue(true)
+			q.SetShuffle(false)
+			q.AddSongs(songs)
+
+			originalSongs := q.GetQueue()
+			if !reflect.DeepEqual(originalSongs, tt.songs) {
+				t.Errorf("No shuffle = %v, want %v", originalSongs, tt.songs)
+			}
+
+			q.SetShuffle(true)
+			shuffleCollection := make(map[string]bool, len(songs))
+			shuffledSongs := q.GetQueue()
+
+			if len(shuffledSongs) != len(songs) {
+				t.Errorf("shuffled songs len differs from original")
+			}
+
+			if reflect.DeepEqual(shuffledSongs, tt.songs) {
+				// guess sometimes shuffle matches original, try again once and hope it does not match twice.
+				q.SetShuffle(false)
+				q.SetShuffle(true)
+				if reflect.DeepEqual(originalSongs, tt.songs) {
+					t.Errorf("Shuffle returned original songs")
+				}
+			}
+
+			for _, v := range shuffledSongs {
+				if shuffleCollection[v.Id.String()] {
+					t.Errorf("duplicate song in shuffled array: %v", v.Id)
+				}
+				shuffleCollection[v.Id.String()] = true
+			}
+
+			q.SetShuffle(false)
+			if !reflect.DeepEqual(originalSongs, tt.songs) {
+				t.Errorf("undo shuffle = %v, want %v", originalSongs, tt.songs)
+			}
+		},
+		)
+	}
+}
+
+func TestQueue_Complete(t *testing.T) {
+
+	songs := testSongs()
+	q := newQueue()
+
+	empty := []*models.Song{}
+
+	q.AddSongs(songs)
+	logDiff(t, songs, q.GetQueue(), "initial queue")
+	q.ClearQueue(false)
+	logDiff(t, empty, q.GetQueue(), "clear queue completely")
+
+	q.AddSongs(songs)
+	q.ClearQueue(true)
+	logDiff(t, []*models.Song{songs[0]}, q.GetQueue(), "clear queue, leave first")
+
+	q.AddSongs(songs)
+	logDiff(t, append([]*models.Song{songs[0]}, songs...), q.GetQueue(), "clear queue, leave first")
+
+	q.SetShuffle(true)
+	shuffledQueue := q.GetQueue()
+	q.songComplete()
+	logDiff(t, shuffledQueue[1:], q.GetQueue(), "song complete during shuffle")
+
+	q.SetShuffle(false)
+	queue := q.GetQueue()
+	// we have added 1 and removed 1 song, lists should be equal in length
+	logDiff(t, len(songs), len(queue), "undo shuffling, test queue size decreased")
+}
+
+func logDiff(t *testing.T, x, y interface{}, msg string) {
+
+	diff := cmp.Diff(x, y)
+	if diff != "" {
+		t.Error(msg, diff)
 	}
 }

@@ -20,14 +20,224 @@ package player
 
 import (
 	"github.com/sirupsen/logrus"
+	"math/rand"
 	"sync"
+	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
+
+	rbt "github.com/emirpasic/gods/trees/redblacktree"
 )
+
+// queueItem: song + original index + random index for shuffling
+type queueItem struct {
+	song *models.Song
+
+	// index is original priority, which is len(queue) at insertion time.
+	index int
+
+	// priority is random number between 0-len(queue).
+	priority int
+}
+
+// queueRbTree implements heap.Interface.
+type queueRbTree struct {
+	// maxIndex. When adding new item, use maxIndex+1 as item index and increase maxIndex by one.
+	maxIndex int
+
+	// is shuffling enabled
+	shuffle bool
+
+	tree *rbt.Tree
+}
+
+func newQueueHeap() *queueRbTree {
+	q := &queueRbTree{
+		maxIndex: 0,
+		shuffle:  false,
+		tree:     rbt.NewWithIntComparator(),
+	}
+	return q
+}
+
+func (q *queueRbTree) Len() int {
+	return q.tree.Size()
+}
+
+func (q *queueRbTree) Compare(x, y interface{}) int {
+	xItem := x.(*queueItem)
+	yItem := y.(*queueItem)
+
+	if q.shuffle {
+		return xItem.priority - yItem.priority
+	} else {
+		return xItem.index - yItem.index
+	}
+}
+
+/* Public methods */
+func (q *queueRbTree) SetShuffling(enable bool) {
+	if enable == q.shuffle {
+		return
+	}
+	q.shuffle = enable
+	items := q.tree.Values()
+	q.tree.Clear()
+	for _, v := range items {
+		queueItem := v.(*queueItem)
+		if enable {
+			q.tree.Put(queueItem.priority, queueItem)
+		} else {
+			q.tree.Put(queueItem.index, queueItem)
+		}
+	}
+}
+
+// Clear. First: whether to clear first item too
+func (q *queueRbTree) Clear(first bool) {
+	if first && q.Len() > 0 {
+		node := q.tree.Left()
+		q.tree.Clear()
+		if node != nil {
+			q.tree.Put(node.Key, node.Value)
+			q.maxIndex = node.Key.(int) + 1
+		}
+	} else {
+		q.tree.Clear()
+		q.maxIndex = 0
+	}
+}
+
+func (q *queueRbTree) AddSong(song *models.Song, playNext bool, playFirst bool) {
+	index := q.maxIndex
+	if q.Len() == 1 {
+		if playNext {
+			node := q.tree.Left()
+			if node != nil {
+				var key int
+				item := node.Value.(*queueItem)
+				// we don't care about shuffle
+				key = item.index
+				q.tree.Remove(key)
+				index = item.index
+				item.index -= 1
+				q.tree.Put(item.index, item)
+			}
+
+		} else if playFirst {
+			node := q.tree.Left()
+			if node != nil {
+				item := node.Value.(*queueItem)
+				index = item.index - 1
+			}
+		}
+	} else if q.Len() > 1 {
+		if playNext {
+			node := q.tree.Left()
+			if node != nil {
+				var key int
+				item := node.Value.(*queueItem)
+				// we don't care about shuffle yet.
+				key = item.index
+				q.tree.Remove(key)
+				index = item.index
+
+				item.index -= 1
+				q.tree.Put(item.index, item)
+			}
+
+		} else if playFirst {
+			node := q.tree.Left()
+			if node != nil {
+				item := node.Value.(*queueItem)
+				index = item.index - 1
+			}
+		}
+	}
+
+	item := &queueItem{
+		song:     song,
+		index:    index,
+		priority: rand.Int(),
+	}
+	q.tree.Put(index, item)
+	q.maxIndex += 1
+}
+
+func (q *queueRbTree) RemoveSong(index int) *models.Song {
+	it := q.tree.Iterator()
+	i := 0
+	for it.Next() {
+		if i == index {
+			val := it.Value()
+			item := val.(*queueItem).song
+			key := it.Key()
+			q.tree.Remove(key)
+			return item
+		}
+		i += 1
+	}
+	return nil
+}
+
+func (q *queueRbTree) GetQueue() []*models.Song {
+	songs := make([]*models.Song, q.Len())
+	i := 0
+	it := q.tree.Iterator()
+	for it.Next() {
+		node := it.Value()
+		item := node.(*queueItem)
+		songs[i] = item.song
+		i += 1
+	}
+	return songs
+}
+
+func (q *queueRbTree) GetTotalDuration() interfaces.AudioTick {
+	ms := 0
+	for it := q.tree.Iterator(); it.Next(); {
+		node := it.Value()
+		item := node.(*queueItem)
+		ms += item.song.Duration
+	}
+	return interfaces.AudioTick(ms)
+}
+
+func (q *queueRbTree) Reorder(index1 int, down bool) {
+	index2 := index1 + 1
+	if down {
+		index2 = index1 - 1
+	}
+
+	it := q.tree.Iterator()
+	i := 0
+	var item1 *queueItem
+	var item2 *queueItem
+	for it.Next() {
+
+		if i == index1 {
+			node := it.Value()
+			item1 = node.(*queueItem)
+		}
+		if i == index2 {
+			node := it.Value()
+			item2 = node.(*queueItem)
+		}
+		if item1 != nil && item2 != nil {
+			break
+		}
+		i += 1
+	}
+	if item1 == nil || item2 == nil {
+		logrus.Errorf("did not find both elements from queue to re-order")
+	} else {
+		item1.song, item2.song = item2.song, item1.song
+	}
+}
 
 // Queue implements interfaces.QueueController
 type Queue struct {
 	lock               sync.RWMutex
-	items              []*models.Song
+	tree               *queueRbTree
 	history            []*models.Song
 	queueUpdatedFunc   []func([]*models.Song)
 	historyUpdatedFunc func([]*models.Song)
@@ -35,7 +245,7 @@ type Queue struct {
 
 func newQueue() *Queue {
 	q := &Queue{
-		items:            []*models.Song{},
+		tree:             newQueueHeap(),
 		history:          []*models.Song{},
 		queueUpdatedFunc: make([]func([]*models.Song), 0),
 	}
@@ -46,7 +256,7 @@ func newQueue() *Queue {
 func (q *Queue) GetQueue() []*models.Song {
 	q.lock.RLock()
 	defer q.lock.RUnlock()
-	return q.items
+	return q.tree.GetQueue()
 }
 
 // ClearQueue clears queue. This also calls QueueChangedCallback.
@@ -54,11 +264,7 @@ func (q *Queue) ClearQueue(first bool) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 	defer q.notifyQueueUpdated()
-	if first || len(q.items) == 0 {
-		q.items = []*models.Song{}
-	} else {
-		q.items = []*models.Song{q.items[0]}
-	}
+	q.tree.Clear(first)
 }
 
 // AddSongs adds songs to the end of queue.
@@ -67,22 +273,19 @@ func (q *Queue) AddSongs(songs []*models.Song) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 	defer q.notifyQueueUpdated()
-	q.items = append(q.items, songs...)
-	logrus.Debug("Adding songs to queue, current size: ", len(q.items))
+
+	for _, v := range songs {
+		q.tree.AddSong(v, false, false)
+	}
+
+	logrus.Debug("Adding songs to queue, current size: ", q.tree.Len())
 }
 
 func (q *Queue) PlayNext(songs []*models.Song) {
 	q.lock.Lock()
-	size := len(q.items)
-	q.lock.Unlock()
-	// append songs if there is 0 or 1 songs
-	if size < 2 {
-		q.AddSongs(songs)
-		return
+	for i := len(songs); i > 0; i-- {
+		q.tree.AddSong(songs[i-1], true, false)
 	}
-	q.lock.Lock()
-	temp := append([]*models.Song{q.items[0]}, songs...)
-	q.items = append(temp, q.items[1:]...)
 	q.lock.Unlock()
 	q.notifyQueueUpdated()
 }
@@ -92,11 +295,8 @@ func (q *Queue) RemoveSong(index int) {
 	q.lock.Lock()
 	if index == 0 {
 		// if we remove first, we must notify player to move to next song
-	} else if len(q.items) > index+1 {
-		q.items = append(q.items[:index], q.items[index+1:]...)
-		changed = true
-	} else if len(q.items) == index+1 {
-		q.items = q.items[:index]
+	} else {
+		q.tree.RemoveSong(index)
 		changed = true
 	}
 	q.lock.Unlock()
@@ -112,22 +312,19 @@ func (q *Queue) Reorder(index int, down bool) bool {
 	q.lock.Lock()
 	changed := false
 
-	//var item *models.Song
-	if len(q.items) == 0 {
-		// no action
-	} else if index < 0 || index > len(q.items)-1 {
-		// illegal index
-	} else if index >= 0 && index < len(q.items)-2 && !down {
-		changed = true
-		oldItem := q.items[index+1]
-		q.items[index+1] = q.items[index]
-		q.items[index] = oldItem
+	heapLen := q.tree.Len()
 
+	//var item *models.Song
+	if heapLen == 0 {
+		// no action
+	} else if index < 0 || index > heapLen-1 {
+		// illegal index
+	} else if index >= 0 && index < heapLen-2 && !down {
+		changed = true
+		q.tree.Reorder(index, down)
 	} else if index >= 1 && down {
 		changed = true
-		oldItem := q.items[index-1]
-		q.items[index-1] = q.items[index]
-		q.items[index] = oldItem
+		q.tree.Reorder(index, down)
 	}
 
 	q.lock.Unlock()
@@ -162,8 +359,10 @@ func (q *Queue) notifyQueueUpdated() {
 	if q.queueUpdatedFunc == nil {
 		return
 	}
+
+	songs := q.tree.GetQueue()
 	for _, v := range q.queueUpdatedFunc {
-		v(q.items)
+		v(songs)
 	}
 }
 
@@ -178,11 +377,11 @@ func (q *Queue) songComplete() {
 	q.lock.Lock()
 	defer q.notifyQueueUpdated()
 	defer q.notifyHistoryUpdated()
-	if len(q.items) == 0 {
+	if q.tree.Len() == 0 {
 		return
 	}
-	song := q.items[0]
-	q.items = q.items[1:]
+
+	song := q.tree.RemoveSong(0)
 	if q.history == nil {
 		q.history = []*models.Song{song}
 	} else {
@@ -201,7 +400,7 @@ func (q *Queue) playLastSong() {
 		return
 	}
 	song := q.history[0]
-	q.items = append([]*models.Song{song}, q.items...)
+	q.tree.AddSong(song, false, true)
 	if q.history == nil {
 		q.history = q.history[1:]
 	} else {
@@ -213,15 +412,20 @@ func (q *Queue) playLastSong() {
 func (q *Queue) empty() bool {
 	q.lock.RLock()
 	defer q.lock.RUnlock()
-	return len(q.items) == 0
+	return q.tree.Len() == 0
 }
 
 func (q *Queue) currentSong() *models.Song {
 	q.lock.RLock()
 	defer q.lock.RUnlock()
-	if len(q.items) > 0 {
-		return q.items[0]
-	} else {
-		return &models.Song{}
-	}
+	//if len(q.items) > 0 {
+	//	return q.items[0]
+	//} else {
+	//	return &models.Song{}
+	//}
+	return nil
+}
+
+func (q *Queue) SetShuffle(enabled bool) {
+	q.tree.SetShuffling(enabled)
 }

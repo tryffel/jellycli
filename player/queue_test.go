@@ -372,7 +372,7 @@ func TestQueue_PlayNext(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			q := &Queue{
-				tree:               newQueueHeap(),
+				list:               newQueueList(),
 				history:            tt.fields.history,
 				queueUpdatedFunc:   tt.fields.queueUpdatedFunc,
 				historyUpdatedFunc: tt.fields.historyUpdatedFunc,
@@ -436,6 +436,10 @@ func TestQueue_Shuffle(t *testing.T) {
 				shuffleCollection[v.Id.String()] = true
 			}
 
+			if shuffledSongs[0] != originalSongs[0] {
+				t.Errorf("1st shuffled song does not match original song")
+			}
+
 			q.SetShuffle(false)
 			if !reflect.DeepEqual(originalSongs, tt.songs) {
 				t.Errorf("undo shuffle = %v, want %v", originalSongs, tt.songs)
@@ -473,6 +477,26 @@ func TestQueue_Complete(t *testing.T) {
 	queue := q.GetQueue()
 	// we have added 1 and removed 1 song, lists should be equal in length
 	logDiff(t, len(songs), len(queue), "undo shuffling, test queue size decreased")
+}
+
+func TestQueue_TestAddSongsDuringShouffle(t *testing.T) {
+	// 1. add songs
+	// 2. shuffle songs
+	// 3. add couple of songs
+	// 4. remove 1st song
+	// 5. undo shuffling
+
+	q := newQueue()
+	songs := testSongs()
+	q.AddSongs(songs)
+
+	q.SetShuffle(true)
+	q.AddSongs(songs[0:2])
+	q.songComplete()
+	q.SetShuffle(false)
+	wantSongs := append(songs[1:], songs[0:2]...)
+	gotSongs := q.GetQueue()
+	logDiff(t, wantSongs, gotSongs, "reversed shuffle")
 }
 
 func logDiff(t *testing.T, x, y interface{}, msg string) {

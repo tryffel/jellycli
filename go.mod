@@ -4,7 +4,6 @@ go 1.13
 
 require (
 	github.com/denisbrodbeck/machineid v1.0.1
-	github.com/emirpasic/gods v1.12.0
 	github.com/faiface/beep v1.0.1
 	github.com/gdamore/tcell v1.3.0
 	github.com/godbus/dbus v4.1.0+incompatible

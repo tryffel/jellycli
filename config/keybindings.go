@@ -86,7 +86,7 @@ func DefaultKeyBindings() KeyBindings {
 			VolumeUp:   tcell.KeyF10,
 			VolumeDown: tcell.KeyF9,
 			MuteUnmute: tcell.KeyF11,
-			Shuffle:    tcell.KeyCtrlA,
+			Shuffle:    tcell.KeyCtrlD,
 		},
 		NavigationBar: NavigationBarBindings{
 			Help:    tcell.KeyF1,

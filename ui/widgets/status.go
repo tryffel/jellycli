@@ -167,8 +167,9 @@ func newStatus(ctrl interfaces.Player) *Status {
 	for _, v := range append(s.buttons, s.btnShuffle) {
 		v.SetBackgroundColor(s.controlsBgColor)
 		v.SetLabelColor(s.controlsFgColor)
-		v.SetBorder(false)
 	}
+
+	s.btnShuffle.SetBackgroundColor(colors.Background)
 	return s
 }
 
@@ -188,18 +189,21 @@ func (s *Status) Draw(screen tcell.Screen) {
 	volume := " Volume " + s.volume.Draw(int(s.state.Volume))
 	topRowFree := w - len(songPast) - len(songDuration) - utf8.RuneCountInString(volume) - 5
 
+	showShuffleBtn := false
+	if w > 140 {
+		showShuffleBtn = true
+		topRowFree -= 6
+	}
+
 	s.progress.SetWidth(topRowFree * 10 / 11)
 
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
 	progressBar := s.progress.Draw(s.state.SongPast.Seconds())
-
 	progress := songPast + progressBar + songDuration
 	progressLen := utf8.RuneCountInString(progress)
-
 	topX := x + 1
-
 	colors := config.Color.Status
 
 	cview.Print(screen, progress, topX, y-1, progressLen+5, cview.AlignLeft, colors.ProgressBar)
@@ -217,17 +221,19 @@ func (s *Status) Draw(screen tcell.Screen) {
 	if w > 40 {
 		for i, v := range s.buttons {
 			cview.Print(screen, s.shortCuts[i], btnX, btnY-1, 4, cview.AlignLeft, colors.Shortcuts)
-
 			v.SetRect(btnX, btnY, 3, 1)
 			v.Draw(screen)
 			btnX += 5
 		}
-
+	}
+	if showShuffleBtn {
 		btnX = w - 3
-		cview.Print(screen, s.shortCuts[len(s.shortCuts)-1], btnX-2, btnY+1, 6, cview.AlignRight, colors.Shortcuts)
-		s.btnShuffle.SetRect(btnX-3, btnY, 7, 1)
+		// draw two empty characters around the button the separate it from status box.
+		cview.Print(screen, "         ", topX-12, btnY-2, 9, cview.AlignLeft, colors.Shortcuts)
+		s.btnShuffle.SetRect(topX-11, btnY-2, 7, 1)
 		s.btnShuffle.Draw(screen)
 	}
+
 	s.WriteStatus(screen, x+30, y)
 }
 
@@ -299,9 +305,9 @@ func (s *Status) DrawButtons() {
 	}
 
 	if s.state.Shuffle {
-		s.btnShuffle.SetBackgroundColor(config.Color.ButtonBackgroundSelected)
+		s.btnShuffle.SetBackgroundColor(config.Color.BackgroundSelected)
 
 	} else {
-		s.btnShuffle.SetBackgroundColor(config.Color.ButtonBackground)
+		s.btnShuffle.SetBackgroundColor(config.Color.Background)
 	}
 }

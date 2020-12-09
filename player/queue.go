@@ -80,7 +80,7 @@ func (q *queueList) SetShuffling(enable bool) {
 	}
 	q.shuffle = enable
 
-	if enable {
+	if enable && len(q.items) > 0 {
 		// make sure 1st stays 1st after shuffling
 		q.items[0].priority = 0
 		for _, v := range q.items[1:] {
@@ -379,12 +379,6 @@ func (q *Queue) empty() bool {
 	return q.list.Len() == 0
 }
 
-func (q *Queue) currentSong() *models.Song {
-	q.lock.RLock()
-	defer q.lock.RUnlock()
-	return nil
-}
-
 func (q *Queue) SetShuffle(enabled bool) {
 	q.lock.Lock()
 	changed := enabled != q.list.shuffle
@@ -395,10 +389,4 @@ func (q *Queue) SetShuffle(enabled bool) {
 	q.list.SetShuffling(enabled)
 	q.lock.Unlock()
 	q.notifyQueueUpdated()
-}
-
-func (q *Queue) GetShuffle() bool {
-	q.lock.RLock()
-	defer q.lock.RUnlock()
-	return q.list.shuffle
 }

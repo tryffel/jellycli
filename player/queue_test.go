@@ -45,6 +45,9 @@ func Test_queue_GetQueue(t *testing.T) {
 		songs []*models.Song
 	}{
 		{
+			songs: []*models.Song{},
+		},
+		{
 			songs: []*models.Song{
 				{
 					Id:   "song-a",
@@ -75,6 +78,41 @@ func Test_queue_GetQueue(t *testing.T) {
 	}
 }
 
+func TestQueue_RemoveSong(t *testing.T) {
+	queue := newQueue()
+	songs := testSongs()
+
+	tests := []struct {
+		name      string
+		songs     []*models.Song
+		index     int
+		wantSongs []*models.Song
+	}{
+		{
+			songs:     []*models.Song{},
+			index:     0,
+			wantSongs: []*models.Song{},
+		},
+		{
+			songs:     songs,
+			index:     len(songs) - 1,
+			wantSongs: songs[:(len(songs) - 1)],
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			queue.ClearQueue(true)
+			queue.AddSongs(tt.songs)
+
+			queue.RemoveSong(tt.index)
+
+			gotSongs := queue.GetQueue()
+			logDiff(t, tt.wantSongs, gotSongs, "songs after removal")
+		})
+	}
+}
+
 func Test_queue_Reorder(t *testing.T) {
 	songs := testSongs()
 
@@ -88,6 +126,7 @@ func Test_queue_Reorder(t *testing.T) {
 		songs     []*models.Song
 		want      []*models.Song
 		orderings []ordering
+		shuffle   bool
 	}{
 		{
 			name:  "first-to-right",
@@ -99,6 +138,7 @@ func Test_queue_Reorder(t *testing.T) {
 			orderings: []ordering{
 				{0, false},
 			},
+			shuffle: false,
 		},
 		{
 			// no edit
@@ -108,6 +148,7 @@ func Test_queue_Reorder(t *testing.T) {
 			orderings: []ordering{
 				{0, true},
 			},
+			shuffle: false,
 		},
 		{
 			name:  "2nd-to-3rd",
@@ -119,6 +160,7 @@ func Test_queue_Reorder(t *testing.T) {
 			orderings: []ordering{
 				{1, false},
 			},
+			shuffle: false,
 		},
 		{
 			name:  "4nd-to-3rd",
@@ -130,6 +172,7 @@ func Test_queue_Reorder(t *testing.T) {
 			orderings: []ordering{
 				{3, true},
 			},
+			shuffle: false,
 		},
 		{
 			name:  "last-left",
@@ -141,6 +184,7 @@ func Test_queue_Reorder(t *testing.T) {
 			orderings: []ordering{
 				{8, true},
 			},
+			shuffle: false,
 		},
 		{
 			name:  "last-right",
@@ -152,6 +196,7 @@ func Test_queue_Reorder(t *testing.T) {
 			orderings: []ordering{
 				{8, false},
 			},
+			shuffle: false,
 		},
 		{
 			name:  "negative",
@@ -163,18 +208,33 @@ func Test_queue_Reorder(t *testing.T) {
 			orderings: []ordering{
 				{-1, false},
 			},
+			shuffle: false,
+		},
+		{
+			name:  "Reorder while shuffle",
+			songs: songs,
+			want:  songs,
+			orderings: []ordering{
+				{8, false},
+			},
+			shuffle: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			q := newQueue()
 			q.AddSongs(songs)
+			q.SetShuffle(tt.shuffle)
 			for _, v := range tt.orderings {
 				q.Reorder(v.from, v.down)
 			}
-			if got := q.GetQueue(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Reorder() = %v, want %v", got, tt.want)
+
+			if tt.shuffle {
+				q.SetShuffle(false)
 			}
+			got := q.GetQueue()
+
+			logDiff(t, got, tt.want, "reorder")
 		})
 	}
 }
@@ -224,32 +284,48 @@ func Test_queue_songComplete(t *testing.T) {
 func Test_queue_AddSongs(t *testing.T) {
 	songs := testSongs()
 	tests := []struct {
-		songs []*models.Song
-		name  string
-		add   []*models.Song
-		want  []*models.Song
+		songs   []*models.Song
+		name    string
+		add     []*models.Song
+		want    []*models.Song
+		shuffle bool
 	}{
 		{
-			songs: songs,
-			add:   []*models.Song{songs[1], songs[2], songs[3]},
-			want:  append(songs, songs[1], songs[2], songs[3]),
+			songs:   songs,
+			add:     []*models.Song{songs[1], songs[2], songs[3]},
+			want:    append(songs, songs[1], songs[2], songs[3]),
+			shuffle: false,
 		},
 		{
-			songs: nil,
-			add:   []*models.Song{songs[1], songs[2], songs[3]},
-			want:  []*models.Song{songs[1], songs[2], songs[3]},
+			songs:   nil,
+			add:     []*models.Song{songs[1], songs[2], songs[3]},
+			want:    []*models.Song{songs[1], songs[2], songs[3]},
+			shuffle: false,
 		},
 		{
-			songs: songs,
-			add:   nil,
-			want:  songs,
+			songs:   songs,
+			add:     nil,
+			want:    songs,
+			shuffle: false,
+		},
+		{
+			name:    "add songs while in shuffle mode",
+			songs:   nil,
+			add:     []*models.Song{songs[1], songs[2], songs[3]},
+			want:    []*models.Song{songs[1], songs[2], songs[3]},
+			shuffle: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			q := newQueue()
+			q.SetShuffle(tt.shuffle)
 			q.AddSongs(tt.songs)
 			q.AddSongs(tt.add)
+
+			if tt.shuffle {
+				q.SetShuffle(false)
+			}
 			got := q.GetQueue()
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("AddSongs, got: %v, want: %v", got, tt.want)
@@ -269,6 +345,7 @@ func TestQueue_playLastSong(t *testing.T) {
 		wantHistory []*models.Song
 		// how many songs
 		previous int
+		shuffle  bool
 	}{
 		{
 			// simple case
@@ -297,15 +374,27 @@ func TestQueue_playLastSong(t *testing.T) {
 			wantQueue:   []*models.Song{songs[1], songs[0], songs[1]},
 			wantHistory: []*models.Song{},
 		},
+		{
+			name:        "shuffle",
+			songs:       songs,
+			previous:    1,
+			queue:       []*models.Song{songs[0]},
+			history:     []*models.Song{songs[1]},
+			wantQueue:   []*models.Song{songs[1], songs[0]},
+			wantHistory: []*models.Song{},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			q := newQueue()
 			q.history = tt.history
+			q.SetShuffle(tt.shuffle)
 			q.AddSongs(tt.queue)
 			for i := 0; i < tt.previous; i++ {
 				q.playLastSong()
 			}
+
+			q.SetShuffle(false)
 
 			history := q.GetHistory(10)
 			queue := q.GetQueue()

@@ -293,6 +293,9 @@ func (w *Window) mediaCtrl(event *tcell.EventKey) bool {
 	case ctrls.Shuffle:
 		shuffle := !w.status.state.Shuffle
 		go w.mediaPlayer.SetShuffle(shuffle)
+	case ctrls.MuteUnmute:
+		mute := !w.status.state.Muted
+		go w.mediaPlayer.SetMute(mute)
 
 	default:
 		return false

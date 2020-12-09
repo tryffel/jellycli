@@ -190,9 +190,13 @@ func (s *Status) Draw(screen tcell.Screen) {
 	topRowFree := w - len(songPast) - len(songDuration) - utf8.RuneCountInString(volume) - 5
 
 	showShuffleBtn := false
+	showShuffleSmall := false
 	if w > 140 {
 		showShuffleBtn = true
 		topRowFree -= 6
+	} else if w > 80 {
+		showShuffleSmall = true
+		topRowFree -= 3
 	}
 
 	s.progress.SetWidth(topRowFree * 10 / 11)
@@ -208,7 +212,12 @@ func (s *Status) Draw(screen tcell.Screen) {
 
 	cview.Print(screen, progress, topX, y-1, progressLen+5, cview.AlignLeft, colors.ProgressBar)
 	topX += progressLen + progressLen/10
-	cview.Print(screen, volume, topX, y-1, w, cview.AlignLeft, colors.ProgressBar)
+
+	if s.state.Muted {
+		cview.Print(screen, volume, topX, y-1, w, cview.AlignLeft, colors.VolumeMuted)
+	} else {
+		cview.Print(screen, volume, topX, y-1, w, cview.AlignLeft, colors.ProgressBar)
+	}
 
 	cview.Print(screen, util.PackKeyBindingName(config.KeyBinds.Global.VolumeDown, 5),
 		topX+7, y, topX+16, cview.AlignLeft, colors.Shortcuts)
@@ -227,11 +236,20 @@ func (s *Status) Draw(screen tcell.Screen) {
 		}
 	}
 	if showShuffleBtn {
+		s.btnShuffle.SetLabel("Shuffle")
 		btnX = w - 3
 		// draw two empty characters around the button the separate it from status box.
 		cview.Print(screen, "         ", topX-12, btnY-2, 9, cview.AlignLeft, colors.Shortcuts)
 		s.btnShuffle.SetRect(topX-11, btnY-2, 7, 1)
 		s.btnShuffle.Draw(screen)
+	} else if showShuffleSmall {
+		s.btnShuffle.SetLabel("S")
+		btnX = w - 3
+		// draw two empty characters around the button the separate it from status box.
+		cview.Print(screen, "   ", topX-5, btnY-2, 3, cview.AlignLeft, colors.Shortcuts)
+		s.btnShuffle.SetRect(topX-4, btnY-2, 1, 1)
+		s.btnShuffle.Draw(screen)
+
 	}
 
 	s.WriteStatus(screen, x+30, y)

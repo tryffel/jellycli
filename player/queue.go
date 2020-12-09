@@ -84,6 +84,7 @@ func (q *queueRbTree) SetShuffling(enable bool) {
 	q.tree.Clear()
 	for _, v := range items {
 		queueItem := v.(*queueItem)
+		queueItem.priority = rand.Int()
 		if enable {
 			q.tree.Put(queueItem.priority, queueItem)
 		} else {

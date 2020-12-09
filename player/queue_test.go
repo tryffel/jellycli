@@ -454,11 +454,11 @@ func TestQueue_Complete(t *testing.T) {
 
 	q.AddSongs(songs)
 	logDiff(t, songs, q.GetQueue(), "initial queue")
-	q.ClearQueue(false)
+	q.ClearQueue(true)
 	logDiff(t, empty, q.GetQueue(), "clear queue completely")
 
 	q.AddSongs(songs)
-	q.ClearQueue(true)
+	q.ClearQueue(false)
 	logDiff(t, []*models.Song{songs[0]}, q.GetQueue(), "clear queue, leave first")
 
 	q.AddSongs(songs)

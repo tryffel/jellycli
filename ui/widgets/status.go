@@ -21,7 +21,6 @@ package widgets
 import (
 	"fmt"
 	"github.com/gdamore/tcell"
-	"github.com/sirupsen/logrus"
 	"gitlab.com/tslocum/cview"
 	"sync"
 	"tryffel.net/go/jellycli/config"
@@ -43,7 +42,7 @@ const (
 
 	// yellow heart, utf8. Not visible on all editors.
 	charFavorite = "💛"
-	btnShuffle   = "⤨"
+	btnShuffle   = "Shuffle"
 
 	btnStyleStart = "[white:red:b]"
 	btnStyleStop  = "[-:-:-]"
@@ -124,22 +123,17 @@ func newStatus(ctrl interfaces.Player) *Status {
 
 	s.details = cview.NewTextView()
 
+	// button inputs are captured globally in widgets.Window.
+	// Status panel buttons act as labels only.
+
 	s.btnPlay = cview.NewButton(btnPlay)
-	s.btnPlay.SetSelectedFunc(s.namedCbFunc(btnPlay))
 	s.btnPause = cview.NewButton(btnPause)
-	s.btnPause.SetSelectedFunc(s.namedCbFunc(btnPause))
 	s.btnNext = cview.NewButton(btnNext)
-	s.btnNext.SetSelectedFunc(s.namedCbFunc(btnNext))
 	s.btnPrevious = cview.NewButton(btnPrevious)
-	s.btnPrevious.SetSelectedFunc(s.namedCbFunc(btnPrevious))
 	s.btnForward = cview.NewButton(btnForward)
-	s.btnForward.SetSelectedFunc(s.namedCbFunc(btnForward))
 	s.btnBackward = cview.NewButton(btnBackward)
-	s.btnBackward.SetSelectedFunc(s.namedCbFunc(btnBackward))
 	s.btnStop = cview.NewButton(btnStop)
-	s.btnStop.SetSelectedFunc(s.namedCbFunc(btnStop))
 	s.btnShuffle = cview.NewButton(btnShuffle)
-	s.btnShuffle.SetSelectedFunc(s.namedCbFunc(btnShuffle))
 
 	s.progress = NewProgressBar(40, 100)
 	s.volume = NewProgressBar(10, 100)
@@ -231,7 +225,7 @@ func (s *Status) Draw(screen tcell.Screen) {
 
 		btnX = w - 3
 		cview.Print(screen, s.shortCuts[len(s.shortCuts)-1], btnX-2, btnY+1, 6, cview.AlignRight, colors.Shortcuts)
-		s.btnShuffle.SetRect(btnX, btnY, 3, 1)
+		s.btnShuffle.SetRect(btnX-3, btnY, 7, 1)
 		s.btnShuffle.Draw(screen)
 	}
 	s.WriteStatus(screen, x+30, y)
@@ -284,38 +278,6 @@ func (s *Status) WriteStatus(screen tcell.Screen, x, y int) {
 		x += len(s.state.Album.Name) + 1
 		cview.Print(screen, fmt.Sprintf("(%d)", s.state.Album.Year), x, y+1, w, cview.AlignLeft, s.detailsMainColor)
 	}
-}
-
-// Return cb func that includes name
-func (s *Status) namedCbFunc(name string) func() {
-	return func() {
-		s.buttonCb(name)
-	}
-}
-
-// Button pressed cb with name of the button
-func (s *Status) buttonCb(name string) {
-	logrus.Infof("Button %s was pressed!", name)
-	if s.actionCb == nil {
-		return
-	}
-
-	status := interfaces.AudioStatus{}
-
-	switch name {
-	case btnPlay:
-		status.Action = interfaces.AudioActionPlay
-	case btnPause:
-		status.Action = interfaces.AudioActionPlayPause
-	case btnNext:
-		status.Action = interfaces.AudioActionNext
-	case btnStop:
-		status.Action = interfaces.AudioActionStop
-	case btnShuffle:
-		status.Action = interfaces.AudioActionShuffleChanged
-		status.Shuffle = !s.state.Shuffle
-	}
-	s.actionCb(status)
 }
 
 func (s *Status) UpdateState(state interfaces.AudioStatus, song *models.SongInfo) {

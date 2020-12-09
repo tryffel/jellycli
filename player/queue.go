@@ -82,10 +82,14 @@ func (q *queueRbTree) SetShuffling(enable bool) {
 	q.shuffle = enable
 	items := q.tree.Values()
 	q.tree.Clear()
-	for _, v := range items {
+	for i, v := range items {
 		queueItem := v.(*queueItem)
-		queueItem.priority = rand.Int()
 		if enable {
+			if i == 0 {
+				queueItem.priority = -1
+			} else {
+				queueItem.priority = rand.Int()
+			}
 			q.tree.Put(queueItem.priority, queueItem)
 		} else {
 			q.tree.Put(queueItem.index, queueItem)
@@ -419,11 +423,6 @@ func (q *Queue) empty() bool {
 func (q *Queue) currentSong() *models.Song {
 	q.lock.RLock()
 	defer q.lock.RUnlock()
-	//if len(q.items) > 0 {
-	//	return q.items[0]
-	//} else {
-	//	return &models.Song{}
-	//}
 	return nil
 }
 

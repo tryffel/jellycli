@@ -19,23 +19,35 @@
 package player
 
 import (
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"runtime"
+	"time"
 	"tryffel.net/go/jellycli/api"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
+	"tryffel.net/go/jellycli/storage"
 )
 
 // Items implements interfaces.ItemController
 type Items struct {
 	browser api.MediaServer
+
+	db *storage.Db
 }
 
-func newItems(api api.MediaServer) *Items {
-	return &Items{
+func newItems(api api.MediaServer) (*Items, error) {
+	items := &Items{
 		browser: api,
 	}
+	var err error
+
+	items.db, err = storage.NewDb(config.AppConfig.Jellyfin.ServerId)
+	if err != nil {
+		return items, fmt.Errorf("init local database: %v", err)
+	}
+	return items, err
 }
 
 func (i *Items) Search(itemType models.ItemType, query string) ([]models.Item, error) {
@@ -43,6 +55,7 @@ func (i *Items) Search(itemType models.ItemType, query string) ([]models.Item, e
 }
 
 func (i *Items) GetArtists(opts *interfaces.QueryOpts) ([]*models.Artist, int, error) {
+	//return i.db.GetArtists(opts)
 	return i.browser.GetArtists(opts)
 }
 
@@ -158,4 +171,53 @@ func (i *Items) GetInstantMix(item models.Item) ([]*models.Song, error) {
 func (i *Items) GetLink(item models.Item) string {
 	return i.browser.GetLink(item)
 
+}
+
+func (i *Items) UpdateLocalArtists(limit int) error {
+	logrus.Debugf("Refresh artists from remote server")
+	start := time.Now()
+	retrieved := 0
+	totalArtists := 0
+
+	query := interfaces.DefaultQueryOpts()
+	query.Paging.PageSize = 200
+	if 0 < limit && limit < 200 {
+		query.Paging.PageSize = limit
+	}
+	query.Paging.CurrentPage = 0
+
+	for {
+		artists, n, err := i.browser.GetArtists(query)
+		if err != nil {
+			return fmt.Errorf("pull artists: %v", err)
+		}
+		totalArtists = n
+
+		if len(artists) == 0 {
+			logrus.Debugf("no artists found")
+			return nil
+		}
+
+		err = i.db.UpdateArtists(artists)
+		if err != nil {
+			return fmt.Errorf("save artists: %v", err)
+		}
+
+		query.Paging.CurrentPage += 1
+		retrieved += len(artists)
+
+		if (limit != 0 && retrieved >= limit) || len(artists) < query.Paging.PageSize {
+			break
+		}
+	}
+
+	if totalArtists != retrieved {
+		logrus.Warningf("not all artists were updated: (%d - %d)", totalArtists, retrieved)
+
+	}
+
+	took := time.Now().Sub(start)
+
+	logrus.Infof("Updated %d artists in %.2f s", retrieved, float32(took.Milliseconds())/1000)
+	return nil
 }

@@ -82,7 +82,7 @@ func NewPlayer(browser api.MediaServer) (*Player, error) {
 
 	p.Audio = newAudio()
 	p.Queue = newQueue()
-	p.Items = newItems(browser)
+	p.Items, err = newItems(browser)
 	if err != nil {
 		return p, err
 	}

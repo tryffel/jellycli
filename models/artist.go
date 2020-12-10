@@ -20,13 +20,13 @@ package models
 
 // Artist has multiple albums.
 type Artist struct {
-	Id            Id
-	Name          string
+	Id            Id     `db:"id"`
+	Name          string `db:"name"`
 	Albums        []Id
-	TotalDuration int
-	AlbumCount    int
+	TotalDuration int `db:"total_duration"`
+	AlbumCount    int `db:"album_count"`
 
-	Favorite bool
+	Favorite bool `db:"favorite"`
 }
 
 func (a *Artist) GetId() Id {

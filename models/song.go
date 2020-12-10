@@ -22,19 +22,19 @@ package models
 // There might be multiple artists.
 type Song struct {
 	// Id as unique identifier for song
-	Id       Id
-	Name     string
-	Duration int
-	Index    int
-	Album    Id
+	Id       Id     `db:"id"`
+	Name     string `db:"name"`
+	Duration int    `db:"duration"`
+	Index    int    `db:"song_index"`
+	Album    Id     `db:"album"`
 	// DiscNumber tells which disc song is part of
-	DiscNumber int
+	DiscNumber int `db:"disc_number"`
 	// Artists are all artist taking part in song
 	Artists []IdName
 	// AlbumArtist is primary artist
-	AlbumArtist Id
+	AlbumArtist Id `db:"artist"`
 
-	Favorite bool
+	Favorite bool `db:"favorite"`
 }
 
 func (s *Song) GetId() Id {

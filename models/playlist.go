@@ -20,12 +20,12 @@ package models
 
 // Playlist is a list of songs. It has no artists itself, but songs do have albums and artists.
 type Playlist struct {
-	Id       Id
-	Name     string
-	Duration int
+	Id       Id     `db:"id"`
+	Name     string `db:"name"`
+	Duration int    `db:"duration"`
 
 	Songs     []*Song
-	SongCount int
+	SongCount int `db:"song_count"`
 }
 
 func (p Playlist) GetId() Id {

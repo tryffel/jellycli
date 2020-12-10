@@ -76,6 +76,9 @@ type Player struct {
 	// memory limit in MiB
 	HttpBufferingLimitMem int  `yaml:"http_buffering_limit_mem"`
 	EnableRemoteControl   bool `yaml:"enable_remote_control"`
+
+	EnableLocalCache bool   `yaml:"enable_local_cache"`
+	LocalCacheDir    string `yaml:"local_cache_dir"`
 }
 
 func (g *Gui) sanitize() {
@@ -117,6 +120,14 @@ func (p *Player) sanitize() {
 		p.HttpBufferingLimitMem = 20
 	}
 
+	if p.LocalCacheDir == "" {
+		baseCacheDir, err := os.UserCacheDir()
+		if err != nil {
+			logrus.Fatalf("cannot set cache directory, please set manually: 'config.player.local_cache_dir")
+		}
+		p.LocalCacheDir = path.Join(baseCacheDir, AppNameLower)
+	}
+
 }
 
 // initialize new config with some sensible values
@@ -137,6 +148,7 @@ func (c *Config) initNewConfig() {
 	c.Player.LogFile = path.Join(tempDir, "jellycli.log")
 
 	c.Gui.EnableResultsFiltering = true
+	c.Player.EnableLocalCache = true
 }
 
 // can config file be considered empty / not configured
@@ -196,6 +208,8 @@ func ConfigFromViper() error {
 			HttpBufferingS:        viper.GetInt("player.http_buffering_s"),
 			HttpBufferingLimitMem: viper.GetInt("player.http_buffering_limit_mem"),
 			EnableRemoteControl:   viper.GetBool("player.enable_remote_control"),
+			LocalCacheDir:         viper.GetString("player.local_cache_dir"),
+			EnableLocalCache:      viper.GetBool("player.enable_local_cache"),
 		},
 		Gui: Gui{
 			PageSize:            viper.GetInt("gui.pagesize"),
@@ -280,6 +294,8 @@ func UpdateViper() {
 	viper.Set("player.http_buffering_limit_mem", AppConfig.Player.HttpBufferingLimitMem)
 	viper.Set("player.enable_remote_control", AppConfig.Player.EnableRemoteControl)
 	viper.Set("player.audio_buffering_ms", AppConfig.Player.AudioBufferingMs)
+	viper.Set("player.local_cache_dir", AppConfig.Player.LocalCacheDir)
+	viper.Set("player.enable_local_cache", AppConfig.Player.EnableLocalCache)
 
 	viper.Set("gui.search_results_limit", AppConfig.Gui.SearchResultsLimit)
 	viper.Set("gui.debug_mode", AppConfig.Gui.DebugMode)

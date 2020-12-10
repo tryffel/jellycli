@@ -79,14 +79,7 @@ type Status struct {
 
 	state interfaces.AudioStatus
 
-	controlsFgColor tcell.Color
-	controlsBgColor tcell.Color
-
-	detailsFgColor tcell.Color
-	detailsBgColor tcell.Color
-
 	detailsMainColor tcell.Color
-	detailsDimColor  tcell.Color
 
 	song *models.SongInfo
 
@@ -104,12 +97,7 @@ func newStatus(ctrl interfaces.Player) *Status {
 	s.player = ctrl
 
 	colors := config.Color.Status
-
-	s.controlsBgColor = colors.ButtonBackground
-	s.controlsFgColor = colors.ButtonLabel
 	s.detailsMainColor = colors.Text
-	s.detailsDimColor = colors.TextSecondary
-	s.detailsBgColor = colors.Background
 
 	s.frame.SetBackgroundColor(colors.Background)
 	s.layout = cview.NewGrid()
@@ -165,8 +153,8 @@ func newStatus(ctrl interfaces.Player) *Status {
 	}
 
 	for _, v := range append(s.buttons, s.btnShuffle) {
-		v.SetBackgroundColor(s.controlsBgColor)
-		v.SetLabelColor(s.controlsFgColor)
+		v.SetBackgroundColor(colors.ButtonBackground)
+		v.SetLabelColor(colors.ButtonLabel)
 	}
 
 	s.btnShuffle.SetBackgroundColor(colors.Background)
@@ -174,7 +162,6 @@ func newStatus(ctrl interfaces.Player) *Status {
 }
 
 func (s *Status) Draw(screen tcell.Screen) {
-	// TODO: Make drawing responsive
 	s.frame.Draw(screen)
 	x, y, w, _ := s.frame.GetInnerRect()
 
@@ -191,10 +178,10 @@ func (s *Status) Draw(screen tcell.Screen) {
 
 	showShuffleBtn := false
 	showShuffleSmall := false
-	if w > 140 {
+	if w > 100 {
 		showShuffleBtn = true
 		topRowFree -= 6
-	} else if w > 80 {
+	} else if w > 60 {
 		showShuffleSmall = true
 		topRowFree -= 3
 	}
@@ -213,16 +200,18 @@ func (s *Status) Draw(screen tcell.Screen) {
 	cview.Print(screen, progress, topX, y-1, progressLen+5, cview.AlignLeft, colors.ProgressBar)
 	topX += progressLen + progressLen/10
 
+	volumeLen := utf8.RuneCountInString(volume)
+	volumeX := x + w - volumeLen - 1
 	if s.state.Muted {
-		cview.Print(screen, volume, topX, y-1, w, cview.AlignLeft, colors.VolumeMuted)
+		cview.Print(screen, volume, volumeX, y-1, w, cview.AlignLeft, colors.VolumeMuted)
 	} else {
-		cview.Print(screen, volume, topX, y-1, w, cview.AlignLeft, colors.ProgressBar)
+		cview.Print(screen, volume, volumeX, y-1, w, cview.AlignLeft, colors.ProgressBar)
 	}
 
 	cview.Print(screen, util.PackKeyBindingName(config.KeyBinds.Global.VolumeDown, 5),
-		topX+7, y, topX+16, cview.AlignLeft, colors.Shortcuts)
+		volumeX+7, y, topX+16, cview.AlignLeft, colors.Shortcuts)
 	cview.Print(screen, util.PackKeyBindingName(config.KeyBinds.Global.VolumeUp, 5),
-		topX+18, y, topX+1, cview.AlignLeft, colors.Shortcuts)
+		volumeX+18, y, topX+1, cview.AlignLeft, colors.Shortcuts)
 
 	btnY := y + 1
 	btnX := x + 1
@@ -237,21 +226,19 @@ func (s *Status) Draw(screen tcell.Screen) {
 	}
 	if showShuffleBtn {
 		s.btnShuffle.SetLabel("Shuffle")
-		btnX = w - 3
+		shuffleX := x + w - volumeLen - 11
 		// draw two empty characters around the button the separate it from status box.
-		cview.Print(screen, "         ", topX-12, btnY-2, 9, cview.AlignLeft, colors.Shortcuts)
-		s.btnShuffle.SetRect(topX-11, btnY-2, 7, 1)
+		cview.Print(screen, "         ", shuffleX, btnY-2, 9, cview.AlignLeft, colors.Shortcuts)
+		s.btnShuffle.SetRect(shuffleX+1, btnY-2, 7, 1)
 		s.btnShuffle.Draw(screen)
 	} else if showShuffleSmall {
 		s.btnShuffle.SetLabel("S")
-		btnX = w - 3
+		shuffleX := x + w - volumeLen - 4
 		// draw two empty characters around the button the separate it from status box.
-		cview.Print(screen, "   ", topX-5, btnY-2, 3, cview.AlignLeft, colors.Shortcuts)
-		s.btnShuffle.SetRect(topX-4, btnY-2, 1, 1)
+		cview.Print(screen, "   ", shuffleX, btnY-2, 3, cview.AlignLeft, colors.Shortcuts)
+		s.btnShuffle.SetRect(shuffleX+1, btnY-2, 1, 1)
 		s.btnShuffle.Draw(screen)
-
 	}
-
 	s.WriteStatus(screen, x+30, y)
 }
 

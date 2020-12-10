@@ -25,6 +25,7 @@ import (
 	"strings"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/models"
+	"tryffel.net/go/jellycli/util"
 )
 
 type Help struct {
@@ -97,6 +98,8 @@ func NewHelp(doneCb func()) *Help {
 	h.SetTitleColor(config.Color.TextSecondary)
 	h.SetDynamicColors(true)
 	h.SetBorderPadding(0, 1, 2, 2)
+	h.SetWrap(true)
+	h.SetWordWrap(true)
 
 	h.totalPages = 3
 	h.setContent()
@@ -145,7 +148,7 @@ func (h *Help) mainPage() string {
 }
 
 func (h *Help) shortcutsPage() string {
-	return `
+	return fmt.Sprintf(`
 [yellow]Navigation[-]:
 * Up/Down: Key up / down
 * VIM-like keys: 
@@ -167,12 +170,18 @@ func (h *Help) shortcutsPage() string {
 * Move down song: Ctrl-J
 * Clear queue with 'clear'. This does not remove current song
 
+
 [yellow]Mouse[-]:
 You can use mouse (if enabled) to navigate in application.
 * Select: Left click / double click
 * Open context menu: right click
 
-`
+[yellow]Audio[-]:
+* Shuffle: %s
+* Mute: %s
+`, util.PackKeyBindingName(config.KeyBinds.Global.Shuffle, 20),
+		util.PackKeyBindingName(config.KeyBinds.Global.MuteUnmute, 20),
+	)
 }
 
 func formatBytes(bytes uint64) string {

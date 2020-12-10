@@ -30,7 +30,7 @@ const (
 	EventStart ApiPlaybackEvent = "start"
 	EventStop  ApiPlaybackEvent = "stop"
 
-	// Outgoing events
+	// Outgoing events, Jellyfin api events.
 	EventTimeUpdate          ApiPlaybackEvent = "TimeUpdate"
 	EventPause               ApiPlaybackEvent = "Pause"
 	EventUnpause             ApiPlaybackEvent = "Unpause"
@@ -42,6 +42,7 @@ const (
 	EventPlaylistItemRemove  ApiPlaybackEvent = "PlaylistItemRemove"
 	EventPlaylistItemAdd     ApiPlaybackEvent = "PlaylistItemAdd"
 	EventQualityChange       ApiPlaybackEvent = "QualityChange"
+	EventShuffleModeChange   ApiPlaybackEvent = "shufflequeuemodechange"
 )
 
 type Api interface {
@@ -61,6 +62,8 @@ type ApiPlaybackState struct {
 	Position int
 	// Volume in 0-100
 	Volume int
+
+	Shuffle bool
 
 	Queue []models.Id
 }

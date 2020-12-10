@@ -130,6 +130,7 @@ type ColorStatus struct {
 	Shortcuts        tcell.Color
 	TextPrimary      tcell.Color
 	TextSecondary    tcell.Color
+	VolumeMuted      tcell.Color
 }
 
 func defaultColorStatus() ColorStatus {
@@ -143,5 +144,6 @@ func defaultColorStatus() ColorStatus {
 		Shortcuts:        colorShortcut,
 		TextPrimary:      colorText,
 		TextSecondary:    tcell.Color26,
+		VolumeMuted:      tcell.Color238,
 	}
 }

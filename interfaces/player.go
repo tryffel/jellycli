@@ -50,6 +50,8 @@ const (
 	AudioActionSeek
 	// AudioActionSetVolume sets volume
 	AudioActionSetVolume
+
+	AudioActionShuffleChanged
 )
 
 // AudioTick is alias for millisecond
@@ -106,6 +108,7 @@ type AudioStatus struct {
 	Volume   AudioVolume
 	Muted    bool
 	Paused   bool
+	Shuffle  bool
 }
 
 func (a *AudioStatus) Clear() {
@@ -142,4 +145,12 @@ type Player interface {
 	SetVolume(volume AudioVolume)
 	// SetMute mutes or un-mutes audio
 	SetMute(muted bool)
+
+	SetShuffle(enabled bool)
+}
+
+// Queuer contains read-only methods for song queue.
+type Queuer interface {
+	GetQueue() []*models.Song
+	GetTotalDuration() AudioTick
 }

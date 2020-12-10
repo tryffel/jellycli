@@ -287,6 +287,7 @@ func (p *Player) audioCallback(status interfaces.AudioStatus) {
 		PlaylistLength: 0,
 		Position:       status.SongPast.Seconds(),
 		Volume:         int(status.Volume),
+		Shuffle:        status.Shuffle,
 	}
 
 	switch status.Action {
@@ -308,6 +309,8 @@ func (p *Player) audioCallback(status interfaces.AudioStatus) {
 		} else {
 			apiStatus.Event = interfaces.EventUnpause
 		}
+	case interfaces.AudioActionShuffleChanged:
+		apiStatus.Event = interfaces.EventShuffleModeChange
 	default:
 		apiStatus.Event = interfaces.EventTimeUpdate
 		logrus.Warningf("cannot map audio state to browser event: %v", status.Action)
@@ -354,4 +357,9 @@ func (p *Player) Reorder(index int, left bool) bool {
 	}
 
 	return p.Queue.Reorder(index, left)
+}
+
+func (p *Player) SetShuffle(enabled bool) {
+	p.Queue.SetShuffle(enabled)
+	p.Audio.SetShuffle(enabled)
 }

@@ -86,6 +86,7 @@ type playbackStarted struct {
 	LiveStreamId        string
 	PlaylistLength      int64
 	PlaylistIndex       int
+	ShuffleMode         string
 	Queue               []queueItem `json:"NowPlayingQueue"`
 }
 
@@ -118,7 +119,7 @@ func (jf *Jellyfin) ReportProgress(state *interfaces.ApiPlaybackState) error {
 
 	started := playbackStarted{
 		QueueableMediaTypes: []string{"Audio"},
-		CanSeek:             true,
+		CanSeek:             false,
 		ItemId:              state.ItemId,
 		MediaSourceId:       state.ItemId,
 		PositionTicks:       int64(state.Position) * ticksToSecond,
@@ -130,6 +131,12 @@ func (jf *Jellyfin) ReportProgress(state *interfaces.ApiPlaybackState) error {
 		LiveStreamId:        "",
 		PlaylistLength:      int64(state.PlaylistLength) * ticksToSecond,
 		Queue:               idsToQueue(state.Queue),
+	}
+
+	if state.Shuffle {
+		started.ShuffleMode = "Shuffle"
+	} else {
+		started.ShuffleMode = "Sorted"
 	}
 
 	if state.Event == interfaces.EventStart {
@@ -205,6 +212,7 @@ func (jf *Jellyfin) ReportCapabilities() error {
 		"Unmute",
 		"ToggleMute",
 		"SetVolume",
+		"SetShuffleQueue",
 	}
 	data["SupportsMediaControl"] = jf.remoteControlEnabled
 	data["SupportsPersistentIdentifier"] = false

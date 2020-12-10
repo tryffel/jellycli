@@ -35,6 +35,7 @@ type GlobalBindings struct {
 	VolumeUp   tcell.Key
 	VolumeDown tcell.Key
 	MuteUnmute tcell.Key
+	Shuffle    tcell.Key
 }
 
 // NavigationBarBindings also override every other key
@@ -84,7 +85,8 @@ func DefaultKeyBindings() KeyBindings {
 			Backward:   0,
 			VolumeUp:   tcell.KeyF10,
 			VolumeDown: tcell.KeyF9,
-			MuteUnmute: tcell.KeyF11,
+			MuteUnmute: tcell.KeyCtrlU,
+			Shuffle:    tcell.KeyCtrlD,
 		},
 		NavigationBar: NavigationBarBindings{
 			Help:    tcell.KeyF1,

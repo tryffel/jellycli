@@ -20,14 +20,188 @@ package player
 
 import (
 	"github.com/sirupsen/logrus"
+	"math/rand"
+	"sort"
 	"sync"
+	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
 )
+
+// queueItem: song + original index + random index for shuffling
+type queueItem struct {
+	song *models.Song
+
+	// index is original priority, which is len(queue) at insertion time.
+	index int
+
+	// priority is random number between 0-len(queue).
+	priority int
+}
+
+// queueList implements sort.Interface.
+type queueList struct {
+	items []*queueItem
+
+	// maxIndex. When adding new item, use maxIndex+1 as item index and increase maxIndex by one.
+	maxIndex int
+
+	// is shuffling enabled
+	shuffle bool
+}
+
+func (q *queueList) Less(i, j int) bool {
+	if q.shuffle {
+		return q.items[i].priority < q.items[j].priority
+	} else {
+		return q.items[i].index < q.items[j].index
+	}
+}
+
+func (q *queueList) Swap(i, j int) {
+	q.items[i], q.items[j] = q.items[j], q.items[i]
+}
+
+func newQueueList() *queueList {
+	q := &queueList{
+		maxIndex: 0,
+		shuffle:  false,
+		items:    make([]*queueItem, 0),
+	}
+	return q
+}
+
+func (q *queueList) Len() int {
+	return len(q.items)
+}
+
+func (q *queueList) SetShuffling(enable bool) {
+	if enable == q.shuffle {
+		return
+	}
+	q.shuffle = enable
+
+	if enable && len(q.items) > 0 {
+		// make sure 1st stays 1st after shuffling
+		q.items[0].priority = 0
+		for _, v := range q.items[1:] {
+			v.priority = rand.Int()
+		}
+	}
+	sort.Sort(q)
+}
+
+// Clear. First: whether to clear first item too
+func (q *queueList) Clear(first bool) {
+	if q.Len() == 0 {
+		return
+	}
+	if first {
+		q.items = make([]*queueItem, 0)
+		q.maxIndex = 0
+	} else {
+		q.items = []*queueItem{q.items[0]}
+	}
+}
+
+func (q *queueList) AddSong(song *models.Song, playNext bool, playFirst bool) {
+	index := q.maxIndex
+	priority := rand.Int()
+	needsSort := false
+
+	if len(q.items) == 0 {
+	} else if q.shuffle && playFirst {
+		priority = q.items[0].priority - 1
+		needsSort = true
+	} else if playFirst {
+		index = q.items[0].index - 1
+	} else if playNext {
+		index = q.items[0].index
+		q.items[0].index -= 1
+	} else {
+		// normal insertion
+	}
+
+	item := &queueItem{
+		song:     song,
+		index:    index,
+		priority: priority,
+	}
+
+	if len(q.items) == 0 || q.shuffle {
+		q.items = append(q.items, item)
+	} else if playNext {
+		temp := append([]*queueItem{q.items[0]}, item)
+		q.items = append(temp, q.items[1:]...)
+	} else if playFirst {
+		q.items = append([]*queueItem{item}, q.items...)
+
+	} else {
+		q.items = append(q.items, item)
+	}
+	q.maxIndex += 1
+	if needsSort {
+		sort.Sort(q)
+	}
+}
+
+func (q *queueList) RemoveSong(index int) (song *models.Song) {
+	if q.Len() == 0 {
+		return nil
+	}
+
+	if q.Len() == 1 && index == 1 {
+		song = q.items[0].song
+		q.Clear(true)
+		return
+	}
+
+	if len(q.items) > index+1 {
+		song = q.items[index].song
+		q.items = append(q.items[:index], q.items[index+1:]...)
+	} else if len(q.items) == index+1 {
+		song = q.items[index].song
+		q.items = q.items[:index]
+	}
+	return
+}
+
+func (q *queueList) GetQueue() []*models.Song {
+	songs := make([]*models.Song, q.Len())
+	for i, v := range q.items {
+		songs[i] = v.song
+	}
+	return songs
+}
+
+func (q *queueList) GetTotalDuration() interfaces.AudioTick {
+	ms := 0
+	for _, v := range q.items {
+		ms += v.song.Duration
+	}
+	return interfaces.AudioTick(ms)
+}
+
+func (q *queueList) Reorder(index1 int, down bool) {
+	index2 := index1 + 1
+	if down {
+		index2 = index1 - 1
+	}
+
+	// no point reordering shuffled songs
+	if q.shuffle {
+		return
+	}
+
+	if index2 < len(q.items) && index1 < len(q.items) {
+		q.items[index1].index, q.items[index2].index = q.items[index2].index, q.items[index1].index
+		sort.Sort(q)
+	}
+}
 
 // Queue implements interfaces.QueueController
 type Queue struct {
 	lock               sync.RWMutex
-	items              []*models.Song
+	list               *queueList
 	history            []*models.Song
 	queueUpdatedFunc   []func([]*models.Song)
 	historyUpdatedFunc func([]*models.Song)
@@ -35,7 +209,7 @@ type Queue struct {
 
 func newQueue() *Queue {
 	q := &Queue{
-		items:            []*models.Song{},
+		list:             newQueueList(),
 		history:          []*models.Song{},
 		queueUpdatedFunc: make([]func([]*models.Song), 0),
 	}
@@ -46,7 +220,7 @@ func newQueue() *Queue {
 func (q *Queue) GetQueue() []*models.Song {
 	q.lock.RLock()
 	defer q.lock.RUnlock()
-	return q.items
+	return q.list.GetQueue()
 }
 
 // ClearQueue clears queue. This also calls QueueChangedCallback.
@@ -54,11 +228,7 @@ func (q *Queue) ClearQueue(first bool) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 	defer q.notifyQueueUpdated()
-	if first || len(q.items) == 0 {
-		q.items = []*models.Song{}
-	} else {
-		q.items = []*models.Song{q.items[0]}
-	}
+	q.list.Clear(first)
 }
 
 // AddSongs adds songs to the end of queue.
@@ -67,22 +237,19 @@ func (q *Queue) AddSongs(songs []*models.Song) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 	defer q.notifyQueueUpdated()
-	q.items = append(q.items, songs...)
-	logrus.Debug("Adding songs to queue, current size: ", len(q.items))
+
+	for _, v := range songs {
+		q.list.AddSong(v, false, false)
+	}
+
+	logrus.Debug("Adding songs to queue, current size: ", q.list.Len())
 }
 
 func (q *Queue) PlayNext(songs []*models.Song) {
 	q.lock.Lock()
-	size := len(q.items)
-	q.lock.Unlock()
-	// append songs if there is 0 or 1 songs
-	if size < 2 {
-		q.AddSongs(songs)
-		return
+	for i := len(songs); i > 0; i-- {
+		q.list.AddSong(songs[i-1], true, false)
 	}
-	q.lock.Lock()
-	temp := append([]*models.Song{q.items[0]}, songs...)
-	q.items = append(temp, q.items[1:]...)
 	q.lock.Unlock()
 	q.notifyQueueUpdated()
 }
@@ -92,11 +259,8 @@ func (q *Queue) RemoveSong(index int) {
 	q.lock.Lock()
 	if index == 0 {
 		// if we remove first, we must notify player to move to next song
-	} else if len(q.items) > index+1 {
-		q.items = append(q.items[:index], q.items[index+1:]...)
-		changed = true
-	} else if len(q.items) == index+1 {
-		q.items = q.items[:index]
+	} else {
+		q.list.RemoveSong(index)
 		changed = true
 	}
 	q.lock.Unlock()
@@ -112,22 +276,19 @@ func (q *Queue) Reorder(index int, down bool) bool {
 	q.lock.Lock()
 	changed := false
 
-	//var item *models.Song
-	if len(q.items) == 0 {
-		// no action
-	} else if index < 0 || index > len(q.items)-1 {
-		// illegal index
-	} else if index >= 0 && index < len(q.items)-2 && !down {
-		changed = true
-		oldItem := q.items[index+1]
-		q.items[index+1] = q.items[index]
-		q.items[index] = oldItem
+	heapLen := q.list.Len()
 
+	//var item *models.Song
+	if heapLen == 0 {
+		// no action
+	} else if index < 0 || index > heapLen-1 {
+		// illegal index
+	} else if index >= 0 && index < heapLen-2 && !down {
+		changed = true
+		q.list.Reorder(index, down)
 	} else if index >= 1 && down {
 		changed = true
-		oldItem := q.items[index-1]
-		q.items[index-1] = q.items[index]
-		q.items[index] = oldItem
+		q.list.Reorder(index, down)
 	}
 
 	q.lock.Unlock()
@@ -162,8 +323,10 @@ func (q *Queue) notifyQueueUpdated() {
 	if q.queueUpdatedFunc == nil {
 		return
 	}
+
+	songs := q.list.GetQueue()
 	for _, v := range q.queueUpdatedFunc {
-		v(q.items)
+		v(songs)
 	}
 }
 
@@ -178,11 +341,11 @@ func (q *Queue) songComplete() {
 	q.lock.Lock()
 	defer q.notifyQueueUpdated()
 	defer q.notifyHistoryUpdated()
-	if len(q.items) == 0 {
+	if q.list.Len() == 0 {
 		return
 	}
-	song := q.items[0]
-	q.items = q.items[1:]
+
+	song := q.list.RemoveSong(0)
 	if q.history == nil {
 		q.history = []*models.Song{song}
 	} else {
@@ -201,7 +364,7 @@ func (q *Queue) playLastSong() {
 		return
 	}
 	song := q.history[0]
-	q.items = append([]*models.Song{song}, q.items...)
+	q.list.AddSong(song, false, true)
 	if q.history == nil {
 		q.history = q.history[1:]
 	} else {
@@ -213,15 +376,17 @@ func (q *Queue) playLastSong() {
 func (q *Queue) empty() bool {
 	q.lock.RLock()
 	defer q.lock.RUnlock()
-	return len(q.items) == 0
+	return q.list.Len() == 0
 }
 
-func (q *Queue) currentSong() *models.Song {
-	q.lock.RLock()
-	defer q.lock.RUnlock()
-	if len(q.items) > 0 {
-		return q.items[0]
-	} else {
-		return &models.Song{}
+func (q *Queue) SetShuffle(enabled bool) {
+	q.lock.Lock()
+	changed := enabled != q.list.shuffle
+	if !changed {
+		q.lock.Unlock()
+		return
 	}
+	q.list.SetShuffling(enabled)
+	q.lock.Unlock()
+	q.notifyQueueUpdated()
 }

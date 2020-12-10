@@ -21,7 +21,6 @@ package widgets
 import (
 	"fmt"
 	"github.com/gdamore/tcell"
-	"github.com/sirupsen/logrus"
 	"gitlab.com/tslocum/cview"
 	"sync"
 	"tryffel.net/go/jellycli/config"
@@ -43,9 +42,7 @@ const (
 
 	// yellow heart, utf8. Not visible on all editors.
 	charFavorite = "💛"
-
-	btnLessVolume = "\xF0\x9F\x94\x89"
-	btnMoreVolume = ""
+	btnShuffle   = "Shuffle"
 
 	btnStyleStart = "[white:red:b]"
 	btnStyleStop  = "[-:-:-]"
@@ -73,7 +70,7 @@ type Status struct {
 	btnForward  *cview.Button
 	btnBackward *cview.Button
 	btnStop     *cview.Button
-	btnQueue    *cview.Button
+	btnShuffle  *cview.Button
 
 	buttons   []*cview.Button
 	shortCuts []string
@@ -82,14 +79,7 @@ type Status struct {
 
 	state interfaces.AudioStatus
 
-	controlsFgColor tcell.Color
-	controlsBgColor tcell.Color
-
-	detailsFgColor tcell.Color
-	detailsBgColor tcell.Color
-
 	detailsMainColor tcell.Color
-	detailsDimColor  tcell.Color
 
 	song *models.SongInfo
 
@@ -107,12 +97,7 @@ func newStatus(ctrl interfaces.Player) *Status {
 	s.player = ctrl
 
 	colors := config.Color.Status
-
-	s.controlsBgColor = colors.ButtonBackground
-	s.controlsFgColor = colors.ButtonLabel
 	s.detailsMainColor = colors.Text
-	s.detailsDimColor = colors.TextSecondary
-	s.detailsBgColor = colors.Background
 
 	s.frame.SetBackgroundColor(colors.Background)
 	s.layout = cview.NewGrid()
@@ -126,21 +111,17 @@ func newStatus(ctrl interfaces.Player) *Status {
 
 	s.details = cview.NewTextView()
 
+	// button inputs are captured globally in widgets.Window.
+	// Status panel buttons act as labels only.
+
 	s.btnPlay = cview.NewButton(btnPlay)
-	s.btnPlay.SetSelectedFunc(s.namedCbFunc(btnPlay))
 	s.btnPause = cview.NewButton(btnPause)
-	s.btnPause.SetSelectedFunc(s.namedCbFunc(btnPause))
 	s.btnNext = cview.NewButton(btnNext)
-	s.btnNext.SetSelectedFunc(s.namedCbFunc(btnNext))
 	s.btnPrevious = cview.NewButton(btnPrevious)
-	s.btnPrevious.SetSelectedFunc(s.namedCbFunc(btnPrevious))
 	s.btnForward = cview.NewButton(btnForward)
-	s.btnForward.SetSelectedFunc(s.namedCbFunc(btnForward))
 	s.btnBackward = cview.NewButton(btnBackward)
-	s.btnBackward.SetSelectedFunc(s.namedCbFunc(btnBackward))
 	s.btnStop = cview.NewButton(btnStop)
-	s.btnStop.SetSelectedFunc(s.namedCbFunc(btnStop))
-	s.btnQueue = cview.NewButton(btnQueue)
+	s.btnShuffle = cview.NewButton(btnShuffle)
 
 	s.progress = NewProgressBar(40, 100)
 	s.volume = NewProgressBar(10, 100)
@@ -168,18 +149,19 @@ func newStatus(ctrl interfaces.Player) *Status {
 		util.PackKeyBindingName(config.KeyBinds.Global.PlayPause, 5),
 		util.PackKeyBindingName(config.KeyBinds.Global.Forward, 5),
 		util.PackKeyBindingName(config.KeyBinds.Global.Next, 5),
+		util.PackKeyBindingName(config.KeyBinds.Global.Shuffle, 10),
 	}
 
-	for _, v := range s.buttons {
-		v.SetBackgroundColor(s.controlsBgColor)
-		v.SetLabelColor(s.controlsFgColor)
-		v.SetBorder(false)
+	for _, v := range append(s.buttons, s.btnShuffle) {
+		v.SetBackgroundColor(colors.ButtonBackground)
+		v.SetLabelColor(colors.ButtonLabel)
 	}
+
+	s.btnShuffle.SetBackgroundColor(colors.Background)
 	return s
 }
 
 func (s *Status) Draw(screen tcell.Screen) {
-	// TODO: Make drawing responsive
 	s.frame.Draw(screen)
 	x, y, w, _ := s.frame.GetInnerRect()
 
@@ -194,38 +176,68 @@ func (s *Status) Draw(screen tcell.Screen) {
 	volume := " Volume " + s.volume.Draw(int(s.state.Volume))
 	topRowFree := w - len(songPast) - len(songDuration) - utf8.RuneCountInString(volume) - 5
 
+	showShuffleBtn := false
+	showShuffleSmall := false
+	if w > 100 {
+		showShuffleBtn = true
+		topRowFree -= 6
+	} else if w > 60 {
+		showShuffleSmall = true
+		topRowFree -= 3
+	}
+
 	s.progress.SetWidth(topRowFree * 10 / 11)
 
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
 	progressBar := s.progress.Draw(s.state.SongPast.Seconds())
-
 	progress := songPast + progressBar + songDuration
 	progressLen := utf8.RuneCountInString(progress)
-
 	topX := x + 1
-
 	colors := config.Color.Status
 
 	cview.Print(screen, progress, topX, y-1, progressLen+5, cview.AlignLeft, colors.ProgressBar)
 	topX += progressLen + progressLen/10
-	cview.Print(screen, volume, topX, y-1, w, cview.AlignLeft, colors.ProgressBar)
+
+	volumeLen := utf8.RuneCountInString(volume)
+	volumeX := x + w - volumeLen - 1
+	if s.state.Muted {
+		cview.Print(screen, volume, volumeX, y-1, w, cview.AlignLeft, colors.VolumeMuted)
+	} else {
+		cview.Print(screen, volume, volumeX, y-1, w, cview.AlignLeft, colors.ProgressBar)
+	}
 
 	cview.Print(screen, util.PackKeyBindingName(config.KeyBinds.Global.VolumeDown, 5),
-		topX+7, y, topX+16, cview.AlignLeft, colors.Shortcuts)
+		volumeX+7, y, topX+16, cview.AlignLeft, colors.Shortcuts)
 	cview.Print(screen, util.PackKeyBindingName(config.KeyBinds.Global.VolumeUp, 5),
-		topX+18, y, topX+1, cview.AlignLeft, colors.Shortcuts)
+		volumeX+18, y, topX+1, cview.AlignLeft, colors.Shortcuts)
 
 	btnY := y + 1
 	btnX := x + 1
 
-	for i, v := range s.buttons {
-		cview.Print(screen, s.shortCuts[i], btnX, btnY-1, 4, cview.AlignLeft, colors.Shortcuts)
-
-		v.SetRect(btnX, btnY, 3, 1)
-		v.Draw(screen)
-		btnX += 5
+	if w > 40 {
+		for i, v := range s.buttons {
+			cview.Print(screen, s.shortCuts[i], btnX, btnY-1, 4, cview.AlignLeft, colors.Shortcuts)
+			v.SetRect(btnX, btnY, 3, 1)
+			v.Draw(screen)
+			btnX += 5
+		}
+	}
+	if showShuffleBtn {
+		s.btnShuffle.SetLabel("Shuffle")
+		shuffleX := x + w - volumeLen - 11
+		// draw two empty characters around the button the separate it from status box.
+		cview.Print(screen, "         ", shuffleX, btnY-2, 9, cview.AlignLeft, colors.Shortcuts)
+		s.btnShuffle.SetRect(shuffleX+1, btnY-2, 7, 1)
+		s.btnShuffle.Draw(screen)
+	} else if showShuffleSmall {
+		s.btnShuffle.SetLabel("S")
+		shuffleX := x + w - volumeLen - 4
+		// draw two empty characters around the button the separate it from status box.
+		cview.Print(screen, "   ", shuffleX, btnY-2, 3, cview.AlignLeft, colors.Shortcuts)
+		s.btnShuffle.SetRect(shuffleX+1, btnY-2, 1, 1)
+		s.btnShuffle.Draw(screen)
 	}
 	s.WriteStatus(screen, x+30, y)
 }
@@ -279,35 +291,6 @@ func (s *Status) WriteStatus(screen tcell.Screen, x, y int) {
 	}
 }
 
-// Return cb func that includes name
-func (s *Status) namedCbFunc(name string) func() {
-	return func() {
-		s.buttonCb(name)
-	}
-}
-
-// Button pressed cb with name of the button
-func (s *Status) buttonCb(name string) {
-	logrus.Infof("Button %s was pressed!", name)
-	if s.actionCb == nil {
-		return
-	}
-
-	status := interfaces.AudioStatus{}
-
-	switch name {
-	case btnPlay:
-		status.Action = interfaces.AudioActionPlay
-	case btnPause:
-		status.Action = interfaces.AudioActionPlayPause
-	case btnNext:
-		status.Action = interfaces.AudioActionNext
-	case btnStop:
-		status.Action = interfaces.AudioActionStop
-	}
-	s.actionCb(status)
-}
-
 func (s *Status) UpdateState(state interfaces.AudioStatus, song *models.SongInfo) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -324,5 +307,12 @@ func (s *Status) DrawButtons() {
 		s.btnPlay.SetLabel(btnPlay)
 	} else {
 		s.btnPlay.SetLabel(btnPause)
+	}
+
+	if s.state.Shuffle {
+		s.btnShuffle.SetBackgroundColor(config.Color.BackgroundSelected)
+
+	} else {
+		s.btnShuffle.SetBackgroundColor(config.Color.Background)
 	}
 }

@@ -595,3 +595,59 @@ func logDiff(t *testing.T, x, y interface{}, msg string) {
 		t.Error(msg, diff)
 	}
 }
+
+// Some benchmarks for shuffling/reversing queue.
+
+// order of 30 µs / op
+func BenchmarkQueue_SetShuffle_100(b *testing.B) {
+	n := 100
+	songs := testSongs()
+	q := newQueue()
+
+	for i := 0; i < n/len(songs); i++ {
+		q.AddSongs(songs)
+	}
+
+	//b.Logf("queue size: %d", len(q.GetQueue()))
+
+	for i := 0; i < b.N; i++ {
+		q.SetShuffle(false)
+		q.SetShuffle(true)
+	}
+}
+
+// order of 350 µs / op
+func BenchmarkQueue_SetShuffle_1000(b *testing.B) {
+	n := 1000
+	songs := testSongs()
+	q := newQueue()
+
+	for i := 0; i < n/len(songs); i++ {
+		q.AddSongs(songs)
+	}
+
+	//b.Logf("queue size: %d", len(q.GetQueue()))
+
+	for i := 0; i < b.N; i++ {
+		q.SetShuffle(false)
+		q.SetShuffle(true)
+	}
+}
+
+// order of 5 ms / op
+func BenchmarkQueue_SetShuffle_10000(b *testing.B) {
+	n := 10000
+	songs := testSongs()
+	q := newQueue()
+
+	for i := 0; i < n/len(songs); i++ {
+		q.AddSongs(songs)
+	}
+
+	//b.Logf("queue size: %d", len(q.GetQueue()))
+
+	for i := 0; i < b.N; i++ {
+		q.SetShuffle(false)
+		q.SetShuffle(true)
+	}
+}

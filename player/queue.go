@@ -23,6 +23,7 @@ import (
 	"math/rand"
 	"sort"
 	"sync"
+	"time"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
 )
@@ -389,4 +390,8 @@ func (q *Queue) SetShuffle(enabled bool) {
 	q.list.SetShuffling(enabled)
 	q.lock.Unlock()
 	q.notifyQueueUpdated()
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
 }

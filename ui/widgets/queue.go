@@ -134,7 +134,7 @@ func (q *Queue) listHandler(key *tcell.EventKey) *tcell.EventKey {
 			index := q.list.GetSelectedIndex()
 			_ = q.controller.Reorder(index, true)
 		}
-	case tcell.KeyDEL:
+	case tcell.KeyDEL, tcell.KeyDelete:
 		if q.controller != nil {
 			index := q.list.GetSelectedIndex()
 			q.controller.RemoveSong(index)

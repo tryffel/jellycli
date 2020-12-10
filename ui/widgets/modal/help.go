@@ -203,10 +203,11 @@ func formatBytes(bytes uint64) string {
 func (h *Help) statsPage() string {
 	text := "[yellow]Server Info[-]\n"
 	if h.stats.ServerInfo != nil {
-		text += fmt.Sprintf("Server type: %s\nName: %s\nVersion: %s\nMessage: %s",
+		text += fmt.Sprintf("Server type: %s\nName: %s\nVersion: %s\nId: %s\nMessage: %s",
 			h.stats.ServerInfo.ServerType,
 			h.stats.ServerInfo.Name,
 			h.stats.ServerInfo.Version,
+			h.stats.ServerInfo.Id,
 			h.stats.ServerInfo.Message,
 		)
 

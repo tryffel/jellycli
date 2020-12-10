@@ -55,14 +55,30 @@ var refreshCmd = &cobra.Command{
 			logrus.Fatalf("init application: %v", err)
 		}
 
+		ok := false
+
+		quit := func() {
+			a.player.Stop()
+			a.server.Stop()
+			a.logfile.Close()
+			if !ok {
+				os.Exit(1)
+			}
+		}
+		defer quit()
+
 		err = a.player.UpdateLocalArtists(0)
 		if err != nil {
 			logrus.Error(err)
+			return
 		}
 
-		a.player.Stop()
-		a.server.Stop()
-		a.logfile.Close()
+		err = a.player.UpdateLocalAlbums(0)
+		if err != nil {
+			logrus.Error(err)
+			return
+		}
+		ok = true
 	},
 }
 

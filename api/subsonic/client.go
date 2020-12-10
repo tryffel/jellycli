@@ -93,7 +93,7 @@ func (s *Subsonic) GetInfo() (*models.ServerInfo, error) {
 		return nil, err
 	}
 
-	info.Id = resp.Type
+	info.Id = s.GetId()
 	info.Name = resp.Type
 	info.Version = resp.ServerVersion
 	return info, nil
@@ -284,4 +284,8 @@ func (s *Subsonic) Start() error {
 
 func (s *Subsonic) Stop() error {
 	return nil
+}
+
+func (s *Subsonic) GetId() string {
+	return fmt.Sprintf("%x", md5.Sum([]byte(s.host+s.user)))
 }

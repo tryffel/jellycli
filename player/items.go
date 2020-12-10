@@ -43,7 +43,8 @@ func newItems(api api.MediaServer) (*Items, error) {
 	}
 	var err error
 
-	items.db, err = storage.NewDb(config.AppConfig.Jellyfin.ServerId)
+	serverId := api.GetId()
+	items.db, err = storage.NewDb(serverId)
 	if err != nil {
 		return items, fmt.Errorf("init local database: %v", err)
 	}
@@ -55,8 +56,11 @@ func (i *Items) Search(itemType models.ItemType, query string) ([]models.Item, e
 }
 
 func (i *Items) GetArtists(opts *interfaces.QueryOpts) ([]*models.Artist, int, error) {
-	//return i.db.GetArtists(opts)
-	return i.browser.GetArtists(opts)
+	if config.AppConfig.Player.EnableLocalCache {
+		return i.db.GetArtists(opts)
+	} else {
+		return i.browser.GetArtists(opts)
+	}
 }
 
 func (i *Items) GetAlbumArtists(paging interfaces.Paging) ([]*models.Artist, int, error) {
@@ -64,7 +68,11 @@ func (i *Items) GetAlbumArtists(paging interfaces.Paging) ([]*models.Artist, int
 }
 
 func (i *Items) GetAlbums(opts *interfaces.QueryOpts) ([]*models.Album, int, error) {
-	return i.browser.GetAlbums(opts)
+	if config.AppConfig.Player.EnableLocalCache {
+		return i.db.GetAlbums(opts)
+	} else {
+		return i.browser.GetAlbums(opts)
+	}
 }
 
 func (i *Items) GetArtistAlbums(artist models.Id) ([]*models.Album, error) {
@@ -173,6 +181,7 @@ func (i *Items) GetLink(item models.Item) string {
 
 }
 
+// UpdateLocalArtists pulls latest info on artists from server and stores/updates on local database.
 func (i *Items) UpdateLocalArtists(limit int) error {
 	logrus.Debugf("Refresh artists from remote server")
 	start := time.Now()
@@ -202,11 +211,12 @@ func (i *Items) UpdateLocalArtists(limit int) error {
 		if err != nil {
 			return fmt.Errorf("save artists: %v", err)
 		}
-
 		query.Paging.CurrentPage += 1
 		retrieved += len(artists)
 
-		if (limit != 0 && retrieved >= limit) || len(artists) < query.Paging.PageSize {
+		logrus.Debugf("retrieved %d artists", retrieved)
+
+		if (limit != 0 && retrieved >= limit) || len(artists) < query.Paging.PageSize || totalArtists <= retrieved {
 			break
 		}
 	}
@@ -220,4 +230,55 @@ func (i *Items) UpdateLocalArtists(limit int) error {
 
 	logrus.Infof("Updated %d artists in %.2f s", retrieved, float32(took.Milliseconds())/1000)
 	return nil
+}
+
+// UpdateLocalAlbums pulls latest info on albums from server and stores/updates on local database.
+func (i *Items) UpdateLocalAlbums(limit int) error {
+	logrus.Debugf("Refresh album from remote server")
+	start := time.Now()
+	retrieved := 0
+	totalAlbums := 0
+
+	query := interfaces.DefaultQueryOpts()
+	query.Paging.PageSize = 100
+	if 0 < limit && limit < 100 {
+		query.Paging.PageSize = limit
+	}
+	query.Paging.CurrentPage = 0
+
+	for {
+		albums, n, err := i.browser.GetAlbums(query)
+		if err != nil {
+			return fmt.Errorf("pull albums: %v", err)
+		}
+		totalAlbums = n
+
+		if len(albums) == 0 {
+			logrus.Debugf("no albums found")
+			return nil
+		}
+
+		err = i.db.UpdateAlbums(albums)
+		if err != nil {
+			return fmt.Errorf("save albums: %v", err)
+		}
+
+		query.Paging.CurrentPage += 1
+		retrieved += len(albums)
+
+		if (limit != 0 && retrieved >= limit) || len(albums) < query.Paging.PageSize {
+			break
+		}
+	}
+
+	if totalAlbums != retrieved {
+		logrus.Warningf("not all albums were updated: (%d - %d)", totalAlbums, retrieved)
+
+	}
+
+	took := time.Now().Sub(start)
+
+	logrus.Infof("Updated %d albums in %.2f s", retrieved, float32(took.Milliseconds())/1000)
+	return nil
+
 }

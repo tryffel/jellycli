@@ -134,3 +134,35 @@ func (db *Db) checkSchema() error {
 
 	return nil
 }
+
+func (db *Db) Close() error {
+	return db.engine.Close()
+}
+
+// database transaction. Start new with db.Begin,
+// st tx.ok = true to commit transaction and call tx.Close().
+type tx struct {
+	*sqlx.Tx
+	ok bool
+}
+
+func (tx *tx) Close() error {
+	if tx.ok {
+		return tx.Commit()
+	} else {
+		return tx.Rollback()
+	}
+}
+
+func (db *Db) begin() (*tx, error) {
+	txX, err := db.engine.Beginx()
+	if err != nil {
+		return nil, err
+	}
+	tx := &tx{
+		Tx: txX,
+		ok: false,
+	}
+
+	return tx, nil
+}

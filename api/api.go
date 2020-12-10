@@ -141,4 +141,8 @@ type RemoteServer interface {
 
 	// Stop stops background service for remote server, if any.
 	Stop() error
+
+	// GetId returns unique id for server. Id server does not provide one
+	// it can be e.g. hashed from url and user.
+	GetId() string
 }

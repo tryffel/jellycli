@@ -41,9 +41,9 @@ CREATE TABLE albums (
 	duration INTEGER NOT NULL,
 	favorite BOOL NOT NULL,
 
-	artist TEXT,
+	-- jellyfin sometimes returns empty artist, so don't require existing artist.
+	artist TEXT NOT NULL DEFAULT ''
 
-	FOREIGN KEY (artist) REFERENCES artists(id)
 );
 
 

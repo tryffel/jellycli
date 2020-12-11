@@ -33,8 +33,8 @@ type Album struct {
 	// 0 means album is empty, where -1 means songs need to be gathered separately.
 	SongCount int `db:"song_count"`
 	// ImageId is optional id for image album
-	ImageId   string
-	DiscCount int `db:"disc_count"`
+	ImageId   string `db:"image_id"`
+	DiscCount int    `db:"disc_count"`
 
 	Favorite bool `db:"favorite"`
 }

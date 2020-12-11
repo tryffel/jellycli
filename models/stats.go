@@ -20,6 +20,7 @@ package models
 
 import (
 	"fmt"
+	"time"
 )
 
 // Stats are application-wide statistics and usage info
@@ -35,24 +36,14 @@ type Stats struct {
 
 	// ServerInfo contains remote server information
 	ServerInfo *ServerInfo
+
+	StorageInfo StorageInfo
 }
 
 // HeapString returns heap usage in human-readable format
 func (s *Stats) HeapString() string {
 	bytes := s.Heap
-	if bytes < 1024 {
-		return fmt.Sprint(bytes)
-	}
-	if bytes < 1024*1024 {
-		return fmt.Sprintf("%d KiB", bytes/1024)
-	}
-	if bytes < 1024*1024*1024 {
-		return fmt.Sprintf("%d MiB", bytes/1024/1024)
-	}
-	if bytes < 1024*1024*1024 {
-		return fmt.Sprintf("%d GiB", bytes/1024/1024/1024)
-	}
-	return ""
+	return byteToString(bytes)
 }
 
 // ServerInfo contains general info on server and connection to it.
@@ -73,4 +64,36 @@ type ServerInfo struct {
 
 	// Misc contains any non-standard information, that use might be interested in.
 	Misc map[string]string
+}
+
+type StorageInfo struct {
+	DbSize      int
+	DbFile      string
+	LastUpdated time.Time
+}
+
+func (s StorageInfo) DbSizeString() string {
+	return byteToString(s.DbSize)
+}
+
+func (s StorageInfo) LastUpdatedString() string {
+	return s.LastUpdated.Format(time.ANSIC)
+
+}
+
+func byteToString(bytes int) string {
+	f := float32(bytes)
+	if bytes < 1024 {
+		return fmt.Sprint(bytes)
+	}
+	if bytes < 1024*1024 {
+		return fmt.Sprintf("%.2f KiB", f/1024)
+	}
+	if bytes < 1024*1024*1024 {
+		return fmt.Sprintf("%.2f MiB", f/1024/1024)
+	}
+	if bytes < 1024*1024*1024 {
+		return fmt.Sprintf("%.2f GiB", f/1024/1024/1024)
+	}
+	return ""
 }

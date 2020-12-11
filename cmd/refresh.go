@@ -78,6 +78,12 @@ var refreshCmd = &cobra.Command{
 			logrus.Error(err)
 			return
 		}
+
+		err = a.player.UpdateLocalSongs(0)
+		if err != nil {
+			logrus.Error(err)
+			return
+		}
 		ok = true
 	},
 }

@@ -21,6 +21,7 @@
 package storage
 
 import (
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"github.com/Masterminds/squirrel"
@@ -30,14 +31,22 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 	"tryffel.net/go/jellycli/config"
+	"tryffel.net/go/jellycli/models"
 	"tryffel.net/go/jellycli/storage/migrations"
 )
 
 const schemaLevel = 1
 
+// Db implements storing relational data to local database as cache.
+// Schema reflects the data coming from server and tries to store updated content
+// and not enforce relational integrity.
+// This should also mean getting data from db and server
+// should return same results for same queries.
 type Db struct {
-	id string
+	id   string
+	file string
 
 	builder squirrel.StatementBuilderType
 	engine  *sqlx.DB
@@ -58,9 +67,10 @@ func NewDb(id string) (*Db, error) {
 	db := &Db{
 		id:      id,
 		builder: squirrel.StatementBuilder.PlaceholderFormat(squirrel.Question),
+		file:    fileName,
 	}
 
-	db.engine, err = sqlx.Connect("sqlite3", fmt.Sprintf("file:%s?_fk=true&_cslike=true", fileName))
+	db.engine, err = sqlx.Connect("sqlite3", fmt.Sprintf("file:%s?_fk=true&_cslike=false", fileName))
 	if err != nil {
 		return db, err
 	}
@@ -73,8 +83,6 @@ func NewDb(id string) (*Db, error) {
 			return db, err
 		}
 	}
-	// PRAGMA foreign_keys = ON;
-
 	return db, err
 }
 
@@ -165,4 +173,45 @@ func (db *Db) begin() (*tx, error) {
 	}
 
 	return tx, nil
+}
+
+func (db *Db) GetStats() (models.StorageInfo, error) {
+	info := models.StorageInfo{
+		DbSize:      0,
+		DbFile:      db.file,
+		LastUpdated: time.Time{},
+	}
+
+	sql := "select updated from state order by updated asc limit 1;"
+	t := sqlTime{}
+	err := db.engine.Get(&t, sql)
+	if err != nil {
+		return info, err
+	}
+
+	info.LastUpdated = t.Time
+	fileStat, err := os.Stat(db.file)
+	if err != nil {
+		return info, err
+	}
+	info.DbSize = int(fileStat.Size())
+	return info, nil
+}
+
+type sqlTime struct {
+	Time time.Time
+}
+
+func (s *sqlTime) Scan(src interface{}) error {
+	srcInt, ok := src.(int64)
+	if ok {
+		s.Time = time.Unix(0, srcInt)
+	} else {
+		return fmt.Errorf("not time: %v", src)
+	}
+	return nil
+}
+
+func (s sqlTime) Value() (driver.Value, error) {
+	return s.Time.UnixNano(), nil
 }

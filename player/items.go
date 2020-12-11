@@ -147,11 +147,21 @@ func (i *Items) GetStatistics() models.Stats {
 	if err != nil {
 		logrus.Errorf("get server info: %v", err)
 	}
+
+	stats.StorageInfo, err = i.db.GetStats()
+	if err != nil {
+		logrus.Errorf("get local storage info: %v", err)
+
+	}
 	return stats
 }
 
 func (i *Items) GetSongs(page, pageSize int) ([]*models.Song, int, error) {
-	return i.browser.GetSongs(page, pageSize)
+	if config.AppConfig.Player.EnableLocalCache {
+		return i.browser.GetSongs(page, pageSize)
+	} else {
+		return i.db.GetSongs(page, pageSize)
+	}
 }
 
 func (i *Items) GetAlbumArtist(album *models.Album) (*models.Artist, error) {
@@ -281,4 +291,52 @@ func (i *Items) UpdateLocalAlbums(limit int) error {
 	logrus.Infof("Updated %d albums in %.2f s", retrieved, float32(took.Milliseconds())/1000)
 	return nil
 
+}
+
+func (i *Items) UpdateLocalSongs(limit int) error {
+	logrus.Debugf("Refresh songs from remote server")
+	start := time.Now()
+	retrieved := 0
+	totalSongs := 0
+
+	query := interfaces.DefaultQueryOpts()
+	query.Paging.PageSize = 100
+	if 0 < limit && limit < 100 {
+		query.Paging.PageSize = limit
+	}
+	query.Paging.CurrentPage = 0
+
+	for {
+		songs, n, err := i.browser.GetSongs(query.Paging.CurrentPage, query.Paging.PageSize)
+		if err != nil {
+			return fmt.Errorf("pull songs: %v", err)
+		}
+		totalSongs = n
+
+		if len(songs) == 0 {
+			logrus.Debugf("no songs found")
+			return nil
+		}
+
+		err = i.db.UpdateSongs(songs)
+		if err != nil {
+			return fmt.Errorf("save songs: %v", err)
+		}
+
+		query.Paging.CurrentPage += 1
+		retrieved += len(songs)
+
+		if (limit != 0 && retrieved >= limit) || len(songs) < query.Paging.PageSize {
+			break
+		}
+	}
+
+	if totalSongs != retrieved {
+		logrus.Warningf("not all songs were updated: (%d - %d)", totalSongs, retrieved)
+	}
+
+	took := time.Now().Sub(start)
+
+	logrus.Infof("Updated %d songs in %.2f s", retrieved, float32(took.Milliseconds())/1000)
+	return nil
 }

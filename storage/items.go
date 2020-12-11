@@ -29,12 +29,13 @@ import (
 const (
 	keyAlbums  = "albums"
 	keyArtists = "artists"
+	keySongs   = "songs"
 )
 
 func (db *Db) updateKey(key string, tx *tx) error {
 	sql := `INSERT INTO state (key, updated) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET updated=excluded.updated;`
 
-	_, err := tx.Exec(sql, key, time.Now())
+	_, err := tx.Exec(sql, key, sqlTime{time.Now()})
 	if err != nil {
 		return err
 	}
@@ -44,13 +45,15 @@ func (db *Db) updateKey(key string, tx *tx) error {
 // UpdateArtists updates/inserts artists.
 func (db *Db) UpdateArtists(artists []*models.Artist) error {
 
-	sql := `INSERT INTO artists(id, name, favorite)
+	sql := `INSERT INTO artists(id, name, favorite, total_duration, album_count)
 	VALUES %s
 	ON CONFLICT(id) DO UPDATE SET
-    name=excluded.name, favorite=excluded.favorite;
+    name=excluded.name, favorite=excluded.favorite,
+	total_duration=excluded.total_duration,
+	album_count=excluded.album_count;
 `
 
-	args := make([]interface{}, len(artists)*3)
+	args := make([]interface{}, len(artists)*5)
 
 	argFmt := ""
 
@@ -58,11 +61,13 @@ func (db *Db) UpdateArtists(artists []*models.Artist) error {
 		if i > 0 {
 			argFmt += ", "
 		}
-		argFmt += "(?, ?, ?)"
+		argFmt += "(?, ?, ?, ?, ?)"
 
-		args[i*3] = v.Id
-		args[i*3+1] = v.Name
-		args[i*3+2] = v.Favorite
+		args[i*5] = v.Id
+		args[i*5+1] = v.Name
+		args[i*5+2] = v.Favorite
+		args[i*5+3] = v.TotalDuration
+		args[i*5+4] = v.AlbumCount
 	}
 
 	sql = fmt.Sprintf(sql, argFmt)
@@ -94,9 +99,7 @@ func (db *Db) UpdateArtists(artists []*models.Artist) error {
 func (db *Db) GetArtists(query *interfaces.QueryOpts) (artists []*models.Artist, count int, err error) {
 
 	stmt := db.builder.
-		Select("ar.id as id, ar.name as name, ar.favorite as favorite, count(a.id) as album_count, sum(a.duration) as total_duration").
-		From("artists ar").Join("albums a on ar.id = a.artist")
-	stmt = stmt.GroupBy("ar.id")
+		Select("*").From("artists")
 
 	if !query.Filter.Empty() {
 		if query.Filter.Favorite {
@@ -145,16 +148,16 @@ func (db *Db) GetArtists(query *interfaces.QueryOpts) (artists []*models.Artist,
 }
 
 func (db *Db) UpdateAlbums(albums []*models.Album) error {
-	sql := `INSERT INTO albums(id, name, year, duration, favorite, artist)
+	sql := `INSERT INTO albums(id, name, year, duration, favorite, artist, song_count, image_id, disc_count)
 	VALUES %s
 	ON CONFLICT(id) DO UPDATE SET
     name=excluded.name, favorite=excluded.favorite,
 	year=excluded.year, duration=excluded.duration,
-	artist=excluded.artist;
-;
+	artist=excluded.artist, song_count=excluded.song_count,
+	image_id=excluded.image_id, disc_count=excluded.disc_count;
 `
 
-	args := make([]interface{}, len(albums)*6)
+	args := make([]interface{}, len(albums)*9)
 
 	argFmt := ""
 
@@ -162,15 +165,19 @@ func (db *Db) UpdateAlbums(albums []*models.Album) error {
 		if i > 0 {
 			argFmt += ", "
 		}
-		argFmt += "(?, ?, ?, ?, ?, ?)"
+		argFmt += "(?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
-		args[i*6] = v.Id
-		args[i*6+1] = v.Name
-		args[i*6+2] = v.Year
+		args[i*9] = v.Id
+		args[i*9+1] = v.Name
+		args[i*9+2] = v.Year
 
-		args[i*6+3] = v.Duration
-		args[i*6+4] = v.Favorite
-		args[i*6+5] = v.Artist
+		args[i*9+3] = v.Duration
+		args[i*9+4] = v.Favorite
+		args[i*9+5] = v.Artist
+
+		args[i*9+6] = v.SongCount
+		args[i*9+7] = v.ImageId
+		args[i*9+8] = v.DiscCount
 	}
 
 	sql = fmt.Sprintf(sql, argFmt)
@@ -242,4 +249,88 @@ func (db *Db) GetAlbums(query *interfaces.QueryOpts) (albums []*models.Album, n 
 	sql = "SELECT COUNT(id) FROM ARTISTS"
 	err = db.engine.Get(&n, sql)
 	return
+}
+
+func (db *Db) UpdateSongs(songs []*models.Song) error {
+	sql := `INSERT INTO songs(id, name, duration, song_index, disc_number, favorite, album)
+	VALUES %s
+	ON CONFLICT(id) DO UPDATE SET
+    name=excluded.name, duration=excluded.duration,
+	song_index=excluded.song_index, disc_number=excluded.disc_number,
+	favorite=excluded.favorite, album=excluded.album;
+`
+
+	args := make([]interface{}, len(songs)*7)
+
+	argFmt := ""
+
+	for i, v := range songs {
+		if i > 0 {
+			argFmt += ", "
+		}
+		argFmt += "(?, ?, ?, ?, ?, ?, ?)"
+
+		args[i*7] = v.Id
+		args[i*7+1] = v.Name
+		args[i*7+2] = v.Duration
+
+		args[i*7+3] = v.Index
+		args[i*7+4] = v.DiscNumber
+		args[i*7+5] = v.Favorite
+		args[i*7+6] = v.Album
+	}
+
+	sql = fmt.Sprintf(sql, argFmt)
+
+	tx, err := db.begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Close()
+
+	_, err = tx.Exec(sql, args...)
+	if err != nil {
+		return err
+	}
+
+	err = db.updateKey(keySongs, tx)
+	if err != nil {
+		return err
+	}
+	tx.ok = true
+	return nil
+}
+
+func (db *Db) GetSongs(page int, pageSize int) ([]*models.Song, int, error) {
+	stmt := db.builder.
+		Select("*").From("songs")
+
+	stmt = stmt.Offset(uint64(page * pageSize))
+	stmt = stmt.Limit(uint64(pageSize))
+
+	var sql string
+	var args []interface{}
+
+	sql, args, err := stmt.ToSql()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	s := &[]models.Song{}
+
+	err = db.engine.Select(s, sql, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	songs := make([]*models.Song, len(*s))
+	for i, _ := range *s {
+		songs[i] = &(*s)[i]
+	}
+
+	count := 0
+
+	sql = "SELECT COUNT(id) FROM songs"
+	err = db.engine.Get(&count, sql)
+	return songs, count, nil
 }

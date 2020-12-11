@@ -226,6 +226,13 @@ func (h *Help) statsPage() string {
 	text += "\n\n[yellow]Statistics[-]\n"
 	text += fmt.Sprintf("Memory allocated: %s",
 		h.stats.HeapString())
+
+	text += "\n\n[yellow]Local storage[-]\n"
+	text += fmt.Sprintf("Database file: %s\nDatabase size: %s\nLast updated: %s",
+		h.stats.StorageInfo.DbFile,
+		h.stats.StorageInfo.DbSizeString(),
+		h.stats.StorageInfo.LastUpdatedString())
+
 	return text
 }
 

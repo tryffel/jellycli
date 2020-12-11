@@ -31,7 +31,9 @@ CREATE TABLE genres (
 CREATE TABLE artists (
 	id TEXT PRIMARY KEY,
 	name TEXT NOT NULL,
-	favorite BOOL NOT NULL
+	favorite BOOL NOT NULL,
+	total_duration INTEGER NOT NULL DEFAULT 0,
+	album_count INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE albums (
@@ -40,10 +42,12 @@ CREATE TABLE albums (
 	year INTEGER NOT NULL,
 	duration INTEGER NOT NULL,
 	favorite BOOL NOT NULL,
+	song_count INTEGER NOT NULL,
+	image_id TEXT NOT NULL DEFAULT '',
+	disc_count INTEGER NOT NULL DEFAULT 1,
 
 	-- jellyfin sometimes returns empty artist, so don't require existing artist.
 	artist TEXT NOT NULL DEFAULT ''
-
 );
 
 
@@ -55,9 +59,7 @@ CREATE TABLE songs (
 	disc_number INTEGER NOT NULL,
 	favorite bool,
 
-	album TEXT,
-
-	FOREIGN KEY (album) REFERENCES albums(id)
+	album TEXT
 );
 
 CREATE TABLE playlists (

@@ -205,7 +205,6 @@ func (i *Items) pullSongs(limit int) error {
 func (i *Items) pullSongsByAlbums(limit int) error {
 	logrus.Infof("Pull album songs from server")
 
-	totalAlbums := 0
 	retrieved := 0
 	totalSongs := 0
 	failed := 0
@@ -219,20 +218,12 @@ func (i *Items) pullSongsByAlbums(limit int) error {
 	var err error
 	var albums []*models.Album
 
-	albums, totalAlbums, err = i.GetAlbums(query)
-
-	totalPages := totalAlbums/query.Paging.PageSize + 1
-
-	for page := 0; page < totalPages; page++ {
-		logrus.Debugf("get albums, page %d", page)
-
-		if page > 0 {
-			query.Paging.CurrentPage += 1
-			albums, _, err = i.GetAlbums(query)
-			if err != nil {
-				logrus.Error("get albums: %v", err)
-				continue
-			}
+	for {
+		logrus.Infof("get albums, page %d", query.Paging.CurrentPage)
+		albums, _, err = i.GetAlbums(query)
+		if err != nil {
+			logrus.Errorf("get albums (page %d): %v", query.Paging.CurrentPage, err)
+			continue
 		}
 		for _, album := range albums {
 			songs, err := i.browser.GetAlbumSongs(album.Id)
@@ -254,6 +245,10 @@ func (i *Items) pullSongsByAlbums(limit int) error {
 				return fmt.Errorf("save songs: %v", err)
 			}
 		}
+		if len(albums) < query.Paging.PageSize {
+			break
+		}
+		query.Paging.CurrentPage += 1
 	}
 
 	logrus.Infof("Cached songs for %d albums, %d failed", retrieved, failed)

@@ -246,7 +246,7 @@ func (db *Db) GetAlbums(query *interfaces.QueryOpts) (albums []*models.Album, n 
 		albums[i] = &(*a)[i]
 	}
 
-	sql = "SELECT COUNT(id) FROM ARTISTS"
+	sql = "SELECT COUNT(id) FROM albums"
 	err = db.engine.Get(&n, sql)
 	return
 }
@@ -307,6 +307,7 @@ func (db *Db) GetSongs(page int, pageSize int) ([]*models.Song, int, error) {
 
 	stmt = stmt.Offset(uint64(page * pageSize))
 	stmt = stmt.Limit(uint64(pageSize))
+	stmt = stmt.OrderBy("name")
 
 	var sql string
 	var args []interface{}

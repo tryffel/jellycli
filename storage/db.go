@@ -52,25 +52,17 @@ type Db struct {
 	engine  *sqlx.DB
 }
 
-func NewDb(id string) (*Db, error) {
-	err := os.Mkdir(config.AppConfig.Player.LocalCacheDir, 0760)
-	if err != nil {
-		if errors.Is(err, os.ErrExist) {
-		} else {
-			return nil, fmt.Errorf("create cache dir: %v", err)
-		}
-	}
+func newDb(file, id string) (*Db, error) {
+	var err error
 
-	fileName := path.Join(config.AppConfig.Player.LocalCacheDir, id+".db")
-	logrus.Debugf("use cache: %s", fileName)
-
+	logrus.Debugf("use cache: %s", file)
 	db := &Db{
 		id:      id,
 		builder: squirrel.StatementBuilder.PlaceholderFormat(squirrel.Question),
-		file:    fileName,
+		file:    file,
 	}
 
-	db.engine, err = sqlx.Connect("sqlite3", fmt.Sprintf("file:%s?_fk=true&_cslike=false", fileName))
+	db.engine, err = sqlx.Connect("sqlite3", fmt.Sprintf("file:%s?_fk=true&_cslike=false", file))
 	if err != nil {
 		return db, err
 	}
@@ -84,6 +76,18 @@ func NewDb(id string) (*Db, error) {
 		}
 	}
 	return db, err
+}
+
+func NewDb(id string) (*Db, error) {
+	err := os.Mkdir(config.AppConfig.Player.LocalCacheDir, 0760)
+	if err != nil {
+		if errors.Is(err, os.ErrExist) {
+		} else {
+			return nil, fmt.Errorf("create cache dir: %v", err)
+		}
+	}
+	fileName := path.Join(config.AppConfig.Player.LocalCacheDir, id+".db")
+	return newDb(fileName, id)
 }
 
 // create file + schema

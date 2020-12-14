@@ -52,6 +52,8 @@ func getItemType(dto *map[string]interface{}) (models.ItemType, error) {
 	}
 }
 
+func (jf *Jellyfin) CanCacheSongs() bool { return true }
+
 func (jf *Jellyfin) GetItem(id models.Id) (models.Item, error) {
 	item, found := jf.cache.Get(id)
 	if found && item != nil {

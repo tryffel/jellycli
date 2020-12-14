@@ -27,7 +27,7 @@ import (
 )
 
 // MediaServer combines minimal interfaces for browsing and playing songs from remote server.
-// Mediaserver can additionally implement RemoteController, if server supports it.
+// Mediaserver can additionally implement RemoteController, and Cacher.
 type MediaServer interface {
 	Streamer
 	Browser
@@ -110,8 +110,8 @@ type Browser interface {
 	ImageUrl(item models.Id, itemType models.ItemType) string
 }
 
-// RemoteController implents controlling audio player remotely as well as
-// keeping remote server updated on player status.
+// RemoteController controls audio player remotely as well as
+// keeps remote server updated on player status.
 type RemoteController interface {
 	// SetPlayer allows connecting remote controller to player, which can
 	// then be controlled remotely.
@@ -145,4 +145,14 @@ type RemoteServer interface {
 	// GetId returns unique id for server. Id server does not provide one
 	// it can be e.g. hashed from url and user.
 	GetId() string
+}
+
+// Cacher describes how data may be pulled from remote server
+// and might override some Browser methods.
+type Cacher interface {
+
+	// CanCacheSong returns true if caching songs by Browser.GetSongs is implemented.
+	// Else, player tries to pull songs directly using Browser.GetAlbumSongs.
+	// GetAlbumSongs is slower method (when album contains less songs then paged song list).
+	CanCacheSongs() bool
 }

@@ -25,6 +25,8 @@ import (
 	"tryffel.net/go/jellycli/models"
 )
 
+func (s *Subsonic) CanCacheSongs() bool { return false }
+
 func (s *Subsonic) getFavorites() error {
 	if len(s.favoriteAlbums) == 0 || len(s.favoriteArtists) == 0 {
 		resp, err := s.get("/getStarred2", nil)

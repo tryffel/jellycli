@@ -30,6 +30,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -160,10 +161,25 @@ func NewJellyfin(conf *config.Jellyfin, provider config.KeyValueProvider) (*Jell
 	}
 
 	if jf.host == "" {
-		jf.host, err = provider.Get("jellyfin.url", false, "jellyfin host")
+		jf.host, err = provider.Get("jellyfin.url", false, "jellyfin url")
 		if err != nil {
 			return jf, err
 		}
+
+		if jf.host == "" {
+			return jf, errors.New("jellyfin url cannot be empty")
+		}
+
+		_, err := url.Parse(jf.host)
+		if err != nil {
+			return jf, fmt.Errorf("parse url: %v", err)
+		}
+	}
+
+	err = jf.ping()
+	if err != nil {
+		logrus.Errorf("connection to jellyfin server failed. Make sure you entered correct url.")
+		return jf, fmt.Errorf("connect jellyfin server: %v", err)
 	}
 
 	var password string
@@ -307,6 +323,31 @@ func (jf *Jellyfin) selectDefaultMusicView(provider config.KeyValueProvider) err
 			}
 		}
 	}
+}
+
+func (jf *Jellyfin) ping() error {
+	body, err := jf.get("/System/Info/Public", nil)
+	if err != nil {
+		return err
+	}
+
+	type result struct {
+		LocalAddress    string
+		ServerName      string
+		Version         string
+		ProductName     string
+		OperatingSystem string
+		Id              string
+	}
+
+	res := &result{}
+	err = json.NewDecoder(body).Decode(res)
+	if err != nil {
+		return fmt.Errorf("invalid json response: %v", err)
+	}
+
+	logrus.Debugf("Connect to server %s, (id %s)", res.ServerName, res.Id)
+	return nil
 }
 
 func (jf *Jellyfin) ServerId() string {

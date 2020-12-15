@@ -57,11 +57,11 @@ func (jf *Jellyfin) login(username, password string) error {
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := jf.client.Do(req)
-	if resp.Body != nil {
-		defer resp.Body.Close()
-	}
 	if err != nil {
 		return fmt.Errorf("failed to login: %v", err)
+	}
+	if resp.Body != nil {
+		defer resp.Body.Close()
 	}
 
 	switch resp.StatusCode {

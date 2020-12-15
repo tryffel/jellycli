@@ -184,6 +184,7 @@ func (a *app) run() {
 			logrus.Errorf("start gui: %v", err)
 		}
 	} else {
+		logrus.Info("Waiting for commands from server")
 		a.stopOnSignal()
 	}
 }

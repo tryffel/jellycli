@@ -172,10 +172,11 @@ func (i *Items) GetStatistics() models.Stats {
 		logrus.Errorf("get server info: %v", err)
 	}
 
-	stats.StorageInfo, err = i.db.GetStats()
-	if err != nil {
-		logrus.Errorf("get local storage info: %v", err)
-
+	if i.db != nil {
+		stats.StorageInfo, err = i.db.GetStats()
+		if err != nil {
+			logrus.Errorf("get local storage info: %v", err)
+		}
 	}
 	return stats
 }

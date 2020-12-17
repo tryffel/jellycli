@@ -5,7 +5,7 @@
 
 Terminal music player, works with: 
 * Jellyfin >= 10.6 (and Emby >= 4.4)
-* Subsonic compatible server, with API >= 1.16 (tested with Navidrome)
+* **Experimental:** Subsonic compatible server, with API >= 1.16 (tested with Navidrome)
 
 ![Screenshot](screenshots/browse.png)
 
@@ -56,10 +56,10 @@ go build .
 ```
 
 ## Run
-Binaries for Linux & Windows are available at 
+Binaries for 64-bit Linux & Windows are available under
 [latest release](https://github.com/tryffel/jellycli/releases/latest).
 
-On Arch Linux you can install jellycli with pre-built AUR package 'jellycli-bin'.
+On Arch Linux you can install Jellycli with pre-built AUR package 'jellycli-bin'.
 
 ``` 
 # Gui
@@ -88,6 +88,12 @@ docker run -it --rm --device /dev/snd:/dev/snd  -v ~/jellycli-config/jellycli-co
 ### Config file
 
 On first time application asks for Jellyfin host, username, password and default collection for music. 
+
+To connect directly to Subsonic, create new config file by running Jellycli for the first time and stop program, 
+edit config file and set player.server=subsonic and run Jellycli and insert server info. Alternatively, use env
+var JELLYCLI_PLAYER_SERVER=subsonic
+
+
 All this is stored in configuration file:
 * ~/.config/jellycli/jellycli.yaml 
 * C:\Users\<user>\AppData\Roaming\jellycli\jellycli.yaml
@@ -114,6 +120,8 @@ For development purposes you should set log-level either to debug or trace.
 It is possible to override any config file value with environment variable. In addition to that,
 it is also possible to define passwords for servers. This way it would be possible to use
 Jellycli without persisting config file (with e.g. Docker). Jellycli will still create config file, nevertheless.
+
+Note: [#14](https://github.com/tryffel/jellycli/issues/14): environment variables override config values, and env variables will be saved in config file.
 
 
 ```

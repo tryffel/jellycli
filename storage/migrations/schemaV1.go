@@ -73,7 +73,9 @@ CREATE TABLE playlist_songs (
 	song TEXT,
 
 	FOREIGN KEY (playlist) REFERENCES playlists(id),
-	FOREIGN KEY (song) REFERENCES songs(id)
+	FOREIGN KEY (song) REFERENCES songs(id),
+
+	UNIQUE(playlist_index, playlist)
 );
 
 

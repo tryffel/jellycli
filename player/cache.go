@@ -204,7 +204,7 @@ func (i *Items) pullSongs(limit int) error {
 }
 
 func (i *Items) pullSongsByAlbums(limit int) error {
-	logrus.Infof("Pull album songs from server")
+	logrus.Info("Pull album songs from server")
 
 	retrieved := 0
 	totalSongs := 0
@@ -245,7 +245,7 @@ func (i *Items) pullSongsByAlbums(limit int) error {
 			if err != nil {
 				return fmt.Errorf("save songs: %v", err)
 			}
-			logrus.Debugf("retrieved %d songs", retrieved)
+			logrus.Debugf("retrieved %d songs", totalSongs)
 		}
 		if len(albums) < query.Paging.PageSize {
 			break
@@ -254,5 +254,32 @@ func (i *Items) pullSongsByAlbums(limit int) error {
 	}
 
 	logrus.Infof("Cached songs for %d albums, %d failed", retrieved, failed)
+	return err
+}
+
+func (i *Items) UpdatePlaylists() error {
+	logrus.Info("Update playlists from server")
+
+	playlists, err := i.browser.GetPlaylists()
+	if err != nil {
+		return fmt.Errorf("get playlists: %v", err)
+	}
+	if len(playlists) == 0 {
+		logrus.Info("no playlists")
+		return nil
+	}
+
+	for index, v := range playlists {
+		songs, err := i.browser.GetPlaylistSongs(v.Id)
+		if err != nil {
+			return fmt.Errorf("get playlist songs: %v", err)
+		}
+		playlists[index].Songs = songs
+	}
+
+	err = i.db.UpdatePlaylists(playlists)
+	if err == nil {
+		logrus.Infof("Updated %d playlists", len(playlists))
+	}
 	return err
 }

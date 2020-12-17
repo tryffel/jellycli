@@ -45,6 +45,10 @@ var refreshCmd = &cobra.Command{
 
 		logrus.Infof("############# %s v%s ############", config.AppName, config.Version)
 
+		if !config.AppConfig.Player.EnableLocalCache {
+			logrus.Fatalf("Local cache is disabled")
+		}
+
 		err = a.initServerConnection()
 		if err != nil {
 			logrus.Fatalf("connect to server: %v", err)
@@ -80,6 +84,12 @@ var refreshCmd = &cobra.Command{
 		}
 
 		err = a.player.UpdateLocalSongs(0)
+		if err != nil {
+			logrus.Error(err)
+			return
+		}
+
+		err = a.player.UpdatePlaylists()
 		if err != nil {
 			logrus.Error(err)
 			return

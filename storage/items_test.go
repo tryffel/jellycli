@@ -159,3 +159,48 @@ func TestDb_UpdateSongs(t *testing.T) {
 		t.Errorf("songs differ: %s", diff)
 	}
 }
+
+func TestDb_UpdatePlaylists(t *testing.T) {
+	playlists := api.MockPlaylists
+
+	if len(playlists) == 0 {
+		t.Errorf("no playlists")
+		return
+	}
+
+	db := testDb(t)
+	if db == nil {
+		return
+	}
+
+	defer closeDb(t, db)
+
+	err := db.UpdateSongs(api.MockSongs)
+
+	err = db.UpdatePlaylists(playlists[1:])
+	if err != nil {
+		t.Errorf("insert playlists: %v", err)
+	}
+
+	err = db.UpdatePlaylists(playlists)
+	if err != nil {
+		t.Errorf("update playlists: %v", err)
+	}
+
+	gotPlaylists, err := db.GetPlaylists()
+	if err != nil {
+		t.Errorf("get playlists: %v", err)
+	}
+
+	if len(gotPlaylists) != len(playlists) {
+		t.Errorf("invalid playlists count returned")
+	}
+
+	for i, v := range gotPlaylists {
+		v.Songs = playlists[i].Songs
+		diff := cmp.Diff(v, gotPlaylists[i])
+		if diff != "" {
+			t.Errorf("playlist differs: %s", diff)
+		}
+	}
+}

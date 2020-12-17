@@ -27,9 +27,10 @@ import (
 )
 
 const (
-	keyAlbums  = "albums"
-	keyArtists = "artists"
-	keySongs   = "songs"
+	keyAlbums    = "albums"
+	keyArtists   = "artists"
+	keySongs     = "songs"
+	keyPlaylists = "playlists"
 )
 
 func (db *Db) updateKey(key string, tx *tx) error {
@@ -334,4 +335,111 @@ func (db *Db) GetSongs(page int, pageSize int) ([]*models.Song, int, error) {
 	sql = "SELECT COUNT(id) FROM songs"
 	err = db.engine.Get(&count, sql)
 	return songs, count, nil
+}
+
+// UpdatePlaylists updates playlists. Songs are expected to already exist.
+func (db *Db) UpdatePlaylists(playlists []*models.Playlist) error {
+	tx, err := db.begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Close()
+
+	// playlists
+
+	sql := `INSERT INTO playlists(id, name) VALUES %s
+	ON CONFLICT(id) DO UPDATE SET
+    name=excluded.name;`
+
+	args := make([]interface{}, len(playlists)*2)
+	argFmt := ""
+	for i, v := range playlists {
+		if i > 0 {
+			argFmt += ", "
+		}
+		argFmt += "(?, ?)"
+
+		args[i*2] = v.Id
+		args[i*2+1] = v.Name
+	}
+
+	sql = fmt.Sprintf(sql, argFmt)
+
+	_, err = tx.Exec(sql, args...)
+	if err != nil {
+		return err
+	}
+
+	// playlist songs
+	sql = `DELETE FROM playlist_songs WHERE playlist IN %s; 
+	INSERT INTO playlist_songs(playlist_index, playlist, song) VALUES %s;
+`
+	args = make([]interface{}, 0, len(playlists))
+
+	argFmt = ""
+	argPlaylists := "("
+
+	for i, pl := range playlists {
+		if i > 0 {
+			argPlaylists += ", "
+		}
+		argPlaylists += "?"
+		args = append(args, pl.Id)
+	}
+
+	for i, pl := range playlists {
+		for songIndex, song := range pl.Songs {
+			if i > 0 || songIndex > 0 {
+				argFmt += ", "
+			}
+			argFmt += "(?, ?, ?)"
+			args = append(args, songIndex+1)
+			args = append(args, pl.Id)
+			args = append(args, song.Id)
+		}
+	}
+	argPlaylists += ")"
+
+	sql = fmt.Sprintf(sql, argPlaylists, argFmt)
+	_, err = tx.Exec(sql, args...)
+	if err != nil {
+		return err
+	}
+
+	err = db.updateKey(keyPlaylists, tx)
+	if err != nil {
+		return err
+	}
+	tx.ok = true
+	return nil
+}
+
+func (db *Db) GetPlaylists() ([]*models.Playlist, error) {
+	sql := `
+		SELECT
+	pl.id AS id,
+		pl.name AS name,
+		COUNT(ps.song) AS song_count,
+		SUM(s.duration) AS duration
+	FROM playlists pl
+	JOIN playlist_songs ps ON pl.id = ps.playlist
+	JOIN songs s ON ps.song = s.id
+	GROUP BY pl.id
+	ORDER BY pl.name;`
+
+	playlists := make([]*models.Playlist, 0)
+	rows, err := db.engine.Query(sql)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		playlist := &models.Playlist{}
+		err = rows.Scan(&playlist.Id, &playlist.Name, &playlist.SongCount, &playlist.Duration)
+		if err != nil {
+			return playlists, err
+		} else {
+			playlists = append(playlists, playlist)
+		}
+	}
+	return playlists, nil
 }

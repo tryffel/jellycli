@@ -131,6 +131,23 @@ var MockSongs = []*models.Song{
 	},
 }
 
+var MockPlaylists = []*models.Playlist{
+	{
+		Id:        "playlist-1",
+		Name:      "playlist 1",
+		Songs:     MockSongs[0:2],
+		SongCount: 2,
+		Duration:  360,
+	},
+	{
+		Id:        "playlist-2",
+		Name:      "playlist 2",
+		Songs:     MockSongs[0:5],
+		SongCount: 5,
+		Duration:  900,
+	},
+}
+
 func limitPaging(lastIndex, items int) int {
 	if lastIndex > items-1 {
 		return items - 1

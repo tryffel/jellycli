@@ -94,7 +94,12 @@ func (i *Items) GetAlbumSongs(album models.Id) ([]*models.Song, error) {
 }
 
 func (i *Items) GetPlaylists() ([]*models.Playlist, error) {
-	return i.browser.GetPlaylists()
+	if config.AppConfig.Player.EnableLocalCache {
+		return i.db.GetPlaylists()
+	} else {
+		return i.browser.GetPlaylists()
+	}
+
 }
 
 func (i *Items) GetPlaylistSongs(playlist *models.Playlist) error {

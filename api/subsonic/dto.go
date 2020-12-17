@@ -87,6 +87,7 @@ type response struct {
 	Playlists     *playlists     `json:"playlists,omitempty"`
 	Playlist      *playlistSongs `json:"playlist,omitempty"`
 	Genres        *genres        `json:"genres"`
+	SimilarSongs  *similarSongs  `json:"similarSongs,omitempty"`
 }
 
 type musicFolder struct {
@@ -265,4 +266,8 @@ func (g *genre) toGenre() *models.IdName {
 		Id:   models.Id(g.Name),
 		Name: g.Name,
 	}
+}
+
+type similarSongs struct {
+	Songs []child `json:"song"`
 }

@@ -29,6 +29,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 	"tryffel.net/go/jellycli/api"
 	"tryffel.net/go/jellycli/config"
@@ -188,7 +189,7 @@ func (s *Subsonic) get(url string, params *params) (*response, error) {
 		return nil, err
 	}
 
-	logrus.Debugf("Get %s status: %d, took: %d ms", "/rest"+url, resp.StatusCode, took.Milliseconds())
+	logrus.Debugf("Get %s status: %d, took: %d ms", req.URL.String(), resp.StatusCode, took.Milliseconds())
 	defer resp.Body.Close()
 	dto := &subResponse{}
 	err = json.NewDecoder(resp.Body).Decode(dto)
@@ -242,6 +243,11 @@ type params map[string]string
 
 func (p *params) setId(id string) {
 	(*p)["id"] = id
+}
+
+func (p *params) setPaging(paging interfaces.Paging) {
+	(*p)["offset"] = strconv.Itoa(paging.Offset())
+	(*p)["size"] = strconv.Itoa(paging.PageSize)
 }
 
 func (s *Subsonic) GetConfig() config.Backend {

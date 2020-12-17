@@ -188,6 +188,7 @@ func (i *Items) pullSongs(limit int) error {
 
 		query.Paging.CurrentPage += 1
 		retrieved += len(songs)
+		logrus.Debugf("retrieved %d songs", retrieved)
 
 		if (limit != 0 && retrieved >= limit) || len(songs) < query.Paging.PageSize {
 			break
@@ -244,6 +245,7 @@ func (i *Items) pullSongsByAlbums(limit int) error {
 			if err != nil {
 				return fmt.Errorf("save songs: %v", err)
 			}
+			logrus.Debugf("retrieved %d songs", retrieved)
 		}
 		if len(albums) < query.Paging.PageSize {
 			break

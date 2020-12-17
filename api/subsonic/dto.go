@@ -146,7 +146,7 @@ func (a *album) toAlbum() *models.Album {
 		Year:              a.Year,
 		Duration:          a.Duration,
 		Artist:            models.Id(a.ArtistId),
-		AdditionalArtists: nil,
+		AdditionalArtists: []models.IdName{{models.Id(a.ArtistId), a.Artist}},
 		Songs:             nil,
 		SongCount:         a.SongCount,
 		ImageId:           "",

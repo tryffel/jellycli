@@ -43,11 +43,22 @@ func newItems(api api.MediaServer) (*Items, error) {
 	var err error
 
 	serverId := api.GetId()
-	items.db, err = storage.NewDb(serverId)
-	if err != nil {
-		return items, fmt.Errorf("init local database: %v", err)
+	if config.AppConfig.Player.EnableLocalCache {
+		items.db, err = storage.NewDb(serverId)
+		if err != nil {
+			return items, fmt.Errorf("init local database: %v", err)
+		}
 	}
 	return items, err
+}
+
+func (i *Items) closeDb() {
+	if i.db != nil {
+		err := i.db.Close()
+		if err != nil {
+			logrus.Errorf("close db: %s", err)
+		}
+	}
 }
 
 func (i *Items) Search(itemType models.ItemType, query string) ([]models.Item, error) {

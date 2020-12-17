@@ -124,7 +124,7 @@ func (p *Player) loop() {
 		case <-p.StopChan():
 			// stop application
 			p.Audio.StopMedia()
-			p.Items.db.Close()
+			p.Items.closeDb()
 			break
 		case <-p.songComplete:
 			// stream / song complete, get next song

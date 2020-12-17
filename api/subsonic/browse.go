@@ -71,10 +71,7 @@ func (s *Subsonic) GetArtists(query *interfaces.QueryOpts) (artists []*models.Ar
 	return artists, len(artists), nil
 }
 
-func (s *Subsonic) GetAlbumArtists(paging interfaces.Paging) ([]*models.Artist, int, error) {
-	query := &interfaces.QueryOpts{
-		Paging: paging,
-	}
+func (s *Subsonic) GetAlbumArtists(query *interfaces.QueryOpts) ([]*models.Artist, int, error) {
 	return s.GetArtists(query)
 }
 
@@ -211,7 +208,7 @@ func (s *Subsonic) GetRecentlyPlayed(paging interfaces.Paging) ([]*models.Song, 
 	return nil, 0, errors.New("not implemented")
 }
 
-func (s *Subsonic) GetSongs(page, pageSize int) ([]*models.Song, int, error) {
+func (s *Subsonic) GetSongs(query *interfaces.QueryOpts) ([]*models.Song, int, error) {
 	return nil, 0, errors.New("not implemented")
 }
 
@@ -334,6 +331,6 @@ func (s *Subsonic) GetArtist(id models.Id) (*models.Artist, error) {
 	return artist, nil
 }
 
-func (s *Subsonic) ImageUrl(item models.Id, itemType models.ItemType) string {
+func (s *Subsonic) GetImageUrl(item models.Id, itemType models.ItemType) string {
 	return ""
 }

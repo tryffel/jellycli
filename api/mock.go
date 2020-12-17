@@ -182,9 +182,9 @@ func (m *MockServer) GetArtists(query *interfaces.QueryOpts) ([]*models.Artist, 
 	return artists, len(m.Artists), nil
 }
 
-func (m *MockServer) GetAlbumArtists(paging interfaces.Paging) ([]*models.Artist, int, error) {
-	offset := paging.Offset()
-	last := limitPaging(paging.CurrentPage*paging.PageSize, len(m.AlbumArtists))
+func (m *MockServer) GetAlbumArtists(query *interfaces.QueryOpts) ([]*models.Artist, int, error) {
+	offset := query.Paging.Offset()
+	last := limitPaging(query.Paging.CurrentPage*query.Paging.PageSize, len(m.AlbumArtists))
 	artists := m.AlbumArtists[offset:last]
 	return artists, len(m.Artists), nil
 }
@@ -235,7 +235,7 @@ func (m *MockServer) GetRecentlyPlayed(paging interfaces.Paging) ([]*models.Song
 	panic("not implemented")
 }
 
-func (m *MockServer) GetSongs(page, pageSize int) ([]*models.Song, int, error) {
+func (m *MockServer) GetSongs(query *interfaces.QueryOpts) ([]*models.Song, int, error) {
 	panic("not implemented")
 }
 
@@ -271,7 +271,7 @@ func (m *MockServer) GetArtist(id models.Id) (*models.Artist, error) {
 	panic("not implemented")
 }
 
-func (m *MockServer) ImageUrl(item models.Id, itemType models.ItemType) string {
+func (m *MockServer) GetImageUrl(item models.Id, itemType models.ItemType) string {
 	panic("not implemented")
 }
 

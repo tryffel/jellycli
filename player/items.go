@@ -74,7 +74,7 @@ func (i *Items) GetArtists(opts *interfaces.QueryOpts) ([]*models.Artist, int, e
 }
 
 func (i *Items) GetAlbumArtists(paging interfaces.Paging) ([]*models.Artist, int, error) {
-	return i.browser.GetAlbumArtists(paging)
+	return i.browser.GetAlbumArtists(interfaces.DefaultQueryOpts())
 }
 
 func (i *Items) GetAlbums(opts *interfaces.QueryOpts) ([]*models.Album, int, error) {
@@ -115,11 +115,21 @@ func (i *Items) GetFavoriteArtists() ([]*models.Artist, error) {
 }
 
 func (i *Items) GetFavoriteAlbums(paging interfaces.Paging) ([]*models.Album, int, error) {
-	return i.browser.GetFavoriteAlbums(paging)
+	query := interfaces.DefaultQueryOpts()
+	query.Filter.Favorite = true
+	query.Paging = paging
+	return i.browser.GetAlbums(query)
 }
 
 func (i *Items) GetLatestAlbums() ([]*models.Album, error) {
-	return i.browser.GetLatestAlbums()
+	query := interfaces.DefaultQueryOpts()
+	if config.AppConfig.Gui.LimitRecentlyPlayed {
+		query.Paging.PageSize = 100
+	}
+	query.Sort.Field = interfaces.SortByLatest
+	query.Sort.Mode = interfaces.SortDesc
+	albums, _, err := i.browser.GetAlbums(query)
+	return albums, err
 }
 
 func (i *Items) GetRecentlyPlayed(paging interfaces.Paging) ([]*models.Song, int, error) {
@@ -139,7 +149,11 @@ func (i *Items) GetGenres(paging interfaces.Paging) ([]*models.IdName, int, erro
 }
 
 func (i *Items) GetGenreAlbums(genre models.IdName) ([]*models.Album, error) {
-	return i.browser.GetGenreAlbums(genre)
+	query := interfaces.DefaultQueryOpts()
+	query.Filter.Genres = []models.IdName{genre}
+
+	albums, _, err := i.browser.GetAlbums(query)
+	return albums, err
 }
 
 func (i *Items) GetStatistics() models.Stats {
@@ -170,7 +184,7 @@ func (i *Items) GetSongs(page, pageSize int) ([]*models.Song, int, error) {
 	if config.AppConfig.Player.EnableLocalCache {
 		return i.db.GetSongs(page, pageSize)
 	} else {
-		return i.browser.GetSongs(page, pageSize)
+		return i.browser.GetSongs(interfaces.DefaultQueryOpts())
 	}
 }
 

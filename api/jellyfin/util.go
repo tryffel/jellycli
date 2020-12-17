@@ -196,7 +196,7 @@ func (jf *Jellyfin) GetCacheItems() int {
 }
 
 //ImageUrl returns primary image url for item, if there is one. Otherwise return empty
-func (jf *Jellyfin) ImageUrl(item models.Id, itemType models.ItemType) string {
+func (jf *Jellyfin) GetImageUrl(item models.Id, itemType models.ItemType) string {
 	return ""
 	//return fmt.Sprintf("%s/Items/%s/Images/Primary?maxHeight=500&tag=%s&quality=90", jf.host, item, imageTag)
 }

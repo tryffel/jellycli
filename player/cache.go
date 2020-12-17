@@ -170,7 +170,7 @@ func (i *Items) pullSongs(limit int) error {
 	query.Paging.CurrentPage = 0
 
 	for {
-		songs, n, err := i.browser.GetSongs(query.Paging.CurrentPage, query.Paging.PageSize)
+		songs, n, err := i.browser.GetSongs(interfaces.DefaultQueryOpts())
 		if err != nil {
 			return fmt.Errorf("pull songs: %v", err)
 		}

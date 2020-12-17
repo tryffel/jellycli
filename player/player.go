@@ -211,7 +211,7 @@ func (p *Player) downloadSong(index int) {
 			album = &models.Album{Name: "unknown album"}
 		} else {
 			imageId = album.ImageId
-			imageUrl = p.api.ImageUrl(album.Id, models.TypeAlbum)
+			imageUrl = p.api.GetImageUrl(album.Id, models.TypeAlbum)
 		}
 		a, err := p.api.GetArtist(album.GetParent())
 		if err != nil {

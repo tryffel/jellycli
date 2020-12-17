@@ -84,6 +84,10 @@ func (p *params) setSortingByType(itemType models.ItemType, sort interfaces.Sort
 		field = "PlayCount,SortName"
 	case interfaces.SortByRandom:
 		field = "Random,SortName"
+	case interfaces.SortByLatest:
+		field = "DateCreated,SortName"
+	case interfaces.SortByLastPlayed:
+		field = "DatePlayed,SortName"
 	}
 
 	p.setSorting(field, order)

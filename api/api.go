@@ -52,9 +52,9 @@ type Browser interface {
 	GetArtists(query *interfaces.QueryOpts) ([]*models.Artist, int, error)
 
 	// GetAlbumArtists returns artists that are marked as album artists. See GetArtists.
-	GetAlbumArtists(paging interfaces.Paging) ([]*models.Artist, int, error)
+	GetAlbumArtists(query *interfaces.QueryOpts) ([]*models.Artist, int, error)
 	// GetAlbums gets albums with given paging. Only PageSize and CurrentPage are used. Total count is returned
-	GetAlbums(paging *interfaces.QueryOpts) ([]*models.Album, int, error)
+	GetAlbums(query *interfaces.QueryOpts) ([]*models.Album, int, error)
 
 	// GetArtistAlbums returns albums that artist takes part in.
 	GetArtistAlbums(artist models.Id) ([]*models.Album, error)
@@ -65,8 +65,6 @@ type Browser interface {
 	GetPlaylists() ([]*models.Playlist, error)
 	// GetPlaylistSongs fills songs array for playlist. If there's error, songs will not be filled
 	GetPlaylistSongs(playlist models.Id) ([]*models.Song, error)
-	// GetFavoriteAlbums return list of favorite albums.
-	GetFavoriteAlbums(paging interfaces.Paging) ([]*models.Album, int, error)
 
 	// GetSimilarArtists returns similar artists for artist id
 	GetSimilarArtists(artist models.Id) ([]*models.Artist, error)
@@ -74,20 +72,14 @@ type Browser interface {
 	// GetsimilarAlbums returns list of similar albums.
 	GetSimilarAlbums(album models.Id) ([]*models.Album, error)
 
-	// GetLatestAlbums returns latest albums.
-	GetLatestAlbums() ([]*models.Album, error)
-
 	// GetRecentlyPlayed returns songs that have been played last.
 	GetRecentlyPlayed(paging interfaces.Paging) ([]*models.Song, int, error)
 
 	// GetSongs returns songs by paging. It also returns total number of songs.
-	GetSongs(page, pageSize int) ([]*models.Song, int, error)
+	GetSongs(query *interfaces.QueryOpts) ([]*models.Song, int, error)
 
 	// GetGenres returns music genres with paging. Return genres, total genres and possible error
 	GetGenres(paging interfaces.Paging) ([]*models.IdName, int, error)
-
-	// GetGenreAlbums returns all albums that belong to given genre
-	GetGenreAlbums(genre models.IdName) ([]*models.Album, error)
 
 	// GetAlbumArtist returns main artist for album.
 	GetAlbumArtist(album *models.Album) (*models.Artist, error)
@@ -107,7 +99,7 @@ type Browser interface {
 
 	GetArtist(id models.Id) (*models.Artist, error)
 
-	ImageUrl(item models.Id, itemType models.ItemType) string
+	GetImageUrl(item models.Id, itemType models.ItemType) string
 }
 
 // RemoteController controls audio player remotely as well as
@@ -142,7 +134,7 @@ type RemoteServer interface {
 	// Stop stops background service for remote server, if any.
 	Stop() error
 
-	// GetId returns unique id for server. Id server does not provide one
+	// GetId returns unique id for server. If server does not provide one,
 	// it can be e.g. hashed from url and user.
 	GetId() string
 }

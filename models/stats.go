@@ -77,6 +77,9 @@ func (s StorageInfo) DbSizeString() string {
 }
 
 func (s StorageInfo) LastUpdatedString() string {
+	if s.LastUpdated.IsZero() {
+		return "-"
+	}
 	return s.LastUpdated.Format(time.ANSIC)
 
 }

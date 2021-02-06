@@ -146,6 +146,8 @@ func (jf *Jellyfin) parseInboudMessage(buff *[]byte) error {
 					volume := interfaces.AudioVolume(volume)
 					jf.player.SetVolume(volume)
 				}
+			case "ToggleMute":
+				jf.player.ToggleMute()
 			default:
 				logrus.Warning("unknown socket command: ", name)
 			}

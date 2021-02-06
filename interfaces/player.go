@@ -145,6 +145,8 @@ type Player interface {
 	SetVolume(volume AudioVolume)
 	// SetMute mutes or un-mutes audio
 	SetMute(muted bool)
+	// ToggleMute toggles current mute.
+	ToggleMute()
 
 	SetShuffle(enabled bool)
 }

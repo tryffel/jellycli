@@ -241,6 +241,13 @@ func (a *Audio) SetMute(muted bool) {
 	go a.flushStatus()
 }
 
+func (a *Audio) ToggleMute() {
+	speaker.Lock()
+	muted := a.status.Muted
+	speaker.Unlock()
+	a.SetMute(!muted)
+}
+
 func (a *Audio) streamCompleted() {
 	logrus.Debug("audio stream complete")
 	err := a.closeOldStream()

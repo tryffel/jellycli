@@ -125,7 +125,7 @@ func (jf *Jellyfin) ReportProgress(state *interfaces.ApiPlaybackState) error {
 		PositionTicks:       int64(state.Position) * ticksToSecond,
 		VolumeLevel:         state.Volume,
 		IsPaused:            state.IsPaused,
-		IsMuted:             state.IsPaused,
+		IsMuted:             state.IsMuted,
 		PlayMethod:          "DirectPlay",
 		PlaySessionId:       jf.SessionId,
 		LiveStreamId:        "",

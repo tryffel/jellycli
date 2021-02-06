@@ -152,12 +152,13 @@ func newStatus(ctrl interfaces.Player) *Status {
 		util.PackKeyBindingName(config.KeyBinds.Global.Shuffle, 10),
 	}
 
-	for _, v := range append(s.buttons, s.btnShuffle) {
+	for _, v := range s.buttons {
 		v.SetBackgroundColor(colors.ButtonBackground)
 		v.SetLabelColor(colors.ButtonLabel)
 	}
 
 	s.btnShuffle.SetBackgroundColor(colors.Background)
+	s.btnShuffle.SetLabelColor(config.Color.Status.VolumeMuted)
 	return s
 }
 
@@ -208,6 +209,8 @@ func (s *Status) Draw(screen tcell.Screen) {
 		cview.Print(screen, volume, volumeX, y-1, w, cview.AlignLeft, colors.ProgressBar)
 	}
 
+	cview.Print(screen, util.PackKeyBindingName(config.KeyBinds.Global.MuteUnmute, 5),
+		volumeX+2, y, volumeX+7, cview.AlignLeft, colors.Shortcuts)
 	cview.Print(screen, util.PackKeyBindingName(config.KeyBinds.Global.VolumeDown, 5),
 		volumeX+7, y, topX+16, cview.AlignLeft, colors.Shortcuts)
 	cview.Print(screen, util.PackKeyBindingName(config.KeyBinds.Global.VolumeUp, 5),
@@ -231,6 +234,9 @@ func (s *Status) Draw(screen tcell.Screen) {
 		cview.Print(screen, "         ", shuffleX, btnY-2, 9, cview.AlignLeft, colors.Shortcuts)
 		s.btnShuffle.SetRect(shuffleX+1, btnY-2, 7, 1)
 		s.btnShuffle.Draw(screen)
+		cview.Print(screen, util.PackKeyBindingName(config.KeyBinds.Global.Shuffle, 5),
+			shuffleX+3, btnY-1, shuffleX+8, cview.AlignLeft, colors.Shortcuts)
+
 	} else if showShuffleSmall {
 		s.btnShuffle.SetLabel("S")
 		shuffleX := x + w - volumeLen - 4
@@ -311,8 +317,10 @@ func (s *Status) DrawButtons() {
 
 	if s.state.Shuffle {
 		s.btnShuffle.SetBackgroundColor(config.Color.BackgroundSelected)
+		s.btnShuffle.SetLabelColor(config.Color.Text)
 
 	} else {
 		s.btnShuffle.SetBackgroundColor(config.Color.Background)
+		s.btnShuffle.SetLabelColor(config.Color.Status.VolumeMuted)
 	}
 }

@@ -163,14 +163,14 @@ func (i *Items) pullSongs(limit int) error {
 	retrieved := 0
 	totalSongs := 0
 	query := interfaces.DefaultQueryOpts()
-	query.Paging.PageSize = 100
-	if 0 < limit && limit < 100 {
+	query.Paging.PageSize = 200
+	if 0 < limit && limit < 200 {
 		query.Paging.PageSize = limit
 	}
 	query.Paging.CurrentPage = 0
 
 	for {
-		songs, n, err := i.browser.GetSongs(interfaces.DefaultQueryOpts())
+		songs, n, err := i.browser.GetSongs(query)
 		if err != nil {
 			return fmt.Errorf("pull songs: %v", err)
 		}

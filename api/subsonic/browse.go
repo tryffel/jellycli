@@ -25,6 +25,8 @@ import (
 	"tryffel.net/go/jellycli/models"
 )
 
+func (s *Subsonic) CanCacheSongs() bool { return false }
+
 func (s *Subsonic) getFavorites() error {
 	if len(s.favoriteAlbums) == 0 || len(s.favoriteArtists) == 0 {
 		resp, err := s.get("/getStarred2", nil)
@@ -69,10 +71,7 @@ func (s *Subsonic) GetArtists(query *interfaces.QueryOpts) (artists []*models.Ar
 	return artists, len(artists), nil
 }
 
-func (s *Subsonic) GetAlbumArtists(paging interfaces.Paging) ([]*models.Artist, int, error) {
-	query := &interfaces.QueryOpts{
-		Paging: paging,
-	}
+func (s *Subsonic) GetAlbumArtists(query *interfaces.QueryOpts) ([]*models.Artist, int, error) {
 	return s.GetArtists(query)
 }
 
@@ -94,15 +93,16 @@ func (s *Subsonic) GetAlbums(opts *interfaces.QueryOpts) ([]*models.Album, int, 
 	// subsonic does not support sorting and filtering at the same time
 	params := &params{}
 	(*params)["type"] = "alphabeticalByName"
-	(*params)["offset"] = strconv.Itoa(opts.Paging.Offset())
-	(*params)["size"] = strconv.Itoa(opts.Paging.PageSize)
-
+	params.setPaging(opts.Paging)
 	if opts.Filter.YearRangeValid() && opts.Filter.YearRange[0] != 0 {
 		(*params)["type"] = "byYear"
 		(*params)["fromYear"] = strconv.Itoa(opts.Filter.YearRange[0])
 		(*params)["toYear"] = strconv.Itoa(opts.Filter.YearRange[1])
 	} else if opts.Filter.Favorite {
 		(*params)["type"] = "starred"
+	} else if len(opts.Filter.Genres) > 0 {
+		(*params)["type"] = "byGenre"
+		(*params)["genre"] = opts.Filter.Genres[0].Name
 	} else {
 		if opts.Sort.Field != "" {
 			switch opts.Sort.Field {
@@ -116,6 +116,10 @@ func (s *Subsonic) GetAlbums(opts *interfaces.QueryOpts) ([]*models.Album, int, 
 				(*params)["type"] = "frequent"
 			case interfaces.SortByRandom:
 				(*params)["type"] = "random"
+			case interfaces.SortByLastPlayed:
+				(*params)["type"] = "recent"
+			case interfaces.SortByLatest:
+				(*params)["type"] = "newest"
 			}
 		}
 	}
@@ -185,11 +189,6 @@ func (s *Subsonic) GetPlaylistSongs(playlist models.Id) ([]*models.Song, error) 
 	return songs, nil
 }
 
-func (s *Subsonic) GetFavoriteAlbums(paging interfaces.Paging) ([]*models.Album, int, error) {
-	err := s.getFavorites()
-	return s.favoriteAlbums, len(s.favoriteAlbums), err
-}
-
 func (s *Subsonic) GetSimilarArtists(artist models.Id) ([]*models.Artist, error) {
 
 	return nil, errors.New("not implemented")
@@ -199,17 +198,11 @@ func (s *Subsonic) GetSimilarAlbums(album models.Id) ([]*models.Album, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (s *Subsonic) GetLatestAlbums() ([]*models.Album, error) {
-	params := &params{}
-	(*params)["type"] = "newest"
-	return s.getAlbums(params)
-}
-
 func (s *Subsonic) GetRecentlyPlayed(paging interfaces.Paging) ([]*models.Song, int, error) {
 	return nil, 0, errors.New("not implemented")
 }
 
-func (s *Subsonic) GetSongs(page, pageSize int) ([]*models.Song, int, error) {
+func (s *Subsonic) GetSongs(query *interfaces.QueryOpts) ([]*models.Song, int, error) {
 	return nil, 0, errors.New("not implemented")
 }
 
@@ -250,7 +243,22 @@ func (s *Subsonic) GetAlbumArtist(album *models.Album) (*models.Artist, error) {
 }
 
 func (s *Subsonic) GetInstantMix(item models.Item) ([]*models.Song, error) {
-	return nil, errors.New("not implemented")
+	params := &params{}
+	params.setId(item.GetId().String())
+	(*params)["count"] = "200"
+
+	resp, err := s.get("/getSimilarSongs", params)
+	if err != nil {
+		return nil, err
+	}
+
+	songs := make([]*models.Song, len(resp.SimilarSongs.Songs))
+
+	for i, v := range resp.SimilarSongs.Songs {
+		songs[i] = v.toSong()
+	}
+
+	return songs, nil
 }
 
 func (s *Subsonic) GetLink(item models.Item) string {
@@ -332,6 +340,6 @@ func (s *Subsonic) GetArtist(id models.Id) (*models.Artist, error) {
 	return artist, nil
 }
 
-func (s *Subsonic) ImageUrl(item models.Id, itemType models.ItemType) string {
+func (s *Subsonic) GetImageUrl(item models.Id, itemType models.ItemType) string {
 	return ""
 }

@@ -20,23 +20,23 @@ package models
 
 // Album has multiple songs. It has one primary artist and multiple additional artists.
 type Album struct {
-	Id       Id
-	Name     string
-	Year     int
-	Duration int
+	Id       Id     `db:"id"`
+	Name     string `db:"name"`
+	Year     int    `db:"year"`
+	Duration int    `db:"duration"`
 	// Artist is the primary artist
-	Artist Id
+	Artist Id `db:"artist"`
 	// Additional artists. If length is 1, first item is same as primary artist. Else it contains additional artists
 	AdditionalArtists []IdName
 	Songs             []Id
 	//SongCount, how many songs are there in album.
 	// 0 means album is empty, where -1 means songs need to be gathered separately.
-	SongCount int
+	SongCount int `db:"song_count"`
 	// ImageId is optional id for image album
-	ImageId   string
-	DiscCount int
+	ImageId   string `db:"image_id"`
+	DiscCount int    `db:"disc_count"`
 
-	Favorite bool
+	Favorite bool `db:"favorite"`
 }
 
 func (a *Album) GetId() Id {

@@ -203,10 +203,11 @@ func formatBytes(bytes uint64) string {
 func (h *Help) statsPage() string {
 	text := "[yellow]Server Info[-]\n"
 	if h.stats.ServerInfo != nil {
-		text += fmt.Sprintf("Server type: %s\nName: %s\nVersion: %s\nMessage: %s",
+		text += fmt.Sprintf("Server type: %s\nName: %s\nVersion: %s\nId: %s\nMessage: %s",
 			h.stats.ServerInfo.ServerType,
 			h.stats.ServerInfo.Name,
 			h.stats.ServerInfo.Version,
+			h.stats.ServerInfo.Id,
 			h.stats.ServerInfo.Message,
 		)
 
@@ -225,6 +226,13 @@ func (h *Help) statsPage() string {
 	text += "\n\n[yellow]Statistics[-]\n"
 	text += fmt.Sprintf("Memory allocated: %s",
 		h.stats.HeapString())
+
+	text += "\n\n[yellow]Local storage[-]\n"
+	text += fmt.Sprintf("Database file: %s\nDatabase size: %s\nLast updated: %s",
+		h.stats.StorageInfo.DbFile,
+		h.stats.StorageInfo.DbSizeString(),
+		h.stats.StorageInfo.LastUpdatedString())
+
 	return text
 }
 

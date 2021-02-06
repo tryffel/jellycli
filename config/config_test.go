@@ -21,6 +21,7 @@ package config
 import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/spf13/viper"
+	"os"
 	"path"
 	"reflect"
 	"testing"
@@ -52,6 +53,8 @@ func TestConfigToFromViper(t *testing.T) {
 			HttpBufferingS:        5,
 			HttpBufferingLimitMem: 20,
 			EnableRemoteControl:   true,
+			LocalCacheDir:         "/tmp/jellycli",
+			EnableLocalCache:      true,
 		},
 		Gui: Gui{
 			PageSize:               100,
@@ -97,6 +100,11 @@ func TestInitEmptyConfig(t *testing.T) {
 	configFile := path.Join(tmpDir, "jellycli.yaml")
 	viper.SetConfigFile(configFile)
 
+	cachedir, err := os.UserCacheDir()
+	if err != nil {
+		t.Errorf("get cache dir: %v", err)
+	}
+
 	conf := &Config{
 		Jellyfin: Jellyfin{},
 		Subsonic: Subsonic{},
@@ -108,6 +116,8 @@ func TestInitEmptyConfig(t *testing.T) {
 			HttpBufferingS:        5,
 			HttpBufferingLimitMem: 20,
 			EnableRemoteControl:   true,
+			LocalCacheDir:         path.Join(cachedir, AppNameLower),
+			EnableLocalCache:      true,
 		},
 		Gui: Gui{
 			PageSize:            100,
@@ -128,7 +138,7 @@ func TestInitEmptyConfig(t *testing.T) {
 	viper.Reset()
 
 	//read config
-	err := ConfigFromViper()
+	err = ConfigFromViper()
 	if err != nil {
 		t.Fatalf("read config from viper: %v", err)
 	}
@@ -143,6 +153,11 @@ func TestInitEmptyConfig(t *testing.T) {
 
 func TestSanitizeConfig(t *testing.T) {
 	// test existing config file is sanitized
+
+	cachedir, err := os.UserCacheDir()
+	if err != nil {
+		t.Errorf("get cache dir: %v", err)
+	}
 
 	invalidConf := &Config{
 		Jellyfin: Jellyfin{
@@ -195,6 +210,7 @@ func TestSanitizeConfig(t *testing.T) {
 	invalidConf.Player.AudioBufferingMs = 150
 	invalidConf.Player.HttpBufferingS = 5
 	invalidConf.Player.HttpBufferingLimitMem = 20
+	invalidConf.Player.LocalCacheDir = path.Join(cachedir, AppNameLower)
 
 	invalidConf.Gui.PageSize = 100
 	invalidConf.Gui.DoubleClickMs = 220
@@ -204,7 +220,7 @@ func TestSanitizeConfig(t *testing.T) {
 	configFrom(&Config{})
 
 	//read config
-	err := ConfigFromViper()
+	err = ConfigFromViper()
 	if err != nil {
 		t.Fatalf("read config from viper: %v", err)
 	}

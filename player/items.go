@@ -19,22 +19,45 @@
 package player
 
 import (
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"runtime"
 	"tryffel.net/go/jellycli/api"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
+	"tryffel.net/go/jellycli/storage"
 )
 
 // Items implements interfaces.ItemController
 type Items struct {
 	browser api.MediaServer
+
+	db *storage.Db
 }
 
-func newItems(api api.MediaServer) *Items {
-	return &Items{
+func newItems(api api.MediaServer) (*Items, error) {
+	items := &Items{
 		browser: api,
+	}
+	var err error
+
+	serverId := api.GetId()
+	if config.AppConfig.Player.EnableLocalCache {
+		items.db, err = storage.NewDb(serverId)
+		if err != nil {
+			return items, fmt.Errorf("init local database: %v", err)
+		}
+	}
+	return items, err
+}
+
+func (i *Items) closeDb() {
+	if i.db != nil {
+		err := i.db.Close()
+		if err != nil {
+			logrus.Errorf("close db: %s", err)
+		}
 	}
 }
 
@@ -43,15 +66,23 @@ func (i *Items) Search(itemType models.ItemType, query string) ([]models.Item, e
 }
 
 func (i *Items) GetArtists(opts *interfaces.QueryOpts) ([]*models.Artist, int, error) {
-	return i.browser.GetArtists(opts)
+	if config.AppConfig.Player.EnableLocalCache {
+		return i.db.GetArtists(opts)
+	} else {
+		return i.browser.GetArtists(opts)
+	}
 }
 
 func (i *Items) GetAlbumArtists(paging interfaces.Paging) ([]*models.Artist, int, error) {
-	return i.browser.GetAlbumArtists(paging)
+	return i.browser.GetAlbumArtists(interfaces.DefaultQueryOpts())
 }
 
 func (i *Items) GetAlbums(opts *interfaces.QueryOpts) ([]*models.Album, int, error) {
-	return i.browser.GetAlbums(opts)
+	if config.AppConfig.Player.EnableLocalCache {
+		return i.db.GetAlbums(opts)
+	} else {
+		return i.browser.GetAlbums(opts)
+	}
 }
 
 func (i *Items) GetArtistAlbums(artist models.Id) ([]*models.Album, error) {
@@ -63,7 +94,12 @@ func (i *Items) GetAlbumSongs(album models.Id) ([]*models.Song, error) {
 }
 
 func (i *Items) GetPlaylists() ([]*models.Playlist, error) {
-	return i.browser.GetPlaylists()
+	if config.AppConfig.Player.EnableLocalCache {
+		return i.db.GetPlaylists()
+	} else {
+		return i.browser.GetPlaylists()
+	}
+
 }
 
 func (i *Items) GetPlaylistSongs(playlist *models.Playlist) error {
@@ -84,11 +120,21 @@ func (i *Items) GetFavoriteArtists() ([]*models.Artist, error) {
 }
 
 func (i *Items) GetFavoriteAlbums(paging interfaces.Paging) ([]*models.Album, int, error) {
-	return i.browser.GetFavoriteAlbums(paging)
+	query := interfaces.DefaultQueryOpts()
+	query.Filter.Favorite = true
+	query.Paging = paging
+	return i.browser.GetAlbums(query)
 }
 
 func (i *Items) GetLatestAlbums() ([]*models.Album, error) {
-	return i.browser.GetLatestAlbums()
+	query := interfaces.DefaultQueryOpts()
+	if config.AppConfig.Gui.LimitRecentlyPlayed {
+		query.Paging.PageSize = 100
+	}
+	query.Sort.Field = interfaces.SortByLatest
+	query.Sort.Mode = interfaces.SortDesc
+	albums, _, err := i.browser.GetAlbums(query)
+	return albums, err
 }
 
 func (i *Items) GetRecentlyPlayed(paging interfaces.Paging) ([]*models.Song, int, error) {
@@ -108,7 +154,11 @@ func (i *Items) GetGenres(paging interfaces.Paging) ([]*models.IdName, int, erro
 }
 
 func (i *Items) GetGenreAlbums(genre models.IdName) ([]*models.Album, error) {
-	return i.browser.GetGenreAlbums(genre)
+	query := interfaces.DefaultQueryOpts()
+	query.Filter.Genres = []models.IdName{genre}
+
+	albums, _, err := i.browser.GetAlbums(query)
+	return albums, err
 }
 
 func (i *Items) GetStatistics() models.Stats {
@@ -126,11 +176,22 @@ func (i *Items) GetStatistics() models.Stats {
 	if err != nil {
 		logrus.Errorf("get server info: %v", err)
 	}
+
+	if i.db != nil {
+		stats.StorageInfo, err = i.db.GetStats()
+		if err != nil {
+			logrus.Errorf("get local storage info: %v", err)
+		}
+	}
 	return stats
 }
 
 func (i *Items) GetSongs(page, pageSize int) ([]*models.Song, int, error) {
-	return i.browser.GetSongs(page, pageSize)
+	if config.AppConfig.Player.EnableLocalCache {
+		return i.db.GetSongs(page, pageSize)
+	} else {
+		return i.browser.GetSongs(interfaces.DefaultQueryOpts())
+	}
 }
 
 func (i *Items) GetAlbumArtist(album *models.Album) (*models.Artist, error) {

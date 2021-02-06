@@ -29,6 +29,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 	"tryffel.net/go/jellycli/api"
 	"tryffel.net/go/jellycli/config"
@@ -93,7 +94,7 @@ func (s *Subsonic) GetInfo() (*models.ServerInfo, error) {
 		return nil, err
 	}
 
-	info.Id = resp.Type
+	info.Id = s.GetId()
 	info.Name = resp.Type
 	info.Version = resp.ServerVersion
 	return info, nil
@@ -188,7 +189,7 @@ func (s *Subsonic) get(url string, params *params) (*response, error) {
 		return nil, err
 	}
 
-	logrus.Debugf("Get %s status: %d, took: %d ms", "/rest"+url, resp.StatusCode, took.Milliseconds())
+	logrus.Debugf("Get %s status: %d, took: %d ms", req.URL.String(), resp.StatusCode, took.Milliseconds())
 	defer resp.Body.Close()
 	dto := &subResponse{}
 	err = json.NewDecoder(resp.Body).Decode(dto)
@@ -244,6 +245,11 @@ func (p *params) setId(id string) {
 	(*p)["id"] = id
 }
 
+func (p *params) setPaging(paging interfaces.Paging) {
+	(*p)["offset"] = strconv.Itoa(paging.Offset())
+	(*p)["size"] = strconv.Itoa(paging.PageSize)
+}
+
 func (s *Subsonic) GetConfig() config.Backend {
 	return &config.Subsonic{
 		Url:      s.host,
@@ -284,4 +290,8 @@ func (s *Subsonic) Start() error {
 
 func (s *Subsonic) Stop() error {
 	return nil
+}
+
+func (s *Subsonic) GetId() string {
+	return fmt.Sprintf("%x", md5.Sum([]byte(s.host+s.user)))
 }

@@ -82,7 +82,7 @@ func NewPlayer(browser api.MediaServer) (*Player, error) {
 
 	p.Audio = newAudio()
 	p.Queue = newQueue()
-	p.Items = newItems(browser)
+	p.Items, err = newItems(browser)
 	if err != nil {
 		return p, err
 	}
@@ -124,6 +124,7 @@ func (p *Player) loop() {
 		case <-p.StopChan():
 			// stop application
 			p.Audio.StopMedia()
+			p.Items.closeDb()
 			break
 		case <-p.songComplete:
 			// stream / song complete, get next song
@@ -210,7 +211,7 @@ func (p *Player) downloadSong(index int) {
 			album = &models.Album{Name: "unknown album"}
 		} else {
 			imageId = album.ImageId
-			imageUrl = p.api.ImageUrl(album.Id, models.TypeAlbum)
+			imageUrl = p.api.GetImageUrl(album.Id, models.TypeAlbum)
 		}
 		a, err := p.api.GetArtist(album.GetParent())
 		if err != nil {

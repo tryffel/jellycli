@@ -18,7 +18,25 @@
 
 package models
 
+import (
+	"database/sql/driver"
+	"fmt"
+)
+
 type Id string
+
+func (i Id) Value() (driver.Value, error) {
+	return string(i), nil
+}
+
+func (i *Id) Scan(src interface{}) error {
+	str, ok := src.(string)
+	if !ok {
+		return fmt.Errorf("'%v' not string", src)
+	}
+	*i = Id(str)
+	return nil
+}
 
 func (i Id) String() string {
 	return string(i)

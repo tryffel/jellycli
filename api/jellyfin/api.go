@@ -78,6 +78,10 @@ func (jf *Jellyfin) AuthOk() error {
 	return jf.TokenOk()
 }
 
+func (jf *Jellyfin) GetId() string {
+	return jf.serverId
+}
+
 func (jf *Jellyfin) GetInfo() (*models.ServerInfo, error) {
 	info := &models.ServerInfo{
 		ServerType: "Jellyfin",

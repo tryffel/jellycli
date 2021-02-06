@@ -25,7 +25,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
-	"strconv"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
 )
@@ -51,6 +50,8 @@ func getItemType(dto *map[string]interface{}) (models.ItemType, error) {
 		return "", fmt.Errorf("unknown type: %s", text)
 	}
 }
+
+func (jf *Jellyfin) CanCacheSongs() bool { return true }
 
 func (jf *Jellyfin) GetItem(id models.Id) (models.Item, error) {
 	item, found := jf.cache.Get(id)
@@ -404,14 +405,12 @@ func (jf *Jellyfin) GetPlaylistSongs(playlist models.Id) ([]*models.Song, error)
 }
 
 // GetSongs returns songs by paging, and returns total number of songs
-func (jf *Jellyfin) GetSongs(page, pageSize int) ([]*models.Song, int, error) {
+func (jf *Jellyfin) GetSongs(query *interfaces.QueryOpts) ([]*models.Song, int, error) {
 	params := *jf.defaultParams()
 	params.setIncludeTypes(mediaTypeSong)
 	params.enableRecursive()
-	params.setSorting("Name", "Ascending")
-
-	params["Limit"] = strconv.Itoa(pageSize)
-	params["StartIndex"] = strconv.Itoa((page) * pageSize)
+	params.setPaging(query.Paging)
+	params.setFilter(models.TypeSong, query.Filter)
 
 	resp, err := jf.get(fmt.Sprintf("/Users/%s/Items", jf.userId), &params)
 	if resp != nil {
@@ -433,7 +432,6 @@ func (jf *Jellyfin) GetSongs(page, pageSize int) ([]*models.Song, int, error) {
 	for i, v := range dto.Songs {
 		logInvalidType(&v, "get songs")
 		songs[i] = v.toSong()
-		songs[i].Index = pageSize*pageSize + i + 1
 	}
 
 	return songs, dto.TotalSongs, nil
@@ -518,11 +516,12 @@ func (jf *Jellyfin) getArtists(paging interfaces.Paging) (artistList []*models.A
 	return jf.parseArtists(resp)
 }
 
-func (jf *Jellyfin) GetAlbumArtists(paging interfaces.Paging) (artistList []*models.Artist, numRecords int, err error) {
+func (jf *Jellyfin) GetAlbumArtists(query *interfaces.QueryOpts) (artistList []*models.Artist, numRecords int, err error) {
 	params := *jf.defaultParams()
 	params.enableRecursive()
-	params.setSorting("SortName", "Ascending")
-	params.setPaging(paging)
+	params.setFilter(models.TypeArtist, query.Filter)
+	params.setPaging(query.Paging)
+	params.setSortingByType(models.TypeArtist, query.Sort)
 	resp, err := jf.get("/Artists/AlbumArtists", &params)
 	if resp != nil {
 		defer resp.Close()

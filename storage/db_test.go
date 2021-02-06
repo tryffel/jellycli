@@ -16,42 +16,34 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package models
+package storage
 
-// Playlist is a list of songs. It has no artists itself, but songs do have albums and artists.
-type Playlist struct {
-	Id       Id     `db:"id"`
-	Name     string `db:"name"`
-	Duration int    `db:"duration"`
+import (
+	"path"
+	"testing"
+)
 
-	Songs     []*Song
-	SongCount int `db:"song_count"`
-}
+func testDb(t *testing.T) *Db {
+	id := "test-123"
+	dir := t.TempDir()
+	file := path.Join(dir, id+".db")
 
-func (p Playlist) GetId() Id {
-	return p.Id
-}
-
-func (p Playlist) GetName() string {
-	return p.Name
-}
-
-func (p Playlist) HasChildren() bool {
-	return p.SongCount > 0
-}
-
-func (p Playlist) GetChildren() []Id {
-	ids := make([]Id, len(p.Songs))
-	for i, v := range p.Songs {
-		ids[i] = v.Id
+	db, err := newDb(file, id)
+	if err != nil {
+		t.Errorf("init db: %v", err)
+		return nil
 	}
-	return ids
+	return db
 }
 
-func (p Playlist) GetParent() Id {
-	return ""
+func closeDb(t *testing.T, db *Db) {
+	err := db.Close()
+	if err != nil {
+		t.Errorf("close db: %v", err)
+	}
 }
 
-func (p Playlist) GetType() ItemType {
-	return TypePlaylist
+func TestNewDb(t *testing.T) {
+	db := testDb(t)
+	closeDb(t, db)
 }

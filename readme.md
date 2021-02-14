@@ -16,6 +16,7 @@ Available features vary depending on server being used. E.g. Subsonic-servers do
 * View artists, songs, albums, playlists, favorite artists and albums, genres, similar albums and artists
 * Queue: add songs and albums, reorder & delete songs, clear queue
 * Control (and view) play state through Dbus integration
+* (experimental) Local metadata caching
 * Remote control over Jellyfin server. Currently implemented:
     * [x] Play / pause / stop
     * [x] Set volume
@@ -38,6 +39,19 @@ namely poor colors, missing characters and some keybindings
 might not work as expected. Windows Console works better than Cmd.
 
 On raspi 2 you need to increase audio buffer duration in config file to somewhere around 400.
+
+### (Experimental) Local metadata caching
+
+Jellycli features caching metadata locally. This is handy and speeds up browsing, especially with slow internet.
+Cache is very basic and supports every other resource except genres at the moment. Also filtering/searching
+is not supported. For Subsonic servers, local caching is the only way to actually browse full library. 
+
+To enable caching, set config option player.enable_local_cache = true, then index manually with:
+```jellycli refresh``'. This will create new db file if needed and update library. Depending on library size,
+this might take some minutes.
+If something goes wrong, you can always remove db file by hand and run this command again. 
+Database file is located in /home/user/.cache/jellycli/*.db, and is visible in help page->info too.
+Refer to help page to get correct file. Each server backend uses separate db file.
 
 ## Building
 **You will need Go 1.13 or later installed and configured**

@@ -92,3 +92,7 @@ player:
   # If enabled, user can control playback remotely with another client.
   enable_remote_control: true
 
+  # enable local metadata caching. If enabled, use command 'refresh' to pull latest data.
+  # Subsonic servers need this enabled to properly browse library.
+  enable_local_cache: false
+

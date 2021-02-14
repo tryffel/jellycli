@@ -28,7 +28,7 @@ import (
 
 var refreshCmd = &cobra.Command{
 	Use:   "refresh",
-	Short: "Pull latest data from remote server",
+	Short: "Pull latest data from remote server and store to local cache",
 	Run: func(cmd *cobra.Command, args []string) {
 		disableGui = true
 		initConfig()

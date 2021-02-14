@@ -93,6 +93,12 @@ func initAudio() error {
 }
 
 func (a *Audio) SetShuffle(shuffle bool) {
+	if shuffle {
+		logrus.Info("Enable shuffle")
+	} else {
+		logrus.Info("Disable shuffle")
+	}
+
 	speaker.Lock()
 	defer speaker.Unlock()
 	a.status.Shuffle = shuffle
@@ -155,6 +161,7 @@ func (a *Audio) Continue() {
 
 // StopMedia stops music. If there is no audio to play, do nothing.
 func (a *Audio) StopMedia() {
+	logrus.Infof("Stop audio")
 	speaker.Lock()
 	a.status.State = interfaces.AudioStateStopped
 	a.status.Action = interfaces.AudioActionStop
@@ -174,6 +181,7 @@ func (a *Audio) StopMedia() {
 
 // Next plays next track. If there's no next song to play, do nothing.
 func (a *Audio) Next() {
+	logrus.Info("Next song")
 	speaker.Lock()
 	a.status.Action = interfaces.AudioActionNext
 	speaker.Unlock()
@@ -182,6 +190,7 @@ func (a *Audio) Next() {
 
 // Previous plays previous track. If previous track does not exist, do nothing.
 func (a *Audio) Previous() {
+	logrus.Info("Previous song")
 	speaker.Lock()
 	a.status.Action = interfaces.AudioActionPrevious
 	speaker.Unlock()
@@ -242,6 +251,7 @@ func (a *Audio) SetMute(muted bool) {
 }
 
 func (a *Audio) ToggleMute() {
+	logrus.Info("Toggle mute")
 	speaker.Lock()
 	muted := a.status.Muted
 	speaker.Unlock()

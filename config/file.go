@@ -26,6 +26,7 @@ import (
 )
 
 // NewConfigFile creates new config file in given location.
+// If path contains directory that does not exist, create that as well.
 // If locatin is empty, use default user directory ~/.config/jellycli.
 func NewConfigFile(location string) error {
 	var err error
@@ -41,6 +42,7 @@ func NewConfigFile(location string) error {
 			return err
 		}
 		file = "jellycli.yaml"
+		dir = path.Join(dir, "jellycli")
 		location = path.Join(dir, file)
 	}
 

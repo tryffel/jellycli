@@ -117,7 +117,7 @@ func TestInitEmptyConfig(t *testing.T) {
 			HttpBufferingLimitMem: 20,
 			EnableRemoteControl:   true,
 			LocalCacheDir:         path.Join(cachedir, AppNameLower),
-			EnableLocalCache:      true,
+			EnableLocalCache:      false,
 		},
 		Gui: Gui{
 			PageSize:            100,

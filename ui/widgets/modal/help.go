@@ -250,7 +250,7 @@ func logo() string {
 
 func helpText() string {
 	return `
-[darkorange]Jellycli[-] is a command-line / terminal music player for Jellyfin media server.
+[darkorange]Jellycli[-] is a terminal music player for Jellyfin and Subsonic-compatible media servers.
 Source code: https://github.com/tryffel/jellycli
 
 [yellow::b]Features [-:-:-]
@@ -262,6 +262,7 @@ Source code: https://github.com/tryffel/jellycli
     * [x] Set volume
     * [x] Next/previous track
     * [x] Control queue
+	* [x] Shuffle
     * [ ] Seeking, see (https://github.com/tryffel/jellycli/issues/8
 * Supported formats (server transcodes everything else to mp3): mp3,ogg,flac,wav
 * headless mode (--no-gui)

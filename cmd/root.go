@@ -102,6 +102,9 @@ func initConfig() {
 	if err != nil {
 		logrus.Fatalf("save config file: %v", err)
 	}
+
+	file := viper.ConfigFileUsed()
+	config.ConfigFile = file
 }
 
 func initLogging() (*os.File, error) {

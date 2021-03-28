@@ -23,7 +23,7 @@ Available features vary depending on server being used. E.g. Subsonic-servers do
     * [x] Next/previous track
     * [x] Control queue
     * [ ] Seeking, see [#8](https://github.com/tryffel/jellycli/issues/8)
-    * [ ] Shuffle, todo
+    * [x] Shuffle 
     * [x] Search & filter results
 * Supported formats (server transcodes everything else to mp3): mp3,ogg,flac,wav
 * headless mode (--no-gui)
@@ -40,7 +40,7 @@ might not work as expected. Windows Console works better than Cmd.
 
 On raspi 2 you need to increase audio buffer duration in config file to somewhere around 400.
 
-### (Experimental) Local metadata caching
+### (Experimental) Local metadata caching 
 
 Jellycli features caching metadata locally. This is handy and speeds up browsing, especially with slow internet.
 Cache is very basic and supports every other resource except genres at the moment. Also filtering/searching
@@ -52,6 +52,8 @@ this might take some minutes.
 If something goes wrong, you can always remove db file by hand and run this command again. 
 Database file is located in /home/user/.cache/jellycli/*.db, and is visible in help page->info too.
 Refer to help page to get correct file. Each server backend uses separate db file.
+
+**Official Windows build does not support local cache yet.**
 
 ## Building
 **You will need Go 1.13 or later installed and configured**

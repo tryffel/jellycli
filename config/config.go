@@ -148,7 +148,7 @@ func (c *Config) initNewConfig() {
 	c.Player.LogFile = path.Join(tempDir, "jellycli.log")
 
 	c.Gui.EnableResultsFiltering = true
-	c.Player.EnableLocalCache = true
+	c.Player.EnableLocalCache = false
 }
 
 // can config file be considered empty / not configured

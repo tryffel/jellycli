@@ -47,7 +47,7 @@ Cache is very basic and supports every other resource except genres at the momen
 is not supported. For Subsonic servers, local caching is the only way to actually browse full library. 
 
 To enable caching, set config option player.enable_local_cache = true, then index manually with:
-```jellycli refresh``'. This will create new db file if needed and update library. Depending on library size,
+```jellycli refresh```. This will create new db file if needed and update library. Depending on library size,
 this might take some minutes.
 If something goes wrong, you can always remove db file by hand and run this command again. 
 Database file is located in /home/user/.cache/jellycli/*.db, and is visible in help page->info too.

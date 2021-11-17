@@ -21,13 +21,13 @@ package jellyfin
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/denisbrodbeck/machineid"
-	"github.com/sirupsen/logrus"
-	"io"
 	"net/http"
 	"os"
 	"runtime"
 	"strconv"
+
+	"github.com/denisbrodbeck/machineid"
+	"github.com/sirupsen/logrus"
 	"tryffel.net/go/jellycli/config"
 	"tryffel.net/go/jellycli/interfaces"
 	"tryffel.net/go/jellycli/models"
@@ -160,11 +160,12 @@ func (jf *Jellyfin) ReportProgress(state *interfaces.ApiPlaybackState) error {
 	if err != nil {
 		return fmt.Errorf("json marshaling failed: %v", err)
 	}
-	var resp io.ReadCloser
-	resp, err = jf.post(url, &body, &params)
-	if resp != nil {
-		resp.Close()
+	resp, err := jf.makeRequest(http.MethodPost, url, &body, &params,
+		map[string]string{"X-Emby-Authorization": jf.authHeader()})
+	if err != nil {
+		return fmt.Errorf("push progress: %v", err)
 	}
+	resp.Body.Close()
 
 	/*
 		} else {

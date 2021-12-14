@@ -90,6 +90,15 @@ type playbackStarted struct {
 	Queue               []queueItem `json:"NowPlayingQueue"`
 }
 
+type playbackStoppedInfo struct {
+	PlayedToCompletion bool
+}
+
+type playbackStopped struct {
+	playbackStarted
+	PlaybackStoppedInfo playbackStoppedInfo `json:"PlaybackStoppedInfo"`
+}
+
 type queueItem struct {
 	Id    string `json:"Id"`
 	Index string `json:"PlaylistItemId"`
@@ -144,7 +153,12 @@ func (jf *Jellyfin) ReportProgress(state *interfaces.ApiPlaybackState) error {
 		report = started
 	} else if state.Event == interfaces.EventStop {
 		url = "/Sessions/Playing/Stopped"
-		report = started
+		report = playbackStopped{
+			playbackStarted: started,
+			PlaybackStoppedInfo: playbackStoppedInfo{
+				PlayedToCompletion: true,
+			},
+		}
 	} else {
 		url = "/Sessions/Playing/Progress"
 		report = playbackProgress{

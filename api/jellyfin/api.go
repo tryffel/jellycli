@@ -180,6 +180,10 @@ func NewJellyfin(conf *config.Jellyfin, provider config.KeyValueProvider) (*Jell
 		}
 	}
 
+	if !strings.HasPrefix(jf.host, "http") {
+		return jf, errors.New("jellyfin url must have either 'http://' or 'https://' prefix")
+	}
+
 	err = jf.ping()
 	if err != nil {
 		logrus.Errorf("connection to jellyfin server failed. Make sure you entered correct url.")

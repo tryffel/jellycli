@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/Masterminds/squirrel v1.5.0
 	github.com/denisbrodbeck/machineid v1.0.1
-	github.com/faiface/beep v1.0.2
+	github.com/faiface/beep v1.1.0
 	github.com/gdamore/tcell v1.3.0
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/godbus/dbus v4.1.0+incompatible
@@ -20,7 +20,6 @@ require (
 	github.com/onsi/ginkgo v1.12.0 // indirect
 	github.com/onsi/gomega v1.9.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rivo/uniseg v0.1.0
 	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/cobra v1.1.1
